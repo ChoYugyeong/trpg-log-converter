@@ -12,6 +12,7 @@
 
 /* 기본 라벨 설정 - 텍스트 잘림 방지 */
 QLabel {
+    font-family: "Pretendard", "Malgun Gothic", sans-serif;
     min-height: 20px;
     padding: 2px 0;
 }
@@ -21,13 +22,19 @@ QMainWindow {
 }
 
 QWidget {
+    font-family: "Pretendard", "Malgun Gothic", sans-serif;
     color: palette(text);
     background: transparent;
 }
 
 QLabel {
+    font-family: "Pretendard", "Malgun Gothic", sans-serif;
     color: palette(text);
     background: transparent;
+}
+
+QPushButton, QLineEdit, QComboBox, QCheckBox, QRadioButton, QPlainTextEdit, QTextEdit, QListWidget {
+    font-family: "Pretendard", "Malgun Gothic", sans-serif;
 }
 
 /* ==================== Sidebar ==================== */
@@ -763,12 +770,16 @@ QSpinBox:focus, QDoubleSpinBox:focus {
 
 /* ==================== Color Picker ==================== */
 #ColorSwatch {
-    border: 2px solid rgba(128, 128, 128, 0.2);
+    border: 2px solid rgba(128, 128, 128, 0.15);
     border-radius: 8px;
+    min-width: 36px;
+    max-width: 36px;
+    min-height: 36px;
+    max-height: 36px;
 }
 
 #ColorSwatch:hover {
-    border-color: rgba(128, 128, 128, 0.4);
+    border: 2px solid #007AFF;
 }
 
 /* ==================== Frame ==================== */
@@ -913,7 +924,7 @@ QColorDialog QSpinBox {
     border: 2px dashed rgba(128, 128, 128, 0.2);
     border-radius: 12px;
     min-height: 100px;
-    max-height: 120px;
+    max-height: 140px;
 }
 
 #FileDropArea:hover {
@@ -928,7 +939,7 @@ QColorDialog QSpinBox {
 }
 
 #DropIcon {
-    font-size: 36px;
+    font-size: 26px;
     color: palette(dark);
 }
 
@@ -1441,7 +1452,7 @@ QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
     border: 2px dashed rgba(10, 132, 255, 0.25);
     border-radius: 14px;
     min-height: 100px;
-    max-height: 120px;
+    max-height: 140px;
 }
 
 #FileDropArea:hover {

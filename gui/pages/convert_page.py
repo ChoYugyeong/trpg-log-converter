@@ -295,14 +295,6 @@ class ConvertPage(BasePage):
         btn_layout.setContentsMargins(0, 0, 0, 0)
         btn_layout.setSpacing(10)
 
-        # 미리보기 버튼
-        self.preview_btn = PushButton("미리보기")
-        self.preview_btn.setMinimumHeight(42)
-        self.preview_btn.setMinimumWidth(100)
-        self.preview_btn.setCursor(Qt.PointingHandCursor)
-        self.preview_btn.clicked.connect(self._show_preview)
-        btn_layout.addWidget(self.preview_btn)
-
         btn_layout.addStretch()
 
         # 변환 시작 버튼 - 세련된 프라이머리 액션

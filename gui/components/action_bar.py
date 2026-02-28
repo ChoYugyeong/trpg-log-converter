@@ -196,11 +196,6 @@ class EnterpriseActionBar(QFrame):
         self.secondary_buttons = {}
 
         # 보조 버튼들
-        self.preview_btn = ActionButton("미리보기", primary=False)
-        self.preview_btn.setMinimumWidth(100)
-        self.preview_btn.clicked.connect(lambda: self.secondary_clicked.emit("preview"))
-        right_section.addWidget(self.preview_btn)
-
         self.settings_btn = ActionButton("설정", primary=False)
         self.settings_btn.setMinimumWidth(80)
         self.settings_btn.clicked.connect(lambda: self.secondary_clicked.emit("settings"))
