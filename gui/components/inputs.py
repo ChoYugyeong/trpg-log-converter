@@ -87,10 +87,8 @@ class ColorPicker(QWidget):
                 background: {self._color};
                 border: 2px solid rgba(0, 0, 0, 0.15);
                 border-radius: 8px;
-                min-width: 36px;
-                min-height: 36px;
-                max-width: 36px;
-                max-height: 36px;
+                padding: 0px;
+                margin: 0px;
             }}
             QPushButton:hover {{
                 border: 2px solid #007AFF;
@@ -266,16 +264,14 @@ class FileDropArea(QFrame):
         self.icon = QLabel("+")
         self.icon.setObjectName("DropIcon")
         self.icon.setAlignment(Qt.AlignCenter)
-        self.icon.setFixedHeight(32)
-        self.icon.setStyleSheet("font-size: 26px; font-weight: 300; color: #0A84FF;")
+        self.icon.setStyleSheet("font-size: 24px; font-weight: 300; color: #0A84FF; padding: 0; margin: 0;")
         layout.addWidget(self.icon)
 
         self.text = QLabel("파일을 드래그하거나 클릭하여 추가")
         self.text.setObjectName("HintLabel")
         self.text.setAlignment(Qt.AlignCenter)
         self.text.setWordWrap(True)
-        self.text.setFixedHeight(24)
-        self.text.setStyleSheet("font-size: 13px; color: #0A84FF; font-weight: 500;")
+        self.text.setStyleSheet("font-size: 13px; color: #0A84FF; font-weight: 500; padding: 0; margin: 0;")
         layout.addWidget(self.text)
 
         self._files = []
@@ -310,8 +306,8 @@ class FileDropArea(QFrame):
         names = ", ".join(rejected_names[:3])
         suffix = f" 외 {len(rejected_names) - 3}개" if len(rejected_names) > 3 else ""
         self.text.setText(f"지원하지 않는 파일: {names}{suffix}")
-        self.text.setStyleSheet("font-size: 12px; color: #FF3B30; font-weight: 500;")
-        self.icon.setStyleSheet("font-size: 26px; font-weight: 300; color: #FF3B30;")
+        self.text.setStyleSheet("font-size: 12px; color: #FF3B30; font-weight: 500; padding: 0; margin: 0;")
+        self.icon.setStyleSheet("font-size: 24px; font-weight: 300; color: #FF3B30; padding: 0; margin: 0;")
         self.icon.setText("!")
         # 2초 후 원래 상태로 복원
         self._reset_timer.start(2500)
@@ -319,8 +315,8 @@ class FileDropArea(QFrame):
     def _show_success_feedback(self, count: int):
         """성공적으로 파일 추가 시 시각 피드백"""
         self.text.setText(f"{count}개 파일 추가됨")
-        self.text.setStyleSheet("font-size: 13px; color: #22C55E; font-weight: 600;")
-        self.icon.setStyleSheet("font-size: 26px; font-weight: 300; color: #22C55E;")
+        self.text.setStyleSheet("font-size: 13px; color: #22C55E; font-weight: 600; padding: 0; margin: 0;")
+        self.icon.setStyleSheet("font-size: 24px; font-weight: 300; color: #22C55E; padding: 0; margin: 0;")
         self.icon.setText("✓")
         self._reset_timer.start(2000)
 
@@ -331,9 +327,9 @@ class FileDropArea(QFrame):
         self.style().unpolish(self)
         self.style().polish(self)
         self.icon.setText("+")
-        self.icon.setStyleSheet("font-size: 26px; font-weight: 300; color: #0A84FF;")
+        self.icon.setStyleSheet("font-size: 24px; font-weight: 300; color: #0A84FF; padding: 0; margin: 0;")
         self.text.setText("파일을 드래그하거나 클릭하여 추가")
-        self.text.setStyleSheet("font-size: 13px; color: #0A84FF; font-weight: 500;")
+        self.text.setStyleSheet("font-size: 13px; color: #0A84FF; font-weight: 500; padding: 0; margin: 0;")
 
     def dragEnterEvent(self, event: QDragEnterEvent):
         if event.mimeData().hasUrls():

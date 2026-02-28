@@ -772,10 +772,8 @@ QSpinBox:focus, QDoubleSpinBox:focus {
 #ColorSwatch {
     border: 2px solid rgba(128, 128, 128, 0.15);
     border-radius: 8px;
-    min-width: 36px;
-    max-width: 36px;
-    min-height: 36px;
-    max-height: 36px;
+    padding: 0px;
+    margin: 0px;
 }
 
 #ColorSwatch:hover {
@@ -892,8 +890,9 @@ QColorDialog QSpinBox {
     color: palette(dark);
     font-size: 13px;
     font-weight: 400;
-    padding: 4px 8px;
-    min-height: 24px;
+    padding: 0px;
+    margin: 0px;
+    min-height: 0px;
 }
 
 #CharacterName {
@@ -939,8 +938,11 @@ QColorDialog QSpinBox {
 }
 
 #DropIcon {
-    font-size: 26px;
+    font-size: 24px;
     color: palette(dark);
+    padding: 0px;
+    margin: 0px;
+    min-height: 0px;
 }
 
 /* ==================== Preview Labels ==================== */
