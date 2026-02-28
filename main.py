@@ -11,8 +11,11 @@ from pathlib import Path
 # 경로 설정 - 모듈 import 전에 수행
 if getattr(sys, 'frozen', False):
     APP_DIR = Path(sys.executable).parent
+    # PyInstaller _internal 디렉토리 (리소스, 모듈 등)
+    RESOURCE_DIR = Path(getattr(sys, '_MEIPASS', APP_DIR))
 else:
     APP_DIR = Path(__file__).parent
+    RESOURCE_DIR = APP_DIR
 
 sys.path.insert(0, str(APP_DIR))
 os.chdir(APP_DIR)
@@ -38,7 +41,7 @@ def load_embedded_fonts():
     """앱에 포함된 폰트 로드"""
     from PySide6.QtGui import QFontDatabase
 
-    fonts_dir = APP_DIR / "resources" / "fonts"
+    fonts_dir = RESOURCE_DIR / "resources" / "fonts"
     loaded_fonts = []
 
     if fonts_dir.exists():
@@ -117,6 +120,15 @@ def main():
     app.setApplicationName("TRPG Log Converter Pro")
     app.setApplicationVersion("2.1")
     app.setOrganizationName("TRPG Tools")
+
+    # QSS 스타일시트 로드
+    qss_path = RESOURCE_DIR / "gui" / "styles" / "stylesheet.qss"
+    if qss_path.exists():
+        qss_text = qss_path.read_text(encoding='utf-8')
+        app.setStyleSheet(qss_text)
+        logging.info("스타일시트 로드 완료: %s", qss_path)
+    else:
+        logging.warning("스타일시트를 찾을 수 없음: %s", qss_path)
 
     # ConfigManager 및 메인 윈도우 로드
     from core.config_manager import ConfigManager
