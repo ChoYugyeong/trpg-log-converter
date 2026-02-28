@@ -288,7 +288,7 @@ class MainWindow(FluentWindow):
         self.navigationInterface.addSeparator()
 
         self.addSubInterface(self.style_page, FIF.PALETTE, '스타일')
-        self.addSubInterface(self.font_page, FIF.FONT, '폰트')
+        self.addSubInterface(self.font_page, FIF.FONT_SIZE, '폰트')
         self.addSubInterface(self.content_page, FIF.DOCUMENT, '콘텐츠')
         self.addSubInterface(self.cover_page, FIF.PHOTO, '표지')
         self.addSubInterface(self.decoration_page, FIF.BRUSH, '장식')

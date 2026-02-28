@@ -162,6 +162,104 @@ class PresetService:
             tags=["korean", "minimal", "ccfolia"],
         ),
 
+        "ccfolia_insane": Preset(
+            name="ccfolia_insane",
+            display_name="코코포리아 인세인",
+            description="인세인 (Insane) 세션용 - 2D6 판정, 공포 판정, 광기 카드",
+            platform="ccfolia",
+            config={
+                "log_source": "ccfolia",
+                "parsing": {
+                    "name_max_length": 30,
+                    "skip_channels": ["雑談", "other", "잡담", "ooc"],
+                    "normalize_punctuation": True,
+                    "dice_patterns": [
+                        r"2D6",           # 기본 판정
+                        r"\d+D6",         # 변형 판정
+                        r"ST判定",        # 공포 판정 (일본어)
+                        r"공포\s*판정",   # 공포 판정 (한국어)
+                    ],
+                },
+                "narration": {
+                    "users": ["GM", "KP", "キーパー", "Keeper", "시스템", "진행자", "ナレーター"],
+                    "style": "indent",
+                },
+                "style": {
+                    "narration_prefix": "＿",
+                    "scene_marker": "■",
+                    "dice_color": "#8B0000",  # 다크레드 (호러 테마)
+                    "dialogue_bracket": "「」",
+                },
+                "chapter": {
+                    "split_mode": "scene",
+                    "scene_patterns": [
+                        r"^■", r"^씬\s*\d+", r"^シーン\s*\d+",
+                        r"^장면\s*\d+", r"^사이클\s*\d+", r"^サイクル\s*\d+",
+                        r"^클라이맥스", r"^クライマックス",
+                        r"^도입", r"^導入", r"^엔딩", r"^エンディング",
+                    ],
+                    "extract_scene_title": True,
+                    "title_format": "씬 {n}",
+                },
+                "content": {
+                    "include_dice": True,
+                    "include_system": True,
+                    "include_effects": True,
+                },
+            },
+            tags=["korean", "japanese", "insane", "ccfolia", "horror", "2d6"],
+        ),
+
+        "ccfolia_dx3": Preset(
+            name="ccfolia_dx3",
+            display_name="코코포리아 더블크로스",
+            description="더블크로스 The 3rd Edition - xDX 다이스풀, 이펙트, 침식률",
+            platform="ccfolia",
+            config={
+                "log_source": "ccfolia",
+                "parsing": {
+                    "name_max_length": 30,
+                    "skip_channels": ["雑談", "other", "잡담", "ooc"],
+                    "normalize_punctuation": True,
+                    "dice_patterns": [
+                        r"\d+DX",          # DX 다이스풀 (10면체)
+                        r"\d+D10",         # 10면체 판정
+                        r"C\(\d+\)",       # 크리티컬 값
+                        r"侵蝕率",         # 침식률 (일본어)
+                        r"침식률",         # 침식률 (한국어)
+                    ],
+                },
+                "narration": {
+                    "users": ["GM", "マスター", "Master", "시스템", "진행자"],
+                    "style": "indent",
+                },
+                "style": {
+                    "narration_prefix": "＿",
+                    "scene_marker": "■",
+                    "dice_color": "#FF4500",  # 오렌지레드 (DX 테마)
+                    "dialogue_bracket": "「」",
+                },
+                "chapter": {
+                    "split_mode": "scene",
+                    "scene_patterns": [
+                        r"^■", r"^씬\s*\d+", r"^シーン\s*\d+",
+                        r"^오프닝", r"^オープニング", r"^OP",
+                        r"^미들", r"^ミドル", r"^MD",
+                        r"^클라이맥스", r"^クライマックス", r"^CL",
+                        r"^엔딩", r"^エンディング", r"^ED",
+                    ],
+                    "extract_scene_title": True,
+                    "title_format": "씬 {n}",
+                },
+                "content": {
+                    "include_dice": True,
+                    "include_system": True,
+                    "include_effects": True,  # 이펙트/콤보 표시
+                },
+            },
+            tags=["korean", "japanese", "doublecross", "dx3", "ccfolia", "superhero"],
+        ),
+
         # ============ Roll20 프리셋 ============
         "roll20_default": Preset(
             name="roll20_default",
@@ -229,6 +327,110 @@ class PresetService:
                 },
             },
             tags=["english", "dnd", "5e", "roll20"],
+        ),
+
+        "roll20_coc": Preset(
+            name="roll20_coc",
+            display_name="Roll20 크툴루의 부름",
+            description="Call of Cthulhu (CoC) 세션용 - d100 판정, 정신력(SAN), 기능 굴림",
+            platform="roll20",
+            config={
+                "log_source": "roll20",
+                "parsing": {
+                    "name_max_length": 40,
+                    "include_whisper": False,
+                    "normalize_punctuation": True,
+                    "dice_patterns": [
+                        r"1[dD]100",        # 퍼센타일 판정
+                        r"[dD]100",         # 축약형
+                        r"CCB",             # CoC 판정 매크로
+                        r"1[dD]20",         # 행운/POW 대항
+                        r"SAN\s*체크",      # SAN 체크 (한국어)
+                        r"SAN\s*Check",     # SAN Check (영어)
+                        r"Sanity",          # Sanity roll
+                    ],
+                },
+                "narration": {
+                    "users": ["GM", "Keeper", "KP", "Game Master"],
+                    "style": "indent",
+                },
+                "style": {
+                    "narration_prefix": "",
+                    "scene_marker": "---",
+                    "dice_color": "#2E7D32",  # 다크 그린 (CoC 테마)
+                    "dialogue_bracket": '""',
+                },
+                "chapter": {
+                    "split_mode": "scene",
+                    "scene_patterns": [
+                        r"^---", r"^###",
+                        r"^Scene\s*\d+", r"^장면\s*\d+",
+                        r"^Introduction", r"^도입",
+                        r"^Climax", r"^클라이맥스",
+                        r"^Ending", r"^엔딩",
+                    ],
+                    "title_format": "Scene {n}",
+                },
+                "content": {
+                    "include_dice": True,
+                    "include_system": True,
+                    "include_effects": True,
+                    "include_roll_templates": True,
+                },
+            },
+            tags=["english", "korean", "coc", "roll20", "horror", "d100"],
+        ),
+
+        "roll20_insane": Preset(
+            name="roll20_insane",
+            display_name="Roll20 인세인",
+            description="인세인 (Insane) 세션용 Roll20 설정 - 2D6 판정, 공포 판정",
+            platform="roll20",
+            config={
+                "log_source": "roll20",
+                "parsing": {
+                    "name_max_length": 40,
+                    "include_whisper": False,
+                    "normalize_punctuation": True,
+                    "dice_patterns": [
+                        r"2[dD]6",          # 기본 판정
+                        r"\d+[dD]6",        # 변형 판정
+                        r"ST判定",          # 공포 판정 (일본어)
+                        r"공포\s*판정",     # 공포 판정 (한국어)
+                        r"Fear\s*Check",    # Fear Check (영어)
+                    ],
+                },
+                "narration": {
+                    "users": ["GM", "KP", "Keeper", "Game Master"],
+                    "style": "indent",
+                },
+                "style": {
+                    "narration_prefix": "",
+                    "scene_marker": "---",
+                    "dice_color": "#8B0000",  # 다크레드 (호러 테마)
+                    "dialogue_bracket": '""',
+                },
+                "chapter": {
+                    "split_mode": "scene",
+                    "scene_patterns": [
+                        r"^---", r"^###",
+                        r"^Scene\s*\d+", r"^씬\s*\d+", r"^シーン\s*\d+",
+                        r"^Cycle\s*\d+", r"^사이클\s*\d+", r"^サイクル\s*\d+",
+                        r"^Climax", r"^클라이맥스", r"^クライマックス",
+                        r"^Introduction", r"^도입", r"^導入",
+                        r"^Ending", r"^엔딩", r"^エンディング",
+                    ],
+                    "extract_scene_title": True,
+                    "title_format": "Scene {n}",
+                },
+                "content": {
+                    "include_dice": True,
+                    "include_system": True,
+                    "include_effects": True,
+                    "include_roll_templates": True,
+                },
+            },
+            tags=["english", "korean", "japanese", "insane", "roll20", "horror", "2d6"],
         ),
 
         "roll20_pf2e": Preset(
