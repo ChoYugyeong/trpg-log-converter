@@ -97,24 +97,19 @@ def main():
         # Windows: 임베디드 Pretendard 폰트 우선 사용
         available_fonts = QFontDatabase.families()
 
-        # Pretendard가 로드되었으면 사용
         if 'Pretendard' in available_fonts:
-            font = QFont('Pretendard', 10)
-            font.setStyleStrategy(QFont.PreferAntialias)
-            app.setFont(font)
+            font_name = 'Pretendard'
         else:
-            # Fallback 폰트
-            fallback_fonts = [
-                'Malgun Gothic',
-                '맑은 고딕',
-                'Segoe UI',
-            ]
-            for font_name in fallback_fonts:
-                if font_name in available_fonts:
-                    font = QFont(font_name, 10)
-                    font.setStyleStrategy(QFont.PreferAntialias)
-                    app.setFont(font)
+            font_name = 'Malgun Gothic'
+            for name in ['Malgun Gothic', '맑은 고딕', 'Segoe UI']:
+                if name in available_fonts:
+                    font_name = name
                     break
+
+        font = QFont(font_name, 10)
+        font.setHintingPreference(QFont.HintingPreference.PreferNoHinting)
+        font.setStyleStrategy(QFont.StyleStrategy.PreferAntialias)
+        app.setFont(font)
 
     # 앱 메타데이터
     app.setApplicationName("TRPG Log Converter Pro")
