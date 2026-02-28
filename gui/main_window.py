@@ -166,12 +166,26 @@ class ConversionWorker(QThread):
 
             elif self.mode == 'batch':
                 total_files = len(self.files)
+
+                # 파싱 단계 병렬화 (I/O 바운드)
+                from concurrent.futures import ThreadPoolExecutor
+                parsed_files = {}
+                self.progress.emit(10, "파일 파싱 중 (병렬)...")
+
+                def _parse_one(fp):
+                    return fp, parse_with_cache(fp)
+
+                with ThreadPoolExecutor(max_workers=min(4, total_files)) as pool:
+                    for fp, entries in pool.map(lambda fp: _parse_one(fp), self.files):
+                        parsed_files[fp] = entries
+
+                # 변환 단계 (순차 - 파일 쓰기)
                 for i, file_path in enumerate(self.files):
-                    progress = int(10 + (80 * (i / total_files)))
+                    progress = int(30 + (60 * (i / total_files)))
                     file_name = Path(file_path).name
                     self.progress.emit(progress, f"변환 중: {file_name}")
 
-                    entries = parse_with_cache(file_path)
+                    entries = parsed_files.get(file_path, [])
                     if entries:
                         base = Path(file_path).stem
                         file_title = self.title or base

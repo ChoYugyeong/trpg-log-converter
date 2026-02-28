@@ -59,13 +59,11 @@ class ColorPicker(QWidget):
     def _on_hex_change(self, text: str):
         """Hex 입력 변경 시"""
         if len(text) == 7 and text.startswith('#'):
-            try:
-                QColor(text)  # 유효성 검사
+            color = QColor(text)
+            if color.isValid():
                 self._color = text
                 self._update_swatch()
                 self.color_changed.emit(text)
-            except:
-                pass
 
     def set_color(self, color: str):
         """색상 설정"""

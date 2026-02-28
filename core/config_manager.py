@@ -8,6 +8,22 @@ from typing import Optional, Dict, Any
 logger = logging.getLogger(__name__)
 
 
+CONFIG_SCHEMA_VERSION = 2
+
+def _migrate_settings(settings: dict) -> dict:
+    """설정 스키마 마이그레이션"""
+    version = settings.get('_schema_version', 1)
+
+    if version < 2:
+        # v1 → v2: margins를 dict로 통일
+        if 'margins' in settings and isinstance(settings['margins'], str):
+            settings['margins'] = {'top': '1.0', 'bottom': '1.0', 'left': '1.0', 'right': '1.0'}
+        settings['_schema_version'] = 2
+        logger.info("설정 스키마 v%d → v2 마이그레이션 완료", version)
+
+    return settings
+
+
 class ConfigManager:
     """GUI 설정과 엔진 설정을 관리하는 클래스"""
 
@@ -148,16 +164,20 @@ class ConfigManager:
             try:
                 with open(self.config_path, 'r', encoding='utf-8') as f:
                     return yaml.safe_load(f) or {}
-            except:
-                pass
+            except (IOError, yaml.YAMLError) as e:
+                logger.warning("config.yaml 로드 실패: %s", e)
         return {}
 
     def _load_gui_settings(self):
-        """GUI 설정 로드 (Pydantic 검증 포함)"""
+        """GUI 설정 로드 (Pydantic 검증 + 스키마 마이그레이션 포함)"""
         if self.settings_path.exists():
             try:
                 with open(self.settings_path, 'r', encoding='utf-8') as f:
                     loaded = json.load(f)
+
+                # 스키마 마이그레이션 적용
+                loaded = _migrate_settings(loaded)
+
                 # Pydantic으로 설정 검증 (잘못된 값은 기본값으로 대체)
                 try:
                     from core.services.config_schema import validate_gui_settings

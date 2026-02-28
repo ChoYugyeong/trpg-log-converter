@@ -84,18 +84,45 @@ def register_fonts(config: Dict) -> tuple:
     name_font = 'Helvetica-Bold'
     registered_fonts = set()
 
-    # 시스템 폰트 경로들
-    system_fonts = [
-        # macOS
-        {'path': '/System/Library/Fonts/AppleSDGothicNeo.ttc', 'index': 0, 'name': 'AppleSDGothicNeo'},
-        {'path': '/Library/Fonts/NanumMyeongjo.ttf', 'index': None, 'name': 'NanumMyeongjo'},
-        {'path': '/Library/Fonts/NanumGothic.ttf', 'index': None, 'name': 'NanumGothic'},
-        # Windows
-        {'path': 'C:/Windows/Fonts/malgun.ttf', 'index': None, 'name': 'MalgunGothic'},
-        {'path': 'C:/Windows/Fonts/malgunbd.ttf', 'index': None, 'name': 'MalgunGothicBold'},
-        {'path': 'C:/Windows/Fonts/NanumGothic.ttf', 'index': None, 'name': 'NanumGothic'},
-        {'path': 'C:/Windows/Fonts/gulim.ttc', 'index': 0, 'name': 'Gulim'},
-    ]
+    # 시스템 폰트 경로 동적 탐색
+    import sys
+    system_fonts = []
+
+    if sys.platform == 'darwin':
+        font_dirs = [Path('/System/Library/Fonts'), Path('/Library/Fonts'), Path.home() / 'Library/Fonts']
+        font_candidates = [
+            {'filename': 'AppleSDGothicNeo.ttc', 'index': 0, 'name': 'AppleSDGothicNeo'},
+            {'filename': 'NanumMyeongjo.ttf', 'index': None, 'name': 'NanumMyeongjo'},
+            {'filename': 'NanumGothic.ttf', 'index': None, 'name': 'NanumGothic'},
+        ]
+    elif sys.platform == 'win32':
+        win_fonts = Path(os.environ.get('WINDIR', 'C:/Windows')) / 'Fonts'
+        local_fonts = Path(os.environ.get('LOCALAPPDATA', '')) / 'Microsoft/Windows/Fonts'
+        font_dirs = [win_fonts, local_fonts]
+        font_candidates = [
+            {'filename': 'malgun.ttf', 'index': None, 'name': 'MalgunGothic'},
+            {'filename': 'malgunbd.ttf', 'index': None, 'name': 'MalgunGothicBold'},
+            {'filename': 'NanumGothic.ttf', 'index': None, 'name': 'NanumGothic'},
+            {'filename': 'gulim.ttc', 'index': 0, 'name': 'Gulim'},
+        ]
+    else:  # Linux
+        font_dirs = [
+            Path('/usr/share/fonts'), Path('/usr/local/share/fonts'),
+            Path.home() / '.local/share/fonts', Path.home() / '.fonts',
+        ]
+        font_candidates = [
+            {'filename': 'NanumGothic.ttf', 'index': None, 'name': 'NanumGothic'},
+            {'filename': 'NanumMyeongjo.ttf', 'index': None, 'name': 'NanumMyeongjo'},
+        ]
+
+    for candidate in font_candidates:
+        for font_dir in font_dirs:
+            font_path = font_dir / candidate['filename']
+            if font_path.exists():
+                system_fonts.append({
+                    'path': str(font_path), 'index': candidate['index'], 'name': candidate['name']
+                })
+                break  # 첫 번째 발견 경로 사용
 
     # 앱 내장 폰트 우선 등록
     app_fonts_dir = Path(__file__).parent.parent / 'resources' / 'fonts'
@@ -539,8 +566,26 @@ def create_pdf(entries: List[Dict], output_path: str, config: Dict,
                 else:
                     story.append(Paragraph(content_escaped, pdf_styles['Dialogue']))
 
-        # PDF 빌드 (페이지 번호 포함)
-        doc.build(story, canvasmaker=NumberedCanvas)
+        # 원자적 쓰기: 임시 파일에 빌드 후 rename
+        import tempfile
+        tmp_fd, tmp_path = tempfile.mkstemp(suffix='.pdf', dir=os.path.dirname(output_path) or '.')
+        os.close(tmp_fd)
+        try:
+            tmp_doc = SimpleDocTemplate(
+                tmp_path, pagesize=page_size,
+                rightMargin=right_margin, leftMargin=left_margin,
+                topMargin=top_margin, bottomMargin=bottom_margin,
+                title=title, author=author,
+            )
+            tmp_doc.build(story, canvasmaker=NumberedCanvas)
+            if os.path.exists(output_path):
+                os.replace(tmp_path, output_path)
+            else:
+                os.rename(tmp_path, output_path)
+        except Exception:
+            if os.path.exists(tmp_path):
+                os.unlink(tmp_path)
+            raise
         logger.info(f"PDF 생성 완료: {output_path}")
         return output_path
 

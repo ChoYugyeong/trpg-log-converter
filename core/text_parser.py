@@ -103,6 +103,7 @@ def is_scene_marker(text, patterns):
             if re.search(pattern, text, re.IGNORECASE):
                 return True
         except re.error:
+            # 잘못된 정규식은 리터럴 매칭으로 폴백
             if pattern in text:
                 return True
     return False

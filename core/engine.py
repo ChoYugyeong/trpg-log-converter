@@ -17,6 +17,7 @@ import os
 import uuid
 import yaml
 from pathlib import Path
+from typing import Dict, List, Optional, Any, Tuple, Callable
 import mimetypes
 import io
 import logging
@@ -24,7 +25,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # ============ 이미지 최적화 ============
-def optimize_image(img_path, config):
+def optimize_image(img_path: Path, config: Dict[str, Any]) -> Tuple[bytes, str, str]:
     """이미지를 최적화하여 (bytes, mime_type, filename) 반환.
 
     - max_resolution 이상이면 리사이즈
@@ -98,34 +99,40 @@ def optimize_image(img_path, config):
 
 
 # ============ 기본 설정 ============
-DEFAULT_CONFIG = {
-    'paths': {'input_dir': './input', 'output_dir': './export', 'fonts_dir': './fonts', 'images_dir': './images'},
-    'output_format': 'both', 'log_source': 'auto',
-    'cover': {'image': '', 'include': True, 'title_on_cover': True, 'author_on_cover': True,
-              'background_color': '#1a1a1a', 'title_color': '#ffffff', 'subtitle': ''},
-    'toc': {'include': True, 'title': '목차', 'mode': 'auto', 'entries': [], 'style': 'simple'},
-    'fonts': {'name_font': "'Pretendard', sans-serif", 'body_font': "'Nanum Myeongjo', serif",
-              'pretendard_cdn': "https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css",
-              'embed': {}, 'docx_fallback': {'body': '맑은 고딕', 'name': '맑은 고딕'}},
-    'style': {'narration_prefix': '＿', 'scene_marker': '■', 'dialogue_margin': 0.12,
-              'narration_margin': 0.8, 'narration_indent': 1.5, 'dice_color': '#888'},
-    'narration': {'users': ['GM', 'KP', 'DM', 'Keeper', 'Narrator'], 'style': 'indent'},
-    'content': {'include_dice': True, 'include_system': True, 'include_effects': True},
-    'dialogue': {'merge_consecutive': False, 'merge_separator': '\n', 'merge_max': 5},
-    'images': {'enable': True, 'markers': [r'\[IMG:\s*(.+?)\]', r'\[삽화:\s*(.+?)\]'], 'show_caption': True},
-    'custom_styles': {},
-    'chapter': {'split_mode': 'scene', 'entries_per_chapter': 300, 'extract_scene_title': True,
-                'title_format': '장면 {n}', 'min_scene_entries': 10, 'scene_patterns': [
-                    '^■', '^●', '^▶',  # 한국어 마커
-                    '^씬\\s*\\d+', '^장면\\s*\\d+', '^막\\s*\\d+',  # 한국어 장면
-                    '^---\\s*', '^===\\s*', '^\\*\\*\\*',  # 구분선 스타일
-                    '^Scene\\s*\\d*', '^Act\\s*\\d*', '^Chapter\\s*\\d*',  # 영어 장면
-                    '^Session\\s*(Start|End)', '^─+',  # Roll20 스타일
-                ]},
-    'parsing': {'name_max_length': 50, 'skip_channels': ['잡담', 'OOC', 'ooc'], 'normalize_punctuation': True},
-}
+# ConfigManager.DEFAULT_CONFIG가 단일 소스 (Single Source of Truth)
+# engine 단독 실행 시에만 사용되는 폴백
+def _get_default_config():
+    """기본 설정 반환 - ConfigManager가 있으면 그쪽을 사용"""
+    try:
+        from core.config_manager import ConfigManager
+        return ConfigManager.DEFAULT_CONFIG.copy()
+    except ImportError:
+        pass
+    # ConfigManager 임포트 실패 시 최소 폴백
+    return {
+        'paths': {'input_dir': './input', 'output_dir': './export', 'fonts_dir': './fonts', 'images_dir': './images'},
+        'output_format': 'both', 'log_source': 'auto',
+        'cover': {'image': '', 'include': True, 'title_on_cover': True, 'author_on_cover': True,
+                  'background_color': '#1a1a1a', 'title_color': '#ffffff', 'subtitle': ''},
+        'toc': {'include': True, 'title': '목차', 'mode': 'auto', 'entries': [], 'style': 'simple'},
+        'fonts': {'name_font': "'Pretendard', sans-serif", 'body_font': "'Nanum Myeongjo', serif",
+                  'pretendard_cdn': "https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css",
+                  'embed': {}, 'docx_fallback': {'body': '맑은 고딕', 'name': '맑은 고딕'}},
+        'style': {'narration_prefix': '＿', 'scene_marker': '■', 'dialogue_margin': 0.12,
+                  'narration_margin': 0.8, 'narration_indent': 1.5, 'dice_color': '#888'},
+        'narration': {'users': ['GM', 'KP', 'DM', 'Keeper', 'Narrator'], 'style': 'indent'},
+        'content': {'include_dice': True, 'include_system': True, 'include_effects': True},
+        'dialogue': {'merge_consecutive': False, 'merge_separator': '\n', 'merge_max': 5},
+        'images': {'enable': True, 'markers': [r'\[IMG:\s*(.+?)\]', r'\[삽화:\s*(.+?)\]'], 'show_caption': True},
+        'custom_styles': {},
+        'chapter': {'split_mode': 'scene', 'entries_per_chapter': 300, 'extract_scene_title': True,
+                    'title_format': '장면 {n}', 'min_scene_entries': 10, 'scene_patterns': ['^■', '^씬\\s*\\d+', '^장면\\s*\\d+']},
+        'parsing': {'name_max_length': 50, 'skip_channels': [], 'normalize_punctuation': True},
+    }
 
-def deep_merge(base, override):
+DEFAULT_CONFIG = _get_default_config()
+
+def deep_merge(base: Dict, override: Dict) -> Dict:
     result = base.copy()
     for key, value in override.items():
         if key in result and isinstance(result[key], dict) and isinstance(value, dict):
@@ -134,7 +141,7 @@ def deep_merge(base, override):
             result[key] = value
     return result
 
-def load_config(config_path=None):
+def load_config(config_path: Optional[str] = None) -> Dict[str, Any]:
     config = DEFAULT_CONFIG.copy()
     if config_path is None:
         script_dir = Path(__file__).parent
@@ -148,7 +155,7 @@ def load_config(config_path=None):
     return config
 
 # ============ 유틸리티 ============
-def get_font_files(config):
+def get_font_files(config: Dict[str, Any]) -> Dict[str, Any]:
     fonts_dir = Path(config.get('paths', {}).get('fonts_dir', './fonts'))
     fonts = {'body': None, 'name': None, 'all': []}
     if not fonts_dir.exists():
@@ -163,45 +170,45 @@ def get_font_files(config):
                 fonts['all'].append(font_path)
     return fonts
 
-def get_font_family_name(font_path):
+def get_font_family_name(font_path: Path) -> str:
     name = font_path.stem
     for suffix in ['-Regular', '-Bold', '-Light', '-Medium', '-SemiBold']:
         name = name.replace(suffix, '')
     return name
 
-def normalize_punctuation(text):
+def normalize_punctuation(text: str) -> str:
     text = re.sub(r'\.{3,}', '……', text)
     text = text.replace('...', '……')
     return text
 
-def escape_html(text):
+def escape_html(text: str) -> str:
     return text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
 
-def hex_to_rgb(hex_color):
+def hex_to_rgb(hex_color: str) -> RGBColor:
     hex_color = hex_color.lstrip('#')
     if len(hex_color) == 3:
         hex_color = ''.join([c*2 for c in hex_color])
     return RGBColor(int(hex_color[0:2], 16), int(hex_color[2:4], 16), int(hex_color[4:6], 16))
 
-def is_narration_user(name, config):
+def is_narration_user(name: str, config: Dict[str, Any]) -> bool:
     default_users = ['GM', 'KP', 'DM', 'System', '시스템', '나레이션', 'Narrator', '진행자', 'Storyteller', 'Keeper']
     config_users = config.get('narration', {}).get('users', [])
     # 기본값과 설정을 병합
     narration_users = list(set(default_users + config_users))
     return name.lower().strip() in [u.lower() for u in narration_users]
 
-def match_custom_style(content, config):
+def match_custom_style(content: str, config: Dict[str, Any]) -> Optional[str]:
     for style_name, style_config in config.get('custom_styles', {}).items():
         pattern = style_config.get('pattern', '')
         if pattern:
             try:
                 if re.search(pattern, content, re.IGNORECASE):
                     return style_config.get('type', 'dialogue')
-            except re.error:
-                pass
+            except re.error as e:
+                logger.warning("커스텀 스타일 패턴 오류 '%s': %s", pattern, e)
     return None
 
-def is_dice_roll(text):
+def is_dice_roll(text: str) -> bool:
     """주사위 굴림 판정 - 다양한 형식 지원"""
     text_upper = text.upper()
 
@@ -235,22 +242,33 @@ def is_dice_roll(text):
 
     return False
 
-def is_scene_marker(text, patterns):
+def validate_regex(pattern: str) -> bool:
+    """정규식 패턴 유효성 검사"""
+    try:
+        re.compile(pattern)
+        return True
+    except re.error as e:
+        logger.warning("잘못된 정규식 패턴 '%s': %s", pattern, e)
+        return False
+
+def is_scene_marker(text: str, patterns: List[str]) -> bool:
     for pattern in patterns:
         try:
             if re.search(pattern, text, re.IGNORECASE):
                 return True
-        except re.error:
-            pass
+        except re.error as e:
+            logger.warning("씬 마커 패턴 오류 '%s': %s (리터럴 매칭 시도)", pattern, e)
+            if pattern in text:
+                return True
     return False
 
-def extract_scene_title(text):
+def extract_scene_title(text: str) -> Optional[str]:
     text = text.strip()
     text = re.sub(r'^[─━\-=\*]+\s*', '', text)
     text = re.sub(r'\s*[─━\-=\*]+$', '', text)
     return text.strip() if text else None
 
-def find_image_file(filename, config):
+def find_image_file(filename: str, config: Dict[str, Any]) -> Optional[Path]:
     images_dir = Path(config.get('paths', {}).get('images_dir', './images'))
     if Path(filename).exists():
         return Path(filename)
@@ -260,7 +278,7 @@ def find_image_file(filename, config):
             return img_path
     return None
 
-def extract_image_markers(text, config):
+def extract_image_markers(text: str, config: Dict[str, Any]) -> Tuple[Optional[str], str]:
     images_config = config.get('images', {})
     if not images_config.get('enable', True):
         return None, text
@@ -272,12 +290,12 @@ def extract_image_markers(text, config):
                 filename = match.group(1).strip()
                 remaining_text = re.sub(pattern, '', text, count=1).strip()
                 return filename, remaining_text
-        except re.error:
-            pass
+        except re.error as e:
+            logger.warning("이미지 마커 패턴 오류 '%s': %s", pattern, e)
     return None, text
 
 # ============ 파싱 ============
-def strip_channel_prefix(text):
+def strip_channel_prefix(text: str) -> Tuple[str, Optional[str]]:
     """채널 접두사 제거 (예: [메인], [잡담], [정보] 등)"""
     # 코코포리아 스타일: [채널명] 텍스트
     match = re.match(r'^\[([^\]]+)\]\s*', text)
@@ -285,7 +303,7 @@ def strip_channel_prefix(text):
         return text[match.end():].strip(), match.group(1)
     return text, None
 
-def smart_split_name_content(text, max_name_length=50):
+def smart_split_name_content(text: str, max_name_length: int = 50) -> Tuple[Optional[str], str]:
     """이름과 내용을 지능적으로 분리 (복잡한 이름 처리)"""
     if ':' not in text:
         return None, text
@@ -491,7 +509,7 @@ def _parse_roll20(soup, config):
     return entries
 
 
-def parse_log(html_content, config):
+def parse_log(html_content: str, config: Dict[str, Any]) -> List[Dict[str, Any]]:
     soup = BeautifulSoup(html_content, 'html.parser')
     entries = []
 
@@ -627,7 +645,7 @@ def parse_log(html_content, config):
     return entries
 
 # ============ 필터링 ============
-def filter_entries(entries, config):
+def filter_entries(entries: List[Dict], config: Dict[str, Any]) -> List[Dict]:
     content_config = config.get('content', {})
     filtered = []
     
@@ -646,7 +664,7 @@ def filter_entries(entries, config):
     return filtered
 
 # ============ 대사 병합 ============
-def merge_consecutive_dialogues(entries, config):
+def merge_consecutive_dialogues(entries: List[Dict], config: Dict[str, Any]) -> List[Dict]:
     dialogue_config = config.get('dialogue', {})
     if not dialogue_config.get('merge_consecutive', False):
         return entries
@@ -688,7 +706,7 @@ def merge_consecutive_dialogues(entries, config):
     return merged
 
 # ============ 장면 분할 ============
-def split_into_scenes(entries, config):
+def split_into_scenes(entries: List[Dict], config: Dict[str, Any]) -> List[Dict]:
     chapter_config = config.get('chapter', {})
     split_mode = chapter_config.get('split_mode', 'scene')
     
@@ -1019,7 +1037,20 @@ def create_epub(entries, output_path, config, title="TRPG 리플레이", author=
     
     if progress_callback:
         progress_callback(90, 100, "EPUB 저장 중...")
-    epub.write_epub(output_path, book)
+    # 원자적 쓰기: 임시 파일에 작성 후 rename
+    import tempfile
+    tmp_fd, tmp_path = tempfile.mkstemp(suffix='.epub', dir=os.path.dirname(output_path) or '.')
+    os.close(tmp_fd)
+    try:
+        epub.write_epub(tmp_path, book)
+        if os.path.exists(output_path):
+            os.replace(tmp_path, output_path)
+        else:
+            os.rename(tmp_path, output_path)
+    except Exception:
+        if os.path.exists(tmp_path):
+            os.unlink(tmp_path)
+        raise
     if progress_callback:
         progress_callback(100, 100, "EPUB 생성 완료")
     logger.info("EPUB created: %s", output_path)
@@ -1177,7 +1208,20 @@ def create_docx(entries, output_path, config, title="TRPG 리플레이", author=
     
     if progress_callback:
         progress_callback(95, 100, "DOCX 저장 중...")
-    doc.save(output_path)
+    # 원자적 쓰기: 임시 파일에 작성 후 rename
+    import tempfile
+    tmp_fd, tmp_path = tempfile.mkstemp(suffix='.docx', dir=os.path.dirname(output_path) or '.')
+    os.close(tmp_fd)
+    try:
+        doc.save(tmp_path)
+        if os.path.exists(output_path):
+            os.replace(tmp_path, output_path)
+        else:
+            os.rename(tmp_path, output_path)
+    except Exception:
+        if os.path.exists(tmp_path):
+            os.unlink(tmp_path)
+        raise
     if progress_callback:
         progress_callback(100, 100, "DOCX 생성 완료")
     logger.info("DOCX created: %s", output_path)
