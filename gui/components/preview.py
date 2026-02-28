@@ -232,220 +232,121 @@ class DocumentPreview(QFrame):
         """)
 
         toolbar_layout = QVBoxLayout(toolbar)
-        toolbar_layout.setContentsMargins(12, 10, 12, 10)
-        toolbar_layout.setSpacing(10)
+        toolbar_layout.setContentsMargins(8, 6, 8, 6)
+        toolbar_layout.setSpacing(6)
 
-        # 첫 번째 행: 제목 + 문서 형식
+        # 1행: 제목 + 판형
         row1 = QHBoxLayout()
-        row1.setSpacing(12)
-
-        # 제목 섹션
-        title_section = QHBoxLayout()
-        title_section.setSpacing(8)
-
-        title_icon = QLabel("DOC")
-        title_icon.setStyleSheet("font-size: 11px; font-weight: 700; color: #22C55E; background: rgba(34,197,94,0.1); border-radius: 4px; padding: 2px 6px;")
-        title_section.addWidget(title_icon)
+        row1.setSpacing(6)
 
         title = QLabel("미리보기")
-        title.setStyleSheet("font-size: 15px; font-weight: 600;")
-        title_section.addWidget(title)
-
-        row1.addLayout(title_section)
+        title.setStyleSheet("font-size: 13px; font-weight: 600; padding: 0; margin: 0; min-height: 0;")
+        row1.addWidget(title)
         row1.addStretch()
-
-        # 문서 형식 드롭다운
-        format_section = QHBoxLayout()
-        format_section.setSpacing(6)
-
-        format_label = QLabel("판형")
-        format_label.setStyleSheet("font-size: 11px; color: palette(mid);")
-        format_section.addWidget(format_label)
 
         self.format_combo = QComboBox()
         self.format_combo.addItems(list(self.DOCUMENT_FORMATS.keys()))
         self.format_combo.setCurrentText(self._current_format)
-        self.format_combo.setMinimumWidth(130)
+        self.format_combo.setMaximumWidth(160)
         self.format_combo.setStyleSheet("""
             QComboBox {
                 background: palette(base);
-                border: 1px solid rgba(128, 128, 128, 0.25);
-                border-radius: 6px;
-                padding: 6px 10px;
-                font-size: 12px;
+                border: 1px solid rgba(128, 128, 128, 0.2);
+                border-radius: 4px;
+                padding: 3px 8px;
+                font-size: 11px;
             }
-            QComboBox:hover {
-                border-color: rgba(0, 122, 255, 0.5);
-            }
-            QComboBox::drop-down {
-                border: none;
-                width: 24px;
-            }
+            QComboBox::drop-down { border: none; width: 18px; }
         """)
         self.format_combo.currentTextChanged.connect(self._on_format_changed)
-        format_section.addWidget(self.format_combo)
+        row1.addWidget(self.format_combo)
 
-        row1.addLayout(format_section)
         toolbar_layout.addLayout(row1)
 
-        # 두 번째 행: 줌 컨트롤 + 페이지 네비게이션
+        # 2행: 줌 + 페이지
         row2 = QHBoxLayout()
-        row2.setSpacing(8)
+        row2.setSpacing(4)
 
-        # 줌 컨트롤 그룹
-        zoom_group = QFrame()
-        zoom_group.setStyleSheet("""
-            QFrame {
-                background: rgba(128, 128, 128, 0.08);
-                border-radius: 8px;
-            }
-        """)
-        zoom_layout = QHBoxLayout(zoom_group)
-        zoom_layout.setContentsMargins(4, 4, 4, 4)
-        zoom_layout.setSpacing(2)
-
-        # 축소 버튼
+        # 축소
         self.zoom_out_btn = QPushButton("−")
-        self.zoom_out_btn.setMinimumSize(28, 28)
-        self.zoom_out_btn.setMaximumSize(36, 36)
+        self.zoom_out_btn.setFixedSize(26, 26)
         self.zoom_out_btn.setCursor(Qt.PointingHandCursor)
-        self.zoom_out_btn.setToolTip("축소 (Ctrl+-)")
         self.zoom_out_btn.setStyleSheet(self._get_tool_button_style())
         self.zoom_out_btn.clicked.connect(self._zoom_out)
-        zoom_layout.addWidget(self.zoom_out_btn)
+        row2.addWidget(self.zoom_out_btn)
 
-        # 줌 레벨 표시/선택
+        # 줌 레벨
         self.zoom_combo = QComboBox()
         for z in self.ZOOM_PRESETS:
             self.zoom_combo.addItem(f"{z}%", z)
         self.zoom_combo.setCurrentText("100%")
-        self.zoom_combo.setMinimumWidth(60)
-        self.zoom_combo.setMaximumWidth(80)
+        self.zoom_combo.setFixedWidth(62)
         self.zoom_combo.setStyleSheet("""
-            QComboBox {
-                background: transparent;
-                border: none;
-                font-size: 12px;
-                font-weight: 500;
-                padding: 4px 6px;
-            }
-            QComboBox::drop-down {
-                border: none;
-                width: 16px;
-            }
+            QComboBox { background: transparent; border: none; font-size: 11px; font-weight: 500; padding: 2px 4px; }
+            QComboBox::drop-down { border: none; width: 14px; }
         """)
         self.zoom_combo.currentIndexChanged.connect(self._on_zoom_preset_changed)
-        zoom_layout.addWidget(self.zoom_combo)
+        row2.addWidget(self.zoom_combo)
 
-        # 확대 버튼
+        # 확대
         self.zoom_in_btn = QPushButton("+")
-        self.zoom_in_btn.setMinimumSize(28, 28)
-        self.zoom_in_btn.setMaximumSize(36, 36)
+        self.zoom_in_btn.setFixedSize(26, 26)
         self.zoom_in_btn.setCursor(Qt.PointingHandCursor)
-        self.zoom_in_btn.setToolTip("확대 (Ctrl++)")
         self.zoom_in_btn.setStyleSheet(self._get_tool_button_style())
         self.zoom_in_btn.clicked.connect(self._zoom_in)
-        zoom_layout.addWidget(self.zoom_in_btn)
-
-        row2.addWidget(zoom_group)
-
-        # 맞춤 버튼 그룹
-        fit_group = QFrame()
-        fit_group.setStyleSheet("""
-            QFrame {
-                background: rgba(128, 128, 128, 0.08);
-                border-radius: 8px;
-            }
-        """)
-        fit_layout = QHBoxLayout(fit_group)
-        fit_layout.setContentsMargins(4, 4, 4, 4)
-        fit_layout.setSpacing(2)
-
-        self.fit_width_btn = QPushButton("↔")
-        self.fit_width_btn.setMinimumSize(28, 28)
-        self.fit_width_btn.setMaximumSize(36, 36)
-        self.fit_width_btn.setCursor(Qt.PointingHandCursor)
-        self.fit_width_btn.setToolTip("너비에 맞춤")
-        self.fit_width_btn.setStyleSheet(self._get_tool_button_style(active=True))
-        self.fit_width_btn.clicked.connect(lambda: self._set_fit_mode("width"))
-        fit_layout.addWidget(self.fit_width_btn)
-
-        self.fit_page_btn = QPushButton("⬜")
-        self.fit_page_btn.setMinimumSize(28, 28)
-        self.fit_page_btn.setMaximumSize(36, 36)
-        self.fit_page_btn.setCursor(Qt.PointingHandCursor)
-        self.fit_page_btn.setToolTip("페이지에 맞춤")
-        self.fit_page_btn.setStyleSheet(self._get_tool_button_style())
-        self.fit_page_btn.clicked.connect(lambda: self._set_fit_mode("page"))
-        fit_layout.addWidget(self.fit_page_btn)
-
-        row2.addWidget(fit_group)
+        row2.addWidget(self.zoom_in_btn)
 
         row2.addStretch()
 
-        # 페이지 네비게이션 그룹
-        nav_group = QFrame()
-        nav_group.setStyleSheet("""
-            QFrame {
-                background: rgba(0, 122, 255, 0.08);
-                border-radius: 8px;
-            }
-        """)
-        nav_layout = QHBoxLayout(nav_group)
-        nav_layout.setContentsMargins(4, 4, 4, 4)
-        nav_layout.setSpacing(6)
-
         # 이전 페이지
         self.prev_btn = QPushButton("◀")
-        self.prev_btn.setMinimumSize(32, 28)
-        self.prev_btn.setMaximumSize(40, 36)
+        self.prev_btn.setFixedSize(26, 26)
         self.prev_btn.setCursor(Qt.PointingHandCursor)
-        self.prev_btn.setToolTip("이전 페이지 (←)")
         self.prev_btn.setStyleSheet(self._get_nav_button_style())
         self.prev_btn.clicked.connect(self._prev_page)
-        nav_layout.addWidget(self.prev_btn)
+        row2.addWidget(self.prev_btn)
 
         # 페이지 번호
         self.page_spin = QSpinBox()
         self.page_spin.setMinimum(1)
         self.page_spin.setMaximum(1)
-        self.page_spin.setMinimumWidth(50)
-        self.page_spin.setMaximumWidth(70)
-        self.page_spin.setMinimumHeight(28)
-        self.page_spin.setMaximumHeight(36)
+        self.page_spin.setFixedSize(44, 26)
         self.page_spin.setAlignment(Qt.AlignCenter)
         self.page_spin.setButtonSymbols(QSpinBox.NoButtons)
         self.page_spin.setStyleSheet("""
             QSpinBox {
                 background: palette(base);
                 border: 1px solid rgba(0, 122, 255, 0.3);
-                border-radius: 6px;
-                padding: 4px 6px;
-                font-size: 13px;
+                border-radius: 4px;
+                padding: 2px;
+                font-size: 11px;
                 font-weight: 500;
             }
         """)
         self.page_spin.valueChanged.connect(self._on_page_changed)
-        nav_layout.addWidget(self.page_spin)
+        row2.addWidget(self.page_spin)
 
         self.page_label = QLabel("/ 1")
-        self.page_label.setStyleSheet("color: palette(dark); font-size: 13px; font-weight: 500; min-width: 30px;")
-        nav_layout.addWidget(self.page_label)
+        self.page_label.setStyleSheet("color: palette(dark); font-size: 11px; font-weight: 500; padding: 0; margin: 0; min-height: 0;")
+        row2.addWidget(self.page_label)
 
         # 다음 페이지
         self.next_btn = QPushButton("▶")
-        self.next_btn.setMinimumSize(32, 28)
-        self.next_btn.setMaximumSize(40, 36)
+        self.next_btn.setFixedSize(26, 26)
         self.next_btn.setCursor(Qt.PointingHandCursor)
-        self.next_btn.setToolTip("다음 페이지 (→)")
         self.next_btn.setStyleSheet(self._get_nav_button_style())
         self.next_btn.clicked.connect(self._next_page)
-        nav_layout.addWidget(self.next_btn)
+        row2.addWidget(self.next_btn)
 
-        row2.addWidget(nav_group)
         toolbar_layout.addLayout(row2)
 
         layout.addWidget(toolbar)
+
+        # 맞춤 버튼 (숨김 - 기능은 유지)
+        self.fit_width_btn = QPushButton()
+        self.fit_width_btn.hide()
+        self.fit_page_btn = QPushButton()
+        self.fit_page_btn.hide()
 
         # 문서 영역 설정
         self._setup_document_area(layout)
@@ -459,26 +360,18 @@ class DocumentPreview(QFrame):
             return """
                 QPushButton {
                     background: rgba(0, 122, 255, 0.15);
-                    border: none;
-                    border-radius: 6px;
-                    font-size: 14px;
-                    font-weight: bold;
-                    color: #007AFF;
+                    border: none; border-radius: 4px; padding: 0;
+                    font-size: 13px; font-weight: bold; color: #007AFF;
                 }
                 QPushButton:hover { background: rgba(0, 122, 255, 0.25); }
-                QPushButton:pressed { background: rgba(0, 122, 255, 0.35); }
             """
         return """
             QPushButton {
                 background: transparent;
-                border: none;
-                border-radius: 6px;
-                font-size: 14px;
-                font-weight: bold;
-                color: palette(dark);
+                border: none; border-radius: 4px; padding: 0;
+                font-size: 13px; font-weight: bold; color: palette(dark);
             }
             QPushButton:hover { background: rgba(128, 128, 128, 0.15); }
-            QPushButton:pressed { background: rgba(128, 128, 128, 0.25); }
         """
 
     def _get_nav_button_style(self):
@@ -486,17 +379,11 @@ class DocumentPreview(QFrame):
         return """
             QPushButton {
                 background: rgba(0, 122, 255, 0.1);
-                border: none;
-                border-radius: 6px;
-                font-size: 12px;
-                color: #007AFF;
+                border: none; border-radius: 4px; padding: 0;
+                font-size: 11px; color: #007AFF;
             }
             QPushButton:hover { background: rgba(0, 122, 255, 0.2); }
-            QPushButton:pressed { background: rgba(0, 122, 255, 0.3); }
-            QPushButton:disabled {
-                background: transparent;
-                color: rgba(128, 128, 128, 0.4);
-            }
+            QPushButton:disabled { background: transparent; color: rgba(128,128,128,0.4); }
         """
 
     def _on_zoom_preset_changed(self, index):
