@@ -1,0 +1,11 @@
+{
+    "QFluentWidgets": {
+        "FontFamilies": [
+            "Pretendard",
+            "Malgun Gothic",
+            "Segoe UI"
+        ],
+        "ThemeColor": "#ff009faa",
+        "ThemeMode": "Light"
+    }
+}

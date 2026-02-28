@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Roll20 Chat Log - Test Session</title>
+    <style>
+        .message { margin: 5px 0; padding: 5px; }
+        .by { font-weight: bold; }
+        .general { background: #f0f0f0; }
+        .desc { background: #e8f0e8; font-style: italic; }
+        .rollresult { background: #f0f0e8; }
+    </style>
+</head>
+<body>
+<div id="textchat">
+    <!-- 일반 대화 메시지 -->
+    <div class="message general">
+        <span class="by">GM:</span> 오늘의 세션을 시작하겠습니다. 여러분은 고대 던전의 입구에 서 있습니다.
+    </div>
+
+    <!-- 장면 마커 -->
+    <div class="message general">
+        <span class="by">GM:</span> ■ 장면 1: 던전의 입구
+    </div>
+
+    <!-- 플레이어 대화 -->
+    <div class="message general">
+        <span class="by">김철수 (전사):</span> 조심해서 들어가자. 무기를 꺼내둬야겠어.
+    </div>
+
+    <div class="message general">
+        <span class="by">이영희 (마법사):</span> 먼저 조명 마법을 걸겠습니다. 라이트!
+    </div>
+
+    <!-- 다이스 롤 -->
+    <div class="message general rollresult">
+        <span class="by">이영희 (마법사):</span> Rolling 1d20+5 = 18 성공
+    </div>
+
+    <!-- 나레이션/설명 -->
+    <div class="message desc">
+        밝은 빛이 던전 입구를 비추며, 오래된 벽화가 드러납니다.
+    </div>
+
+    <!-- GM 나레이션 -->
+    <div class="message general">
+        <span class="by">GM:</span> 벽화에는 고대의 영웅들이 드래곤과 싸우는 장면이 그려져 있습니다.
+    </div>
+
+    <!-- 더 많은 대화 -->
+    <div class="message general">
+        <span class="by">박준서 (도적):</span> 흥미롭군. 함정은 없는 것 같아?
+    </div>
+
+    <!-- 기술 체크 -->
+    <div class="message general rollresult">
+        <span class="by">박준서 (도적):</span> Rolling 1d20+7 Perception Check = 22
+    </div>
+
+    <div class="message general">
+        <span class="by">GM:</span> 높은 관찰력으로 바닥의 압력판을 발견했습니다.
+    </div>
+
+    <!-- 새로운 장면 -->
+    <div class="message general">
+        <span class="by">GM:</span> ■ 장면 2: 함정의 방
+    </div>
+
+    <div class="message desc">
+        좁은 복도를 지나자 넓은 방이 나타납니다. 방 중앙에는 보물 상자가 놓여 있습니다.
+    </div>
+
+    <div class="message general">
+        <span class="by">김철수 (전사):</span> 「저건 분명히 함정이야. 너무 뻔하잖아.」
+    </div>
+
+    <div class="message general">
+        <span class="by">이영희 (마법사):</span> 디텍트 매직을 사용해볼게요.
+    </div>
+
+    <div class="message general rollresult">
+        <span class="by">이영희 (마법사):</span> Rolling 1d20+8 Arcana = 15
+    </div>
+
+    <div class="message general">
+        <span class="by">GM:</span> 상자에서 마법의 기운이 느껴집니다. 하지만 함정인지 보호 마법인지는 알 수 없습니다.
+    </div>
+</div>
+</body>
+</html>

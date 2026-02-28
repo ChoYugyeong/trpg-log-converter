@@ -1,0 +1,1685 @@
+/* TRPG Log Converter Pro - Enterprise Design System */
+/* UI/UX Pro Max Guidelines Applied - Professional & Modern */
+/* Color System: Accent #0A84FF, Success #22C55E, Surface palette() */
+
+/* ==================== Global ==================== */
+* {
+    font-family: "Pretendard", "Pretendard Variable", "Noto Sans KR", "Malgun Gothic", "맑은 고딕", sans-serif;
+    font-size: 13px;
+    outline: none;
+    line-height: 1.6;
+}
+
+/* 기본 라벨 설정 - 텍스트 잘림 방지 */
+QLabel {
+    min-height: 20px;
+    padding: 2px 0;
+}
+
+QMainWindow {
+    background: palette(window);
+}
+
+QWidget {
+    color: palette(text);
+    background: transparent;
+}
+
+QLabel {
+    color: palette(text);
+    background: transparent;
+}
+
+/* ==================== Sidebar ==================== */
+#Sidebar {
+    background: palette(window);
+    border-right: 1px solid palette(mid);
+}
+
+#SidebarTitle {
+    font-size: 20px;
+    font-weight: 700;
+    color: palette(text);
+    padding: 4px 0;
+    letter-spacing: -0.5px;
+}
+
+#SidebarSubtitle {
+    font-size: 11px;
+    font-weight: 500;
+    color: palette(dark);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+#SidebarButton {
+    background: transparent;
+    border: none;
+    border-radius: 10px;
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 14px;
+    font-weight: 500;
+    color: palette(text);
+    margin: 2px 0;
+}
+
+#SidebarButton:hover {
+    background: rgba(128, 128, 128, 0.1);
+}
+
+#SidebarButton:checked {
+    background: palette(highlight);
+    color: palette(highlighted-text);
+}
+
+#SidebarButton:checked:hover {
+    background: palette(highlight);
+}
+
+#VersionLabel {
+    color: palette(dark);
+    font-size: 11px;
+    font-weight: 500;
+    padding-top: 12px;
+}
+
+/* ==================== Content Area ==================== */
+#ContentArea {
+    background: palette(base);
+}
+
+#PageHeader {
+    font-size: 32px;
+    font-weight: 700;
+    color: palette(text);
+    padding-bottom: 4px;
+    letter-spacing: -0.5px;
+}
+
+#PageSubheader {
+    font-size: 15px;
+    color: palette(dark);
+    padding-bottom: 20px;
+    font-weight: 400;
+}
+
+/* ==================== Cards - Modern Floating Style ==================== */
+#ContentCard {
+    background: palette(base);
+    border: 1px solid rgba(128, 128, 128, 0.12);
+    border-radius: 16px;
+    padding: 8px;
+}
+
+#ContentCard:hover {
+    border-color: rgba(10, 132, 255, 0.25);
+}
+
+#CardTitle {
+    font-size: 15px;
+    font-weight: 600;
+    color: palette(text);
+    letter-spacing: -0.3px;
+}
+
+#CardSubtitle {
+    font-size: 13px;
+    color: palette(dark);
+    font-weight: 400;
+    margin-top: -4px;
+}
+
+#FieldLabel {
+    font-size: 13px;
+    color: palette(dark);
+    font-weight: 500;
+    min-width: 100px;
+}
+
+#SectionTitle {
+    font-size: 11px;
+    font-weight: 600;
+    color: palette(dark);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding-top: 16px;
+    padding-bottom: 8px;
+}
+
+/* ==================== Input Fields - Refined ==================== */
+QLineEdit {
+    background: palette(base);
+    border: 1.5px solid rgba(128, 128, 128, 0.2);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 14px;
+    color: palette(text);
+    selection-background-color: palette(highlight);
+    selection-color: palette(highlighted-text);
+    min-height: 22px;
+}
+
+QLineEdit:hover {
+    border-color: rgba(128, 128, 128, 0.35);
+}
+
+QLineEdit:focus {
+    border-color: palette(highlight);
+    border-width: 2px;
+    padding: 9px 13px;
+}
+
+QLineEdit:disabled {
+    background: palette(window);
+    color: palette(dark);
+    border-color: rgba(128, 128, 128, 0.1);
+}
+
+QLineEdit::placeholder {
+    color: palette(dark);
+}
+
+/* QFluentWidgets LineEdit overrides */
+LineEdit {
+    min-height: 40px;
+}
+
+LineEdit QLineEdit {
+    min-height: 22px;
+    padding: 10px 14px;
+}
+
+QTextEdit, QPlainTextEdit {
+    background: palette(base);
+    border: 1.5px solid rgba(128, 128, 128, 0.2);
+    border-radius: 12px;
+    padding: 14px;
+    font-size: 14px;
+    color: palette(text);
+    selection-background-color: palette(highlight);
+}
+
+QTextEdit:focus, QPlainTextEdit:focus {
+    border-color: palette(highlight);
+    border-width: 2px;
+}
+
+/* ==================== Buttons - Modern Style ==================== */
+QPushButton {
+    background: palette(button);
+    border: 1px solid rgba(128, 128, 128, 0.2);
+    border-radius: 8px;
+    padding: 8px 16px;
+    min-height: 32px;
+    min-width: 60px;
+    font-size: 14px;
+    font-weight: 500;
+    color: palette(button-text);
+}
+
+QPushButton:hover {
+    background: palette(light);
+    border-color: rgba(128, 128, 128, 0.3);
+}
+
+QPushButton:pressed {
+    background: palette(midlight);
+}
+
+QPushButton:disabled {
+    background: palette(window);
+    color: palette(dark);
+    border-color: rgba(128, 128, 128, 0.1);
+}
+
+QPushButton#primary {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 #0A84FF, stop:1 #0066CC);
+    border: none;
+    color: white;
+    font-weight: 600;
+    min-width: 80px;
+}
+
+QPushButton#primary:hover {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 #3399FF, stop:1 #0077DD);
+}
+
+QPushButton#primary:pressed {
+    background: #0055BB;
+}
+
+QPushButton#primary:disabled {
+    background: palette(dark);
+    color: palette(midlight);
+}
+
+QPushButton#danger {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 #FF453A, stop:1 #D93025);
+    border: none;
+    color: white;
+    font-weight: 600;
+    min-width: 80px;
+}
+
+QPushButton#danger:hover {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 #FF6B5B, stop:1 #E54030);
+}
+
+QPushButton#success {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 #22C55E, stop:1 #16A34A);
+    border: none;
+    color: white;
+    font-weight: 600;
+    min-width: 80px;
+}
+
+QPushButton#success:hover {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 #4ADE80, stop:1 #22C55E);
+}
+
+/* ==================== CTA Button - Enterprise Green ==================== */
+QPushButton#cta, #ConvertButton {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 #22C55E, stop:1 #16A34A);
+    border: none;
+    border-radius: 12px;
+    color: white;
+    font-weight: 700;
+    font-size: 15px;
+    min-width: 120px;
+    min-height: 48px;
+    padding: 14px 28px;
+    letter-spacing: 0.3px;
+}
+
+QPushButton#cta:hover, #ConvertButton:hover {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 #4ADE80, stop:1 #22C55E);
+}
+
+QPushButton#cta:pressed, #ConvertButton:pressed {
+    background: #15803D;
+}
+
+QPushButton#cta:disabled, #ConvertButton:disabled {
+    background: rgba(128, 128, 128, 0.3);
+    color: rgba(255, 255, 255, 0.6);
+}
+
+#SmallButton {
+    padding: 6px 14px;
+    font-size: 12px;
+    min-height: 28px;
+    min-width: 50px;
+    border-radius: 6px;
+}
+
+/* QFluentWidgets PushButton overrides */
+PushButton {
+    min-height: 34px;
+    min-width: 70px;
+    padding: 6px 16px;
+}
+
+PrimaryPushButton {
+    min-height: 36px;
+    min-width: 90px;
+    padding: 8px 20px;
+}
+
+/* ==================== Checkboxes & Radio - Refined ==================== */
+QCheckBox {
+    spacing: 12px;
+    font-size: 14px;
+    color: palette(text);
+    padding: 6px 4px;
+    min-height: 28px;
+}
+
+QCheckBox::indicator {
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    border: 2px solid rgba(128, 128, 128, 0.3);
+    background: palette(base);
+}
+
+QCheckBox::indicator:hover {
+    border-color: palette(highlight);
+}
+
+QCheckBox::indicator:checked {
+    background: palette(highlight);
+    border-color: palette(highlight);
+    image: none;
+}
+
+QRadioButton {
+    spacing: 12px;
+    font-size: 14px;
+    color: palette(text);
+    padding: 6px 8px;
+    min-height: 28px;
+}
+
+QRadioButton::indicator {
+    width: 22px;
+    height: 22px;
+    border-radius: 11px;
+    border: 2px solid rgba(128, 128, 128, 0.3);
+    background: palette(base);
+}
+
+QRadioButton::indicator:hover {
+    border-color: palette(highlight);
+}
+
+QRadioButton::indicator:checked {
+    background: palette(base);
+    border: 6px solid palette(highlight);
+}
+
+/* ==================== Combo Box - Refined ==================== */
+QComboBox {
+    background: palette(base);
+    border: 1.5px solid rgba(128, 128, 128, 0.2);
+    border-radius: 10px;
+    padding: 10px 14px;
+    padding-right: 40px;
+    font-size: 14px;
+    color: palette(text);
+    min-height: 22px;
+    min-width: 100px;
+}
+
+QComboBox:hover {
+    border-color: rgba(128, 128, 128, 0.35);
+}
+
+QComboBox:focus {
+    border-color: palette(highlight);
+}
+
+QComboBox::drop-down {
+    border: none;
+    width: 36px;
+    subcontrol-position: center right;
+}
+
+QComboBox QAbstractItemView {
+    background: palette(base);
+    border: 1px solid rgba(128, 128, 128, 0.2);
+    border-radius: 12px;
+    selection-background-color: palette(highlight);
+    selection-color: palette(highlighted-text);
+    padding: 8px;
+    outline: none;
+}
+
+QComboBox QAbstractItemView::item {
+    padding: 12px 16px;
+    border-radius: 8px;
+    color: palette(text);
+    margin: 2px 0;
+    min-height: 24px;
+}
+
+QComboBox QAbstractItemView::item:hover {
+    background: rgba(128, 128, 128, 0.1);
+}
+
+QComboBox QAbstractItemView::item:selected {
+    background: palette(highlight);
+    color: palette(highlighted-text);
+}
+
+/* QFluentWidgets ComboBox overrides */
+ComboBox {
+    min-height: 40px;
+    min-width: 120px;
+}
+
+/* ==================== List Widget - Refined ==================== */
+QListWidget {
+    background: palette(base);
+    border: 1.5px solid rgba(128, 128, 128, 0.2);
+    border-radius: 12px;
+    padding: 6px;
+    outline: none;
+}
+
+QListWidget::item {
+    padding: 12px 16px;
+    border-radius: 10px;
+    color: palette(text);
+    margin: 2px 0;
+}
+
+QListWidget::item:hover {
+    background: rgba(128, 128, 128, 0.08);
+}
+
+QListWidget::item:selected {
+    background: palette(highlight);
+    color: palette(highlighted-text);
+}
+
+/* ==================== Slider - Modern ==================== */
+QSlider::groove:horizontal {
+    height: 6px;
+    background: rgba(128, 128, 128, 0.15);
+    border-radius: 3px;
+}
+
+QSlider::handle:horizontal {
+    width: 22px;
+    height: 22px;
+    margin: -8px 0;
+    background: palette(base);
+    border: 1px solid rgba(128, 128, 128, 0.25);
+    border-radius: 11px;
+}
+
+QSlider::handle:horizontal:hover {
+    border-color: palette(highlight);
+    border-width: 2px;
+}
+
+QSlider::sub-page:horizontal {
+    background: palette(highlight);
+    border-radius: 3px;
+}
+
+/* ==================== Scroll Area - Subtle ==================== */
+QScrollArea {
+    background: transparent;
+    border: none;
+}
+
+QScrollArea > QWidget > QWidget {
+    background: transparent;
+}
+
+QScrollBar:vertical {
+    background: transparent;
+    width: 14px;
+    margin: 4px 2px;
+}
+
+QScrollBar::handle:vertical {
+    background: rgba(128, 128, 128, 0.3);
+    border-radius: 5px;
+    min-height: 40px;
+    margin: 0 3px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background: rgba(128, 128, 128, 0.5);
+}
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    height: 0;
+}
+
+QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+    background: transparent;
+}
+
+QScrollBar:horizontal {
+    background: transparent;
+    height: 14px;
+    margin: 2px 4px;
+}
+
+QScrollBar::handle:horizontal {
+    background: rgba(128, 128, 128, 0.3);
+    border-radius: 5px;
+    min-width: 40px;
+    margin: 3px 0;
+}
+
+/* ==================== Progress Bar - Modern ==================== */
+QProgressBar {
+    background: rgba(128, 128, 128, 0.1);
+    border: none;
+    border-radius: 8px;
+    height: 14px;
+    text-align: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: white;
+}
+
+QProgressBar::chunk {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+        stop:0 #0A84FF, stop:0.5 #3399FF, stop:1 #0A84FF);
+    border-radius: 8px;
+}
+
+/* ==================== Tab Widget - Modern Underline ==================== */
+QTabWidget::pane {
+    background: palette(base);
+    border: 1px solid rgba(128, 128, 128, 0.15);
+    border-radius: 12px;
+    top: -1px;
+}
+
+QTabBar {
+    background: transparent;
+}
+
+QTabBar::tab {
+    background: transparent;
+    padding: 12px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    color: palette(dark);
+    border-bottom: 3px solid transparent;
+    margin-right: 4px;
+}
+
+QTabBar::tab:selected {
+    color: palette(highlight);
+    border-bottom-color: palette(highlight);
+}
+
+QTabBar::tab:hover:!selected {
+    color: palette(text);
+    background: rgba(128, 128, 128, 0.08);
+    border-radius: 8px 8px 0 0;
+}
+
+/* ==================== Tool Tip - Modern ==================== */
+QToolTip {
+    background: palette(base);
+    color: palette(text);
+    border: 1px solid rgba(128, 128, 128, 0.2);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+}
+
+/* ==================== Menu - Refined ==================== */
+QMenu {
+    background: palette(base);
+    border: 1px solid rgba(128, 128, 128, 0.2);
+    border-radius: 12px;
+    padding: 8px;
+}
+
+QMenu::item {
+    padding: 10px 20px;
+    border-radius: 8px;
+    color: palette(text);
+    margin: 2px 0;
+}
+
+QMenu::item:selected {
+    background: palette(highlight);
+    color: palette(highlighted-text);
+}
+
+QMenu::separator {
+    height: 1px;
+    background: rgba(128, 128, 128, 0.15);
+    margin: 6px 12px;
+}
+
+/* ==================== Splitter ==================== */
+QSplitter::handle {
+    background: rgba(128, 128, 128, 0.1);
+}
+
+QSplitter::handle:hover {
+    background: rgba(128, 128, 128, 0.25);
+}
+
+QSplitter::handle:horizontal {
+    width: 4px;
+}
+
+QSplitter::handle:vertical {
+    height: 4px;
+}
+
+/* ==================== Group Box ==================== */
+QGroupBox {
+    font-weight: 600;
+    font-size: 14px;
+    border: 1px solid rgba(128, 128, 128, 0.15);
+    border-radius: 12px;
+    margin-top: 16px;
+    padding-top: 12px;
+    color: palette(text);
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 16px;
+    padding: 0 8px;
+    color: palette(text);
+}
+
+/* ==================== Spin Box ==================== */
+QSpinBox, QDoubleSpinBox {
+    background: palette(base);
+    border: 1.5px solid rgba(128, 128, 128, 0.2);
+    border-radius: 8px;
+    padding: 8px 14px;
+    color: palette(text);
+    font-size: 14px;
+}
+
+QSpinBox:hover, QDoubleSpinBox:hover {
+    border-color: rgba(128, 128, 128, 0.35);
+}
+
+QSpinBox:focus, QDoubleSpinBox:focus {
+    border-color: palette(highlight);
+}
+
+/* ==================== Inspector Bar ==================== */
+#InspectorBar {
+    background: palette(window);
+    border-top: 1px solid rgba(128, 128, 128, 0.15);
+}
+
+#PreviewSection {
+    background: palette(base);
+    border: 1px solid rgba(128, 128, 128, 0.15);
+    border-radius: 12px;
+}
+
+#PreviewTitle {
+    font-size: 11px;
+    font-weight: 600;
+    color: palette(dark);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* ==================== File List Items ==================== */
+#FileListItem {
+    background: rgba(128, 128, 128, 0.04);
+    border: 1px solid transparent;
+    border-radius: 12px;
+    padding: 14px 18px;
+}
+
+#FileListItem:hover {
+    background: rgba(10, 132, 255, 0.06);
+    border-color: rgba(10, 132, 255, 0.2);
+    cursor: pointer;
+}
+
+#FileListItem:selected, #FileListItem[selected="true"] {
+    background: rgba(10, 132, 255, 0.1);
+    border-color: rgba(10, 132, 255, 0.4);
+}
+
+#FileIcon {
+    font-size: 18px;
+}
+
+#FileName {
+    font-size: 14px;
+    font-weight: 500;
+    color: palette(text);
+}
+
+/* ==================== Tags/Chips - Modern ==================== */
+#TagChip {
+    background: rgba(128, 128, 128, 0.1);
+    border-radius: 16px;
+    padding: 6px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    color: palette(text);
+}
+
+#TagChip:hover {
+    background: rgba(128, 128, 128, 0.15);
+}
+
+#TagChipDelete {
+    background: transparent;
+    border: none;
+    font-size: 12px;
+    color: palette(dark);
+    padding: 0;
+    margin-left: 6px;
+}
+
+#TagChipDelete:hover {
+    color: #FF453A;
+}
+
+/* ==================== Color Picker ==================== */
+#ColorSwatch {
+    border: 2px solid rgba(128, 128, 128, 0.2);
+    border-radius: 8px;
+}
+
+#ColorSwatch:hover {
+    border-color: rgba(128, 128, 128, 0.4);
+}
+
+/* ==================== Frame ==================== */
+QFrame {
+    color: palette(text);
+}
+
+QFrame[frameShape="4"] { /* HLine */
+    background: rgba(128, 128, 128, 0.15);
+    max-height: 1px;
+}
+
+QFrame[frameShape="5"] { /* VLine */
+    background: rgba(128, 128, 128, 0.15);
+    max-width: 1px;
+}
+
+/* ==================== Message Box & Dialog ==================== */
+QMessageBox {
+    background: palette(window);
+}
+
+QMessageBox QLabel {
+    color: palette(text);
+    font-size: 14px;
+}
+
+QDialog {
+    background: palette(window);
+}
+
+/* ==================== Tool Bar ==================== */
+QToolBar {
+    background: palette(window);
+    border: none;
+    spacing: 6px;
+    padding: 6px;
+}
+
+QToolBar QToolButton {
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 16px;
+    color: palette(text);
+    font-weight: 500;
+    font-size: 14px;
+}
+
+QToolBar QToolButton:hover {
+    background: rgba(128, 128, 128, 0.1);
+}
+
+QToolBar QToolButton:pressed {
+    background: rgba(128, 128, 128, 0.15);
+}
+
+QToolBar::separator {
+    width: 1px;
+    background: rgba(128, 128, 128, 0.15);
+    margin: 6px 10px;
+}
+
+/* ==================== Status Bar ==================== */
+QStatusBar {
+    background: palette(window);
+    border-top: 1px solid rgba(128, 128, 128, 0.15);
+    color: palette(dark);
+    font-size: 12px;
+}
+
+/* ==================== Header View (Table/Tree) ==================== */
+QHeaderView::section {
+    background: palette(window);
+    color: palette(text);
+    padding: 10px;
+    border: none;
+    border-right: 1px solid rgba(128, 128, 128, 0.15);
+    border-bottom: 1px solid rgba(128, 128, 128, 0.15);
+    font-weight: 600;
+    font-size: 13px;
+}
+
+/* ==================== File/Color Dialog ==================== */
+QFileDialog, QColorDialog {
+    background: palette(window);
+}
+
+QFileDialog QListView, QFileDialog QTreeView {
+    background: palette(base);
+    color: palette(text);
+    border-radius: 8px;
+}
+
+QColorDialog QSpinBox {
+    background: palette(base);
+    color: palette(text);
+}
+
+/* ==================== Custom Labels ==================== */
+#InfoLabel {
+    color: palette(dark);
+    font-size: 13px;
+    padding: 14px 16px;
+    background: rgba(128, 128, 128, 0.06);
+    border-radius: 10px;
+}
+
+#HintLabel {
+    color: palette(dark);
+    font-size: 13px;
+    font-weight: 400;
+    padding: 4px 8px;
+    min-height: 24px;
+}
+
+#CharacterName {
+    font-weight: 600;
+    font-size: 14px;
+    color: palette(text);
+}
+
+#ImagePreviewFrame {
+    background: rgba(128, 128, 128, 0.06);
+    border: 2px dashed rgba(128, 128, 128, 0.2);
+    border-radius: 12px;
+}
+
+#CodeEditor {
+    background: #1E1E1E;
+    color: #D4D4D4;
+    border: 1px solid rgba(128, 128, 128, 0.2);
+    border-radius: 12px;
+    padding: 16px;
+    font-family: "Monaco", "Menlo", "Consolas", monospace;
+    font-size: 13px;
+}
+
+/* ==================== File Drop Area ==================== */
+#FileDropArea {
+    background: rgba(128, 128, 128, 0.04);
+    border: 2px dashed rgba(128, 128, 128, 0.2);
+    border-radius: 12px;
+    min-height: 100px;
+    max-height: 120px;
+}
+
+#FileDropArea:hover {
+    border-color: rgba(128, 128, 128, 0.35);
+    background: rgba(128, 128, 128, 0.08);
+}
+
+#FileDropArea[dragging="true"] {
+    background: rgba(10, 132, 255, 0.1);
+    border-color: #0A84FF;
+    border-style: solid;
+}
+
+#DropIcon {
+    font-size: 36px;
+    color: palette(dark);
+}
+
+/* ==================== Preview Labels ==================== */
+#FontPreviewLabel {
+    font-size: 15px;
+    color: palette(text);
+}
+
+#ContentPreviewText {
+    background: transparent;
+    border: none;
+    font-size: 12px;
+    color: palette(text);
+}
+
+#CoverPreviewTitle {
+    font-size: 12px;
+    font-weight: 600;
+}
+
+#CoverPreviewAuthor {
+    font-size: 10px;
+}
+
+/* ==================== Help Button ==================== */
+#HelpButton {
+    background: rgba(128, 128, 128, 0.15);
+    border: none;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 700;
+    color: palette(dark);
+    padding: 0;
+}
+
+#HelpButton:hover {
+    background: palette(highlight);
+    color: palette(highlighted-text);
+}
+
+#HelpButton:pressed {
+    background: palette(dark);
+}
+
+/* ==================== Accent Colors ==================== */
+.accent-blue { color: #0A84FF; }
+.accent-green { color: #30D158; }
+.accent-red { color: #FF453A; }
+.accent-orange { color: #FF9F0A; }
+.accent-purple { color: #BF5AF2; }
+.accent-pink { color: #FF375F; }
+
+/* ==================== QFluentWidgets Overrides ==================== */
+/* Card Widget */
+CardWidget {
+    border-radius: 14px;
+    background: palette(base);
+    border: 1px solid rgba(128, 128, 128, 0.12);
+    padding: 4px;
+}
+
+/* 모든 Label 텍스트 잘림 방지 */
+BodyLabel, CaptionLabel, StrongBodyLabel, SubtitleLabel, TitleLabel {
+    padding: 4px 0;
+    min-height: 24px;
+    line-height: 1.5;
+}
+
+/* Title Label - 페이지 제목 */
+TitleLabel {
+    min-height: 36px;
+    padding: 4px 0;
+    font-size: 24px;
+}
+
+/* Subtitle Label - 페이지 부제목 */
+SubtitleLabel {
+    min-height: 28px;
+    padding: 4px 0;
+    font-size: 14px;
+}
+
+/* Body Label - 일반 텍스트 */
+BodyLabel {
+    padding: 4px 0;
+    min-height: 26px;
+    font-size: 14px;
+}
+
+/* Caption Label */
+CaptionLabel {
+    padding: 3px 0;
+    min-height: 22px;
+}
+
+/* CheckBox - 텍스트 잘림 방지 */
+CheckBox {
+    spacing: 12px;
+    padding: 8px 4px;
+    min-height: 32px;
+    font-size: 14px;
+}
+
+/* RadioButton - 텍스트 잘림 방지 */
+RadioButton {
+    spacing: 12px;
+    padding: 8px 10px;
+    min-height: 34px;
+    font-size: 14px;
+}
+
+/* SwitchButton 텍스트 잘림 방지 */
+SwitchButton {
+    padding: 8px 4px;
+    min-height: 32px;
+}
+
+/* ComboBox 텍스트 잘림 방지 */
+ComboBox {
+    padding: 10px 14px;
+    min-height: 40px;
+    font-size: 14px;
+}
+
+/* LineEdit 텍스트 잘림 방지 */
+LineEdit {
+    padding: 10px 14px;
+    min-height: 40px;
+    font-size: 14px;
+}
+
+/* PushButton 텍스트 잘림 방지 */
+PushButton, PrimaryPushButton, TransparentPushButton {
+    padding: 10px 18px;
+    min-height: 38px;
+    font-size: 14px;
+}
+
+/* ToolButton 텍스트 잘림 방지 */
+ToolButton, TransparentToolButton {
+    padding: 8px 12px;
+    min-height: 34px;
+}
+
+/* 사이드바 버튼 */
+#SidebarButton {
+    padding: 14px 18px;
+    min-height: 46px;
+    font-size: 14px;
+}
+
+/* 카드 내부 레이블 */
+CardWidget QLabel, CardWidget BodyLabel {
+    padding: 4px 2px;
+    min-height: 24px;
+}
+
+/* InfoBar 스타일 */
+InfoBar {
+    border-radius: 10px;
+}
+
+/* TransparentToolButton (Help Button) */
+TransparentToolButton {
+    background: rgba(128, 128, 128, 0.08);
+    border: none;
+    border-radius: 12px;
+    padding: 4px;
+}
+
+TransparentToolButton:hover {
+    background: rgba(128, 128, 128, 0.15);
+}
+
+TransparentToolButton:pressed {
+    background: rgba(128, 128, 128, 0.2);
+}
+
+/* Flyout View 스타일 */
+FlyoutView {
+    background: palette(base);
+    border-radius: 12px;
+    border: 1px solid rgba(128, 128, 128, 0.15);
+}
+
+/* Slider */
+Slider {
+    min-height: 24px;
+}
+
+/* Spin Box in QFluentWidgets */
+SpinBox, DoubleSpinBox {
+    min-height: 36px;
+    min-width: 80px;
+}
+
+/* ==================== Enhanced Cards ==================== */
+/* Note: Primary #ContentCard style is in the Cards section above */
+
+/* ==================== Better Label Styling ==================== */
+#FieldLabel {
+    font-size: 14px;
+    color: palette(text);
+    font-weight: 500;
+    min-width: 100px;
+    padding: 4px 0;
+}
+
+/* ==================== Improved Input Responsiveness ==================== */
+QLineEdit, LineEdit {
+    transition: border-color 0.2s ease;
+}
+
+/* ==================== Modern Focus Rings ==================== */
+*:focus {
+    outline: none;
+}
+
+QPushButton:focus, PushButton:focus {
+    border: 2px solid palette(highlight);
+}
+
+/* ==================== Smooth Animations ==================== */
+QPushButton, PushButton {
+    transition: background 0.15s ease;
+}
+
+/* ==================== Better Dropdown Items ==================== */
+ComboBox QAbstractItemView::item {
+    padding: 8px 12px;
+    min-height: 28px;
+}
+
+/* ==================== Enterprise File List ==================== */
+#EnterpriseFileList {
+    background: palette(base);
+    border: 1px solid rgba(128, 128, 128, 0.15);
+    border-radius: 12px;
+}
+
+#FileListHeader {
+    background: rgba(128, 128, 128, 0.03);
+    border-bottom: 1px solid rgba(128, 128, 128, 0.1);
+}
+
+#EnterpriseFileListWidget {
+    background: transparent;
+    border: none;
+}
+
+#EmptyState {
+    background: transparent;
+}
+
+/* ==================== Enterprise Action Bar ==================== */
+#EnterpriseActionBar {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 palette(base), stop:1 rgba(128, 128, 128, 0.02));
+    border-top: 1px solid rgba(128, 128, 128, 0.12);
+}
+
+#StatusIndicator {
+    background: rgba(128, 128, 128, 0.06);
+    border-radius: 14px;
+    padding: 4px 12px;
+}
+
+/* ==================== Workflow Steps ==================== */
+#WorkflowSteps {
+    background: rgba(128, 128, 128, 0.03);
+    border: 1px solid rgba(128, 128, 128, 0.1);
+    border-radius: 20px;
+    padding: 4px 8px;
+}
+
+/* ==================== Preview Toolbar ==================== */
+#PreviewToolbar {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 palette(window), stop:1 rgba(128, 128, 128, 0.03));
+    border-bottom: 1px solid rgba(128, 128, 128, 0.12);
+}
+
+/* Preview Toolbar Buttons - Unified Style */
+#PreviewToolbar QPushButton {
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: bold;
+    color: palette(dark);
+    min-width: 28px;
+    min-height: 28px;
+    max-width: 36px;
+    max-height: 36px;
+    padding: 4px;
+}
+
+#PreviewToolbar QPushButton:hover {
+    background: rgba(128, 128, 128, 0.15);
+}
+
+#PreviewToolbar QPushButton:pressed {
+    background: rgba(128, 128, 128, 0.25);
+}
+
+/* Active state for fit buttons */
+#PreviewToolbar QPushButton[active="true"] {
+    background: rgba(0, 122, 255, 0.15);
+    color: #007AFF;
+}
+
+/* Preview SpinBox */
+#PreviewToolbar QSpinBox {
+    background: palette(base);
+    border: 1px solid rgba(0, 122, 255, 0.3);
+    border-radius: 6px;
+    padding: 4px 6px;
+    font-size: 13px;
+    font-weight: 500;
+    min-width: 50px;
+    max-width: 70px;
+}
+
+#PreviewToolbar QSpinBox:focus {
+    border: 2px solid #007AFF;
+}
+
+/* Preview ComboBox (zoom level) */
+#PreviewToolbar QComboBox {
+    background: transparent;
+    border: none;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 4px 6px;
+    min-width: 60px;
+    max-width: 80px;
+}
+
+/* ==================== Modern Card Enhancements ==================== */
+CardWidget {
+    border-radius: 16px;
+    background: palette(base);
+    border: 1px solid rgba(128, 128, 128, 0.1);
+}
+
+CardWidget:hover {
+    border-color: rgba(0, 122, 255, 0.2);
+}
+
+/* ==================== Input Focus States ==================== */
+QLineEdit:focus, LineEdit:focus {
+    border: 2px solid #007AFF;
+    background: palette(base);
+}
+
+QComboBox:focus, ComboBox:focus {
+    border: 2px solid #007AFF;
+}
+
+/* ==================== Button Hover Transitions ==================== */
+QPushButton {
+    transition: all 0.15s ease;
+}
+
+/* ==================== Modern Scrollbar ==================== */
+QScrollBar:vertical {
+    background: transparent;
+    width: 10px;
+    margin: 4px 2px;
+    border-radius: 5px;
+}
+
+QScrollBar::handle:vertical {
+    background: rgba(128, 128, 128, 0.25);
+    border-radius: 5px;
+    min-height: 30px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background: rgba(128, 128, 128, 0.4);
+}
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical,
+QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+    background: transparent;
+    height: 0;
+}
+
+/* ==================== Form Group Styling ==================== */
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: palette(dark);
+    margin-bottom: 6px;
+}
+
+/* ==================== Status Colors ==================== */
+.status-success { color: #30D158; }
+.status-warning { color: #FF9500; }
+.status-error { color: #FF3B30; }
+.status-info { color: #007AFF; }
+
+/* ==================== Badge Styles ==================== */
+.badge {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.badge-primary {
+    background: #007AFF;
+    color: white;
+}
+
+.badge-success {
+    background: #30D158;
+    color: white;
+}
+
+.badge-warning {
+    background: #FF9500;
+    color: white;
+}
+
+.badge-danger {
+    background: #FF3B30;
+    color: white;
+}
+
+/* ==================== Preview Navigation Buttons ==================== */
+#PreviewNavButton {
+    background: rgba(0, 122, 255, 0.1);
+    border: 1px solid rgba(0, 122, 255, 0.3);
+    border-radius: 6px;
+    color: #007AFF;
+    font-size: 14px;
+    min-width: 36px;
+    min-height: 32px;
+}
+
+#PreviewNavButton:hover {
+    background: rgba(0, 122, 255, 0.2);
+}
+
+#PreviewNavButton:pressed {
+    background: rgba(0, 122, 255, 0.3);
+}
+
+#PreviewNavButton:disabled {
+    background: rgba(128, 128, 128, 0.05);
+    border-color: rgba(128, 128, 128, 0.2);
+    color: rgba(128, 128, 128, 0.4);
+}
+
+/* ==================== Preview Zoom Buttons ==================== */
+#PreviewZoomButton {
+    background: rgba(128, 128, 128, 0.1);
+    border: 1px solid rgba(128, 128, 128, 0.3);
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: bold;
+    min-width: 32px;
+    min-height: 32px;
+}
+
+#PreviewZoomButton:hover {
+    background: rgba(128, 128, 128, 0.25);
+}
+
+#PreviewZoomButton:pressed {
+    background: rgba(128, 128, 128, 0.35);
+}
+
+/* ==================== Enhanced Interactive Buttons ==================== */
+#ActionButton {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 #0A84FF, stop:1 #0066CC);
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-weight: 600;
+    font-size: 15px;
+    padding: 12px 24px;
+    min-height: 44px;
+}
+
+#ActionButton:hover {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 #3399FF, stop:1 #0077DD);
+}
+
+#ActionButton:pressed {
+    background: #0055BB;
+}
+
+#ActionButton:disabled {
+    background: rgba(128, 128, 128, 0.3);
+    color: rgba(255, 255, 255, 0.6);
+}
+
+/* ==================== File Drop Area Enhanced ==================== */
+#FileDropArea {
+    background: rgba(10, 132, 255, 0.03);
+    border: 2px dashed rgba(10, 132, 255, 0.25);
+    border-radius: 14px;
+    min-height: 100px;
+    max-height: 120px;
+}
+
+#FileDropArea:hover {
+    background: rgba(10, 132, 255, 0.06);
+    border-color: rgba(10, 132, 255, 0.5);
+    cursor: pointer;
+}
+
+#FileDropArea[dragging="true"] {
+    background: rgba(10, 132, 255, 0.12);
+    border-color: #0A84FF;
+    border-style: solid;
+    border-width: 2px;
+}
+
+/* ==================== Add Button (Tag Input) ==================== */
+#AddButton {
+    background: rgba(0, 122, 255, 0.1);
+    border: 1px solid rgba(0, 122, 255, 0.3);
+    border-radius: 8px;
+    color: #007AFF;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+#AddButton:hover {
+    background: rgba(0, 122, 255, 0.2);
+}
+
+#AddButton:pressed {
+    background: rgba(0, 122, 255, 0.3);
+}
+
+/* ==================== Delete Button (Tag Chip) ==================== */
+#TagChipDelete {
+    background: rgba(255, 59, 48, 0.1);
+    border: none;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: bold;
+    color: #FF3B30;
+}
+
+#TagChipDelete:hover {
+    background: rgba(255, 59, 48, 0.2);
+}
+
+#TagChipDelete:pressed {
+    background: rgba(255, 59, 48, 0.3);
+}
+
+/* ==================== Conversion Status Frame ==================== */
+#ConversionStatusFrame {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 rgba(34, 197, 94, 0.06), stop:1 rgba(34, 197, 94, 0.02));
+    border: 1px solid rgba(34, 197, 94, 0.2);
+    border-radius: 14px;
+    padding: 12px;
+}
+
+#ConversionStatusFrame:hover {
+    border-color: rgba(34, 197, 94, 0.35);
+}
+
+/* File Count Badge */
+#FileCountBadge {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 #22C55E, stop:1 #16A34A);
+    border-radius: 12px;
+    color: white;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 6px 14px;
+    min-width: 24px;
+}
+
+/* File Size Label */
+#FileSizeLabel {
+    color: rgba(128, 128, 128, 0.8);
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* ==================== Global Preview Container ==================== */
+#GlobalPreviewContainer {
+    background: palette(base);
+    border-left: 1px solid rgba(128, 128, 128, 0.12);
+}
+
+/* ==================== Enterprise UX Improvements ==================== */
+
+/* Cursor pointer for all clickable elements */
+QPushButton, PushButton, PrimaryPushButton, TransparentPushButton,
+QToolButton, ToolButton, TransparentToolButton,
+QCheckBox, CheckBox, QRadioButton, RadioButton,
+QComboBox, ComboBox,
+#FileListItem, #TagChip, #FileDropArea,
+#SidebarButton, #ActionButton, #ConvertButton {
+    cursor: pointer;
+}
+
+/* Focus visible states for accessibility */
+QPushButton:focus, PushButton:focus,
+QLineEdit:focus, LineEdit:focus,
+QComboBox:focus, ComboBox:focus,
+QCheckBox:focus, CheckBox:focus {
+    outline: 2px solid rgba(10, 132, 255, 0.4);
+    outline-offset: 2px;
+}
+
+/* Smooth hover transitions */
+QPushButton, PushButton, QLineEdit, LineEdit,
+QComboBox, ComboBox, #ContentCard, #FileListItem {
+    transition: all 200ms ease-out;
+}
+
+/* Status indicator styles */
+#StatusSuccess {
+    background: rgba(34, 197, 94, 0.12);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    border-radius: 8px;
+    color: #16A34A;
+    padding: 8px 14px;
+}
+
+#StatusError {
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 8px;
+    color: #DC2626;
+    padding: 8px 14px;
+}
+
+#StatusWarning {
+    background: rgba(245, 158, 11, 0.12);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    border-radius: 8px;
+    color: #D97706;
+    padding: 8px 14px;
+}
+
+#StatusInfo {
+    background: rgba(59, 130, 246, 0.12);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    border-radius: 8px;
+    color: #2563EB;
+    padding: 8px 14px;
+}
+
+/* Modern tooltip */
+QToolTip {
+    background: #1E293B;
+    color: #F8FAFC;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+}
+
+/* Section divider */
+#SectionDivider {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+        stop:0 transparent, stop:0.5 rgba(128, 128, 128, 0.2), stop:1 transparent);
+    height: 1px;
+    margin: 24px 0;
+}
+
+/* Quick action buttons */
+#QuickActionButton {
+    background: rgba(10, 132, 255, 0.08);
+    border: 1px solid rgba(10, 132, 255, 0.2);
+    border-radius: 10px;
+    color: #0A84FF;
+    font-weight: 600;
+    padding: 10px 18px;
+}
+
+#QuickActionButton:hover {
+    background: rgba(10, 132, 255, 0.15);
+    border-color: rgba(10, 132, 255, 0.4);
+}
+
+/* Empty state styling */
+#EmptyStateIcon {
+    color: rgba(128, 128, 128, 0.3);
+    font-size: 48px;
+}
+
+#EmptyStateTitle {
+    color: palette(text);
+    font-size: 16px;
+    font-weight: 600;
+}
+
+#EmptyStateDescription {
+    color: rgba(128, 128, 128, 0.7);
+    font-size: 14px;
+}
+
+/* Loading spinner placeholder */
+#LoadingSpinner {
+    border: 3px solid rgba(34, 197, 94, 0.2);
+    border-top-color: #22C55E;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+}
+
+/* Recent files section */
+#RecentFilesHeader {
+    color: palette(dark);
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+#RecentFileItem {
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 13px;
+    color: palette(text);
+}
+
+#RecentFileItem:hover {
+    background: rgba(10, 132, 255, 0.08);
+}
+
+/* Keyboard shortcut hint */
+#KeyboardHint {
+    background: rgba(128, 128, 128, 0.1);
+    border-radius: 4px;
+    color: rgba(128, 128, 128, 0.7);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 6px;
+    font-family: "Monaco", "Menlo", "Consolas", monospace;
+}

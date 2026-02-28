@@ -1,0 +1,93 @@
+[project]
+name = "trpg-log-converter-pro"
+version = "2.1.0"
+description = "TRPG 채팅 로그를 EPUB/DOCX/PDF로 변환하는 도구"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "TRPG Converter Team"}
+]
+keywords = ["trpg", "epub", "converter", "cocofolia", "roll20"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: MacOS :: MacOS X",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Text Processing :: Markup",
+]
+
+dependencies = [
+    "PySide6>=6.6.0",
+    "ebooklib>=0.18",
+    "beautifulsoup4>=4.12.0",
+    "lxml>=5.0.0",
+    "python-docx>=1.1.0",
+    "PyYAML>=6.0",
+    "Pillow>=10.0.0",
+    "reportlab>=4.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "mypy>=1.8.0",
+    "pyinstaller>=6.0.0",
+]
+browser = [
+    "playwright>=1.40.0",
+]
+
+[project.scripts]
+trpg-converter = "main:main"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["core*", "gui*", "utils*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true
+exclude = [
+    "venv",
+    "build",
+    "dist",
+]
+
+[[tool.mypy.overrides]]
+module = "PySide6.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "ebooklib.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "docx.*"
+ignore_missing_imports = true
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = ["E501"]  # line too long

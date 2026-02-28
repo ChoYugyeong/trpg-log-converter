@@ -1,0 +1,154 @@
+# TRPG 로그 EPUB/DOCX 변환 설정
+
+paths:
+  input_dir: "./input"
+  output_dir: "./export"
+  fonts_dir: "./fonts"
+  images_dir: "./images"
+
+metadata:
+  author: "GM"
+  language: "ko"
+
+output_format: "both"
+log_source: "auto"
+
+cover:
+  image: ""
+  include: true
+  title_on_cover: true
+  author_on_cover: true
+  background_color: "#1a1a1a"
+  title_color: "#ffffff"
+  subtitle: ""
+
+toc:
+  include: true
+  title: "목차"
+  mode: "auto"
+  entries: []
+  style: "simple"
+
+fonts:
+  name_font: "'Pretendard', 'Apple SD Gothic Neo', sans-serif"
+  body_font: "'Nanum Myeongjo', 'Batang', serif"
+  embed:
+    body: ""
+    name: ""
+  docx_fallback:
+    body: "맑은 고딕"
+    name: "맑은 고딕"
+  pretendard_cdn: "https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css"
+
+layout:
+  page_margin:
+    top: 1.5
+    bottom: 1.5
+    left: 1.2
+    right: 1.2
+  docx_margin:
+    top: 1.0
+    bottom: 1.0
+    left: 1.0
+    right: 1.0
+
+style:
+  base_font_size: 1.0
+  body_line_height: 1.6
+  dialogue_line_height: 1.5
+  narration_line_height: 1.7
+  dialogue_margin: 0.12
+  narration_margin: 0.8
+  system_margin: 1.0
+  narration_indent: 1.5
+  first_line_indent: 0
+  text_color: "#1a1a1a"
+  name_color: "#2d2d2d"
+  dice_color: "#888"
+  system_color: "#666"
+  effect_bg: "#f5f5f5"
+  effect_border: "#ccc"
+  chapter_ornament: "─────  ✦  ─────"
+  scene_separator: "＊　＊　＊"
+  narration_prefix: "＿"
+  scene_marker: "■"
+
+narration:
+  users:
+    - "GM"
+    - "KP"
+    - "DM"
+    - "Keeper"
+    - "Narrator"
+    - "나레이터"
+    - "진행자"
+  style: "indent"
+
+content:
+  include_dice: true
+  include_system: true
+  include_effects: true
+  include_ooc: false
+
+dialogue:
+  merge_consecutive: false
+  merge_separator: "\n"
+  merge_max: 5
+  empty_dialogue: "……"
+
+images:
+  enable: true
+  markers:
+    - "\\[IMG:\\s*(.+?)\\]"
+    - "\\[삽화:\\s*(.+?)\\]"
+    - "\\[이미지:\\s*(.+?)\\]"
+  alignment: "center"
+  max_width: 100
+  show_caption: true
+
+custom_styles:
+  skill:
+    pattern: "^《.+》"
+    type: "effect"
+  secret:
+    pattern: "^【.+】"
+    type: "whisper"
+  important:
+    pattern: "^★"
+    type: "highlight"
+
+chapter:
+  split_mode: "scene"
+  entries_per_chapter: 300
+  extract_scene_title: true
+  title_format: "장면 {n}"
+  min_scene_entries: 10
+  scene_patterns:
+    - "^■"
+    - "^씬\\s*\\d+"
+    - "^장면\\s*\\d+"
+    - "^Scene\\s*\\d+"
+    - "^제\\s*\\d+\\s*장"
+    - "^Act\\s*\\d+"
+    - "^───.*───$"
+
+campaign:
+  enable: false
+  title: "캠페인 리플레이"
+  file_as_chapter: true
+  file_order: []
+  chapter_break: true
+  session_title_format: "Session {n}: {filename}"
+
+parsing:
+  name_max_length: 50
+  skip_channels:
+    - "[main]"
+    - "[잡담]"
+    - "[ooc]"
+  normalize_punctuation: true
+
+roll20:
+  session_gap_minutes: 60
+  emote_style: "italic"
+  include_whisper: false
