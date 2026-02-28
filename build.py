@@ -62,12 +62,14 @@ def build_app():
         "--onedir",    # 하나의 폴더로 묶기
         "--clean",     # 캐시 정리
         "--noconfirm", # 기존 빌드 덮어쓰기
+    ]
 
-        # 데이터 파일 포함
-        "--add-data", f"core{os.pathsep}core",
-        "--add-data", f"gui{os.pathsep}gui",
-        "--add-data", f"utils{os.pathsep}utils",
-        "--add-data", f"resources{os.pathsep}resources",
+    # 데이터 파일 포함 (존재하는 디렉토리만)
+    for data_dir in ["core", "gui", "utils", "resources"]:
+        if (app_dir / data_dir).exists():
+            cmd.extend(["--add-data", f"{data_dir}{os.pathsep}{data_dir}"])
+
+    cmd.extend([
 
         # PySide6 관련 hidden imports
         "--hidden-import", "PySide6",
@@ -93,7 +95,7 @@ def build_app():
         "--osx-bundle-identifier", "com.trpg.converter",
 
         MAIN_SCRIPT
-    ]
+    ])
 
     # config.yaml이 있으면 포함
     if (app_dir / "config.yaml").exists():
