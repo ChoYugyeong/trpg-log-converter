@@ -4,12 +4,8 @@
 """
 
 import pytest
-import sys
 import os
 from pathlib import Path
-
-# 프로젝트 루트 추가
-sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from core.engine import (
     parse_log, filter_entries, merge_consecutive_dialogues,

@@ -19,6 +19,9 @@ import yaml
 from pathlib import Path
 import mimetypes
 import io
+import logging
+
+logger = logging.getLogger(__name__)
 
 # ============ 이미지 최적화 ============
 def optimize_image(img_path, config):
@@ -141,7 +144,7 @@ def load_config(config_path=None):
             user_config = yaml.safe_load(f)
             if user_config:
                 config = deep_merge(config, user_config)
-        print(f"[OK] Config loaded: {config_path}")
+        logger.info("Config loaded: %s", config_path)
     return config
 
 # ============ 유틸리티 ============
@@ -912,7 +915,9 @@ def create_toc_html(scenes, config):
     html += '</ul></div>'
     return html
 
-def create_epub(entries, output_path, config, title="TRPG 리플레이", author=None):
+def create_epub(entries, output_path, config, title="TRPG 리플레이", author=None, progress_callback=None):
+    if progress_callback:
+        progress_callback(0, 100, "EPUB 생성 준비 중...")
     book = epub.EpubBook()
     
     if author is None:
@@ -956,6 +961,8 @@ def create_epub(entries, output_path, config, title="TRPG 리플레이", author=
         book.add_item(cover_chapter)
         epub_chapters.append(cover_chapter)
     
+    if progress_callback:
+        progress_callback(10, 100, "이미지 처리 중...")
     images_added = set()
     optimized_names = {}  # img_path -> optimized filename
     for entry in entries:
@@ -970,8 +977,10 @@ def create_epub(entries, output_path, config, title="TRPG 리플레이", author=
                 images_added.add(str(img_path))
                 optimized_names[str(img_path)] = opt_name
     
+    if progress_callback:
+        progress_callback(20, 100, "장면 분할 중...")
     scenes = split_into_scenes(entries, config)
-    print(f"[SCENE] Split into {len(scenes)} scenes")
+    logger.info("Split into %d scenes", len(scenes))
     
     toc_config = config.get('toc', {})
     if toc_config.get('include', True) and len(scenes) > 1:
@@ -987,7 +996,10 @@ def create_epub(entries, output_path, config, title="TRPG 리플레이", author=
     for idx, scene in enumerate(scenes):
         scene_title = scene.get('title')
         scene_entries = scene.get('entries', [])
-        print(f"   - {scene_title or f'장면 {idx+1}'}: {len(scene_entries)}개")
+        logger.debug("Scene '%s': %d entries", scene_title or f'장면 {idx+1}', len(scene_entries))
+        if progress_callback:
+            pct = 30 + int(60 * idx / max(len(scenes), 1))
+            progress_callback(pct, 100, f"장면 {idx+1}/{len(scenes)} 생성 중...")
         
         content_html = entries_to_html(scene_entries, scene_title, config)
         
@@ -1005,8 +1017,12 @@ def create_epub(entries, output_path, config, title="TRPG 리플레이", author=
     book.add_item(epub.EpubNcx())
     book.add_item(epub.EpubNav())
     
+    if progress_callback:
+        progress_callback(90, 100, "EPUB 저장 중...")
     epub.write_epub(output_path, book)
-    print(f"   [OK] EPUB: {output_path}")
+    if progress_callback:
+        progress_callback(100, 100, "EPUB 생성 완료")
+    logger.info("EPUB created: %s", output_path)
     return output_path
 
 # ============ DOCX ============
@@ -1031,7 +1047,9 @@ def add_paragraph_spacing(paragraph, before_pt=0, after_pt=0, line_spacing=1.0):
     spacing.set(qn('w:lineRule'), 'auto')
     pPr.append(spacing)
 
-def create_docx(entries, output_path, config, title="TRPG 리플레이", author=None):
+def create_docx(entries, output_path, config, title="TRPG 리플레이", author=None, progress_callback=None):
+    if progress_callback:
+        progress_callback(0, 100, "DOCX 생성 준비 중...")
     doc = Document()
     
     if author is None:
@@ -1072,10 +1090,13 @@ def create_docx(entries, output_path, config, title="TRPG 리플레이", author=
         doc.add_page_break()
     
     scenes = split_into_scenes(entries, config)
-    
+
     for scene_idx, scene in enumerate(scenes):
         scene_title = scene.get('title')
         scene_entries = scene.get('entries', [])
+        if progress_callback:
+            pct = 10 + int(80 * scene_idx / max(len(scenes), 1))
+            progress_callback(pct, 100, f"장면 {scene_idx+1}/{len(scenes)} 생성 중...")
         
         if scene_title:
             if scene_idx > 0:
@@ -1154,8 +1175,12 @@ def create_docx(entries, output_path, config, title="TRPG 리플레이", author=
                 content_run = para.add_run(content)
                 set_run_font(content_run, body_font, size_pt=11)
     
+    if progress_callback:
+        progress_callback(95, 100, "DOCX 저장 중...")
     doc.save(output_path)
-    print(f"   [OK] DOCX: {output_path}")
+    if progress_callback:
+        progress_callback(100, 100, "DOCX 생성 완료")
+    logger.info("DOCX created: %s", output_path)
     return output_path
 
 # ============ ConversionEngine 클래스 ============
@@ -1186,13 +1211,13 @@ class ConversionEngine:
         """장면 분할"""
         return split_into_scenes(entries, self.config)
 
-    def create_epub(self, entries, output_path, title="TRPG 리플레이", author=None):
+    def create_epub(self, entries, output_path, title="TRPG 리플레이", author=None, progress_callback=None):
         """EPUB 생성"""
-        return create_epub(entries, output_path, self.config, title, author)
+        return create_epub(entries, output_path, self.config, title, author, progress_callback=progress_callback)
 
-    def create_docx(self, entries, output_path, title="TRPG 리플레이", author=None):
+    def create_docx(self, entries, output_path, title="TRPG 리플레이", author=None, progress_callback=None):
         """DOCX 생성"""
-        return create_docx(entries, output_path, self.config, title, author)
+        return create_docx(entries, output_path, self.config, title, author, progress_callback=progress_callback)
 
     def create_pdf(self, entries, output_path, title="TRPG 리플레이", author=None):
         """PDF 생성"""
@@ -1204,11 +1229,11 @@ class ConversionEngine:
         except ImportError:
             return None
 
-    def convert_file(self, input_path, output_path=None, title=None, author=None, format=None):
+    def convert_file(self, input_path, output_path=None, title=None, author=None, format=None, progress_callback=None):
         """단일 파일 변환"""
-        return convert(input_path, output_path, title, author, self.config, format)
+        return convert(input_path, output_path, title, author, self.config, format, progress_callback=progress_callback)
 
-    def batch_convert(self, input_files, output_dir=None, title_prefix=None, author=None, format=None):
+    def batch_convert(self, input_files, output_dir=None, title_prefix=None, author=None, format=None, progress_callback=None):
         """배치 변환 - 여러 파일 한번에"""
         if output_dir:
             self.config['paths']['output_dir'] = output_dir
@@ -1218,18 +1243,20 @@ class ConversionEngine:
             try:
                 base = os.path.splitext(os.path.basename(file_path))[0]
                 title = f"{title_prefix} - {base}" if title_prefix else base
-                result = convert(file_path, None, title, author, self.config, format)
+                if progress_callback:
+                    progress_callback(i - 1, len(input_files), f"변환 중: {base}")
+                result = convert(file_path, None, title, author, self.config, format, progress_callback=progress_callback)
                 results.append({'file': file_path, 'success': True, 'outputs': result})
-                print(f"[{i}/{len(input_files)}] OK: {base}")
+                logger.info("[%d/%d] OK: %s", i, len(input_files), base)
             except Exception as e:
                 results.append({'file': file_path, 'success': False, 'error': str(e)})
-                print(f"[{i}/{len(input_files)}] FAIL: {base}: {e}")
+                logger.error("[%d/%d] FAIL: %s: %s", i, len(input_files), base, e)
 
         return results
 
 
 # ============ 메인 ============
-def convert(input_path, output_path=None, title=None, author=None, config=None, format=None):
+def convert(input_path, output_path=None, title=None, author=None, config=None, format=None, progress_callback=None):
     if config is None:
         config = load_config()
     
@@ -1240,35 +1267,51 @@ def convert(input_path, output_path=None, title=None, author=None, config=None, 
     if title is None:
         title = base
     
-    with open(input_path, 'r', encoding='utf-8') as f:
-        html_content = f.read()
-    
-    print(f"[INPUT] {input_path}")
+    if progress_callback:
+        progress_callback(0, 100, "파일 읽기 중...")
+    html_content = None
+    for enc in ('utf-8', 'euc-kr', 'cp949', 'latin-1'):
+        try:
+            with open(input_path, 'r', encoding=enc) as f:
+                html_content = f.read()
+            break
+        except UnicodeDecodeError:
+            continue
+    if html_content is None:
+        raise UnicodeDecodeError('utf-8', b'', 0, 1, f"파일을 읽을 수 없습니다: {input_path}")
 
+    logger.info("Input: %s", input_path)
+
+    if progress_callback:
+        progress_callback(10, 100, "파일 파싱 중...")
     entries = parse_log(html_content, config)
-    print(f"[PARSE] {len(entries)} entries")
-    
+    logger.info("Parsed %d entries", len(entries))
+
     entries = filter_entries(entries, config)
     entries = merge_consecutive_dialogues(entries, config)
-    
+
     stats = {}
     for e in entries:
         stats[e['type']] = stats.get(e['type'], 0) + 1
-    print(f"   {' | '.join([f'{k} {v}' for k, v in sorted(stats.items())])}")
+    logger.debug("Entry stats: %s", ' | '.join(f'{k} {v}' for k, v in sorted(stats.items())))
     
     output_format = format or config.get('output_format', 'both')
     results = []
 
     # EPUB 생성
     if output_format in ['epub', 'both', 'all']:
+        if progress_callback:
+            progress_callback(30, 100, "EPUB 생성 중...")
         epub_path = output_path or os.path.join(output_dir, f"{base}.epub")
-        create_epub(entries, epub_path, config, title, author)
+        create_epub(entries, epub_path, config, title, author, progress_callback=progress_callback)
         results.append(epub_path)
 
     # DOCX 생성
     if output_format in ['docx', 'both', 'all']:
+        if progress_callback:
+            progress_callback(60, 100, "DOCX 생성 중...")
         docx_path = os.path.join(output_dir, f"{base}.docx")
-        create_docx(entries, docx_path, config, title, author)
+        create_docx(entries, docx_path, config, title, author, progress_callback=progress_callback)
         results.append(docx_path)
 
     # PDF 생성
@@ -1281,13 +1324,13 @@ def convert(input_path, output_path=None, title=None, author=None, config=None, 
                 if result:
                     results.append(pdf_path)
             else:
-                print("   [WARN] PDF unavailable (reportlab not installed)")
+                logger.warning("PDF unavailable (reportlab not installed)")
         except ImportError:
-            print("   [WARN] PDF module load failed")
+            logger.warning("PDF module load failed")
 
     return results
 
-def batch_convert(input_dir=None, output_dir=None, config=None, format=None):
+def batch_convert(input_dir=None, output_dir=None, config=None, format=None, progress_callback=None):
     if config is None:
         config = load_config()
     
@@ -1297,23 +1340,20 @@ def batch_convert(input_dir=None, output_dir=None, config=None, format=None):
     html_files = list(Path(input_dir).glob('*.html')) + list(Path(input_dir).glob('*.htm'))
     
     if not html_files:
-        print(f"[WARN] No HTML files in {input_dir}")
+        logger.warning("No HTML files in %s", input_dir)
         return []
 
-    print(f"[BATCH] Converting {len(html_files)} files\n")
-    
+    logger.info("Batch converting %d files", len(html_files))
+
     results = []
     for html_file in sorted(html_files):
-        print(f"{'='*50}")
         try:
             output_paths = convert(str(html_file), config=config, format=format)
             results.extend(output_paths)
         except Exception as e:
-            print(f"❌ 오류: {html_file} - {e}")
-        print()
-    
-    print(f"{'='*50}")
-    print(f"✅ 완료: {len(results)}개 파일")
+            logger.error("Conversion error: %s - %s", html_file, e)
+
+    logger.info("Batch complete: %d files created", len(results))
     
     return results
 

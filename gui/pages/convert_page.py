@@ -10,6 +10,9 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Signal, Qt
 from pathlib import Path
 import os
+import logging
+
+logger = logging.getLogger(__name__)
 
 from qfluentwidgets import (
     BodyLabel, PushButton, PrimaryPushButton, LineEdit, ComboBox, RadioButton,
@@ -385,9 +388,7 @@ class ConvertPage(BasePage):
             self.document_preview.update_preview(entries=entries, settings=settings)
 
         except Exception as e:
-            print(f"미리보기 업데이트 오류: {e}")
-            import traceback
-            traceback.print_exc()
+            logger.warning("미리보기 업데이트 오류: %s", e, exc_info=True)
 
     def _show_preview(self):
         """미리보기 패널 표시 및 업데이트"""
@@ -431,6 +432,7 @@ class ConvertPage(BasePage):
     def _on_files_dropped(self, files: list):
         """파일 드롭 이벤트"""
         added = False
+        large_files = []
         for path in files:
             if path not in self.files:
                 self.files.append(path)
@@ -438,6 +440,20 @@ class ConvertPage(BasePage):
                 item.setData(Qt.UserRole, path)
                 self.file_list.addItem(item)
                 added = True
+                try:
+                    if os.path.getsize(path) > 10 * 1024 * 1024:
+                        large_files.append(Path(path).name)
+                except OSError:
+                    pass
+
+        if large_files:
+            InfoBar.warning(
+                title='대용량 파일 경고',
+                content=f'10MB 이상 파일이 포함되어 있습니다: {", ".join(large_files)}. 변환에 시간이 걸릴 수 있습니다.',
+                parent=self,
+                position=InfoBarPosition.TOP,
+                duration=5000
+            )
 
         if added:
             self._update_file_count()

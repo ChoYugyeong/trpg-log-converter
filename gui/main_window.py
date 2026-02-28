@@ -12,6 +12,9 @@ from PySide6.QtGui import QIcon, QShortcut, QKeySequence
 from pathlib import Path
 import os
 import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 from qfluentwidgets import (
     FluentWindow, NavigationItemPosition, FluentIcon,
@@ -21,7 +24,8 @@ from qfluentwidgets import FluentIcon as FIF
 
 from .pages import (
     ConvertPage, BasicPage, StylePage, FontPage,
-    ContentPage, CoverPage, OutputPage, AdvancedPage, PresetPage, DecorationPage
+    ContentPage, CoverPage, OutputPage, AdvancedPage, PresetPage, DecorationPage,
+    ParsingRulePage
 )
 from .components import InspectorBar, DocumentPreview
 from core.services import CacheService, CharacterColorService
@@ -115,6 +119,14 @@ class ConversionWorker(QThread):
             author = config.get('metadata', {}).get('author', 'GM')
             results = []
 
+            # engine progress_callback → Qt signal 변환
+            def engine_progress(current, total, message):
+                if total > 0:
+                    pct = int(current * 100 / total)
+                else:
+                    pct = 0
+                self.progress.emit(min(pct, 99), message)
+
             def parse_with_cache(file_path):
                 if self.cache_service:
                     cached = self.cache_service.get(file_path, config)
@@ -144,9 +156,9 @@ class ConversionWorker(QThread):
                     base = Path(self.files[0]).stem + "_merged"
 
                     if self.output_format in ['both', 'all', 'epub']:
-                        results.append(engine.create_epub(all_entries, os.path.join(output_dir, f"{base}.epub"), self.title, author))
+                        results.append(engine.create_epub(all_entries, os.path.join(output_dir, f"{base}.epub"), self.title, author, progress_callback=engine_progress))
                     if self.output_format in ['both', 'all', 'docx']:
-                        results.append(engine.create_docx(all_entries, os.path.join(output_dir, f"{base}.docx"), self.title, author))
+                        results.append(engine.create_docx(all_entries, os.path.join(output_dir, f"{base}.docx"), self.title, author, progress_callback=engine_progress))
                     if self.output_format in ['all', 'pdf']:
                         pdf_result = engine.create_pdf(all_entries, os.path.join(output_dir, f"{base}.pdf"), self.title, author)
                         if pdf_result:
@@ -165,9 +177,9 @@ class ConversionWorker(QThread):
                         file_title = self.title or base
 
                         if self.output_format in ['both', 'all', 'epub']:
-                            results.append(engine.create_epub(entries, os.path.join(output_dir, f"{base}.epub"), file_title, author))
+                            results.append(engine.create_epub(entries, os.path.join(output_dir, f"{base}.epub"), file_title, author, progress_callback=engine_progress))
                         if self.output_format in ['both', 'all', 'docx']:
-                            results.append(engine.create_docx(entries, os.path.join(output_dir, f"{base}.docx"), file_title, author))
+                            results.append(engine.create_docx(entries, os.path.join(output_dir, f"{base}.docx"), file_title, author, progress_callback=engine_progress))
                         if self.output_format in ['all', 'pdf']:
                             pdf_result = engine.create_pdf(entries, os.path.join(output_dir, f"{base}.pdf"), file_title, author)
                             if pdf_result:
@@ -184,9 +196,9 @@ class ConversionWorker(QThread):
                         base = Path(file_path).stem
 
                         if self.output_format in ['both', 'all', 'epub']:
-                            results.append(engine.create_epub(entries, os.path.join(output_dir, f"{base}.epub"), self.title, author))
+                            results.append(engine.create_epub(entries, os.path.join(output_dir, f"{base}.epub"), self.title, author, progress_callback=engine_progress))
                         if self.output_format in ['both', 'all', 'docx']:
-                            results.append(engine.create_docx(entries, os.path.join(output_dir, f"{base}.docx"), self.title, author))
+                            results.append(engine.create_docx(entries, os.path.join(output_dir, f"{base}.docx"), self.title, author, progress_callback=engine_progress))
                         if self.output_format in ['all', 'pdf']:
                             pdf_result = engine.create_pdf(entries, os.path.join(output_dir, f"{base}.pdf"), self.title, author)
                             if pdf_result:
@@ -197,9 +209,11 @@ class ConversionWorker(QThread):
             success_count = sum(1 for r in results if r)
             self.finished.emit(True, f"변환 완료!\n{success_count}개 파일 생성\n출력 위치: {output_dir}")
 
+        except UnicodeDecodeError as e:
+            logger.error("인코딩 오류: %s", e)
+            self.finished.emit(False, f"파일 인코딩 오류: 지원되지 않는 인코딩입니다. UTF-8, EUC-KR, CP949 형식의 파일을 사용해주세요.")
         except Exception as e:
-            import traceback
-            traceback.print_exc()
+            logger.error("변환 실패: %s", e, exc_info=True)
             self.finished.emit(False, f"변환 실패: {str(e)}")
 
 
@@ -250,6 +264,7 @@ class MainWindow(FluentWindow):
         self.output_page = OutputPage(self.config_manager)
         self.advanced_page = AdvancedPage(self.config_manager)
         self.preset_page = PresetPage(self.config_manager)
+        self.parsing_rules_page = ParsingRulePage(self.config_manager)
 
         # 페이지 저장
         self.pages = {
@@ -263,6 +278,7 @@ class MainWindow(FluentWindow):
             'output': self.output_page,
             'advanced': self.advanced_page,
             'preset': self.preset_page,
+            'parsing_rules': self.parsing_rules_page,
         }
 
         # 네비게이션 아이템 추가
@@ -281,6 +297,7 @@ class MainWindow(FluentWindow):
 
         self.addSubInterface(self.output_page, FIF.FOLDER, '출력')
         self.addSubInterface(self.preset_page, FIF.BOOK_SHELF, '프리셋')
+        self.addSubInterface(self.parsing_rules_page, FIF.CODE, '파싱 규칙')
 
         self.navigationInterface.addSeparator(NavigationItemPosition.BOTTOM)
 
@@ -435,7 +452,7 @@ class MainWindow(FluentWindow):
         preview_shortcut.activated.connect(self.toggle_preview)
 
         # ⌘+1~9: 페이지 전환
-        page_keys = ['convert', 'basic', 'style', 'font', 'content', 'cover', 'decoration', 'output', 'preset']
+        page_keys = ['convert', 'basic', 'style', 'font', 'content', 'cover', 'decoration', 'output', 'preset', 'parsing_rules']
         for i, key in enumerate(page_keys[:9], 1):
             shortcut = QShortcut(QKeySequence(f"Ctrl+{i}"), self)
             shortcut.activated.connect(lambda k=key: self._switch_to_page(k))

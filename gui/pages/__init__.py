@@ -14,6 +14,7 @@ from .output_page import OutputPage
 from .advanced_page import AdvancedPage
 from .preset_page import PresetPage
 from .decoration_page import DecorationPage
+from .parsing_rules_page import ParsingRulePage
 
 __all__ = [
     'BasePage',
@@ -27,4 +28,5 @@ __all__ = [
     'AdvancedPage',
     'PresetPage',
     'DecorationPage',
+    'ParsingRulePage',
 ]

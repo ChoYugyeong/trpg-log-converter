@@ -3,11 +3,7 @@
 """
 
 import pytest
-import sys
 from pathlib import Path
-
-# 프로젝트 루트 추가
-sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from core.services.character_colors import CharacterColorService, get_contrasting_text_color
 

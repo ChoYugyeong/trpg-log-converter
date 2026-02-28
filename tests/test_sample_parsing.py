@@ -5,11 +5,7 @@ Roll20 및 Cocofolia 형식 파싱 검증
 """
 
 import pytest
-import sys
 from pathlib import Path
-
-# 프로젝트 루트 추가
-sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from core.engine import parse_log, DEFAULT_CONFIG, deep_merge
 

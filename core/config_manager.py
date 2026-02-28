@@ -153,13 +153,24 @@ class ConfigManager:
         return {}
 
     def _load_gui_settings(self):
-        """GUI 설정 로드"""
+        """GUI 설정 로드 (Pydantic 검증 포함)"""
         if self.settings_path.exists():
             try:
                 with open(self.settings_path, 'r', encoding='utf-8') as f:
-                    return json.load(f)
-            except:
-                pass
+                    loaded = json.load(f)
+                # Pydantic으로 설정 검증 (잘못된 값은 기본값으로 대체)
+                try:
+                    from core.services.config_schema import validate_gui_settings
+                    validated = validate_gui_settings(loaded)
+                    # extra 필드(검증 모델에 없는 필드)를 유지
+                    merged = self.DEFAULT_GUI_SETTINGS.copy()
+                    merged.update(loaded)
+                    merged.update(validated)
+                    return merged
+                except ImportError:
+                    return loaded
+            except Exception as e:
+                logger.warning("GUI 설정 파일 로드 실패, 기본값 사용: %s", e)
         return self.DEFAULT_GUI_SETTINGS.copy()
 
     def save_gui_settings(self, settings):
@@ -312,7 +323,19 @@ class ConfigManager:
         # 커스텀 CSS
         gui_config['custom_css'] = gui_settings.get('custom_css', '')
 
-        return self._deep_merge(config, gui_config)
+        merged = self._deep_merge(config, gui_config)
+
+        # Pydantic으로 최종 설정 검증
+        try:
+            from core.services.config_schema import validate_engine_config
+            validated = validate_engine_config(merged)
+            # validate_engine_config가 인식하지 못하는 필드 유지
+            for key in merged:
+                if key not in validated:
+                    validated[key] = merged[key]
+            return validated
+        except ImportError:
+            return merged
 
     def _deep_merge(self, base, override):
         """딕셔너리 깊은 병합"""
