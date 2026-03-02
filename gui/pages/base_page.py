@@ -160,7 +160,7 @@ class FluentCard(CardWidget):
         combo = ComboBox()
         combo.addItems(options)
         combo.setMinimumHeight(38)
-        combo.setMinimumWidth(120)
+        combo.setMinimumWidth(180)
         if default and default in options:
             combo.setCurrentText(default)
         return self.add_field(label, combo, key, help_text=help_text)

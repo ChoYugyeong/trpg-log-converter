@@ -195,49 +195,55 @@ class PresetPage(BasePage):
         self.preset_list.itemDoubleClicked.connect(self._edit_preset)
         list_card.add_widget(self.preset_list)
 
-        # 버튼
-        buttons = QHBoxLayout()
-        buttons.setSpacing(8)
+        # 버튼 - 1행: 편집 관련
+        buttons_row1 = QHBoxLayout()
+        buttons_row1.setSpacing(8)
 
         save_current_btn = PushButton("현재 설정 저장")
         save_current_btn.setObjectName("primary")
         save_current_btn.clicked.connect(self._save_current_settings)
-        buttons.addWidget(save_current_btn)
+        buttons_row1.addWidget(save_current_btn)
 
         add_btn = PushButton("새 프리셋")
         add_btn.clicked.connect(self._add_preset)
-        buttons.addWidget(add_btn)
+        buttons_row1.addWidget(add_btn)
 
         edit_btn = PushButton("편집")
         edit_btn.clicked.connect(self._edit_preset)
-        buttons.addWidget(edit_btn)
+        buttons_row1.addWidget(edit_btn)
 
         duplicate_btn = PushButton("복제")
         duplicate_btn.clicked.connect(self._duplicate_preset)
-        buttons.addWidget(duplicate_btn)
+        buttons_row1.addWidget(duplicate_btn)
+
+        buttons_row1.addStretch()
+
+        list_card.add_layout(buttons_row1)
+
+        # 버튼 - 2행: 적용/삭제/가져오기/내보내기
+        buttons_row2 = QHBoxLayout()
+        buttons_row2.setSpacing(8)
+
+        apply_btn = PushButton("적용")
+        apply_btn.clicked.connect(self._apply_preset)
+        buttons_row2.addWidget(apply_btn)
 
         delete_btn = PushButton("삭제")
         delete_btn.setObjectName("danger")
         delete_btn.clicked.connect(self._delete_preset)
-        buttons.addWidget(delete_btn)
+        buttons_row2.addWidget(delete_btn)
 
-        buttons.addSpacing(16)
-
-        apply_btn = PushButton("적용")
-        apply_btn.clicked.connect(self._apply_preset)
-        buttons.addWidget(apply_btn)
-
-        buttons.addStretch()
+        buttons_row2.addStretch()
 
         import_btn = PushButton("가져오기")
         import_btn.clicked.connect(self._import_preset)
-        buttons.addWidget(import_btn)
+        buttons_row2.addWidget(import_btn)
 
         export_btn = PushButton("내보내기")
         export_btn.clicked.connect(self._export_preset)
-        buttons.addWidget(export_btn)
+        buttons_row2.addWidget(export_btn)
 
-        list_card.add_layout(buttons)
+        list_card.add_layout(buttons_row2)
         self.content_layout.addWidget(list_card)
 
         # 프리셋 상세 정보 카드

@@ -55,7 +55,7 @@ class ConvertPage(BasePage):
         # 파일 목록
         self.file_list = QListWidget()
         self.file_list.setMinimumHeight(80)
-        self.file_list.setMaximumHeight(150)
+        self.file_list.setMaximumHeight(200)
         self.file_list.setDragDropMode(QListWidget.InternalMove)
         self.file_list.setSelectionMode(QListWidget.ExtendedSelection)
         file_card.add_widget(self.file_list)
@@ -95,7 +95,7 @@ class ConvertPage(BasePage):
 
         self.recent_list = QListWidget()
         self.recent_list.setMinimumHeight(60)
-        self.recent_list.setMaximumHeight(80)  # 높이 축소
+        self.recent_list.setMaximumHeight(120)
         self.recent_list.itemDoubleClicked.connect(self._on_recent_file_clicked)
         self.recent_list.setSelectionMode(QListWidget.ExtendedSelection)
         recent_card.add_widget(self.recent_list)
@@ -430,6 +430,7 @@ class ConvertPage(BasePage):
                 self.files.append(path)
                 item = QListWidgetItem(f"  {Path(path).name}")
                 item.setData(Qt.UserRole, path)
+                item.setToolTip(path)
                 self.file_list.addItem(item)
                 added = True
                 try:

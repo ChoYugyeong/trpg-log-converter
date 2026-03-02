@@ -54,6 +54,7 @@ class FontPage(BasePage):
         # EPUB 본문 폰트 드롭다운
         self.epub_body_combo = ComboBox()
         self.epub_body_combo.addItems(self._system_fonts)
+        self.epub_body_combo.setMinimumWidth(220)
         self.epub_body_combo.setCurrentText(self.settings.get('epub_body_font', '나눔명조'))
         self.epub_body_combo.currentTextChanged.connect(self._on_font_changed)
         epub_card.add_field("본문 폰트", self.epub_body_combo, help_text="EPUB 본문에 사용할 폰트를 선택하세요.")
@@ -61,6 +62,7 @@ class FontPage(BasePage):
         # EPUB 이름 폰트 드롭다운
         self.epub_name_combo = ComboBox()
         self.epub_name_combo.addItems(self._system_fonts)
+        self.epub_name_combo.setMinimumWidth(220)
         self.epub_name_combo.setCurrentText(self.settings.get('epub_name_font', 'Pretendard'))
         self.epub_name_combo.currentTextChanged.connect(self._on_font_changed)
         epub_card.add_field("이름 폰트", self.epub_name_combo, help_text="캐릭터 이름에 사용할 폰트. 산세리프 계열 권장.")
@@ -112,6 +114,7 @@ class FontPage(BasePage):
         # DOCX 본문 폰트 드롭다운
         self.docx_body_combo = ComboBox()
         self.docx_body_combo.addItems(self._system_fonts)
+        self.docx_body_combo.setMinimumWidth(220)
         self.docx_body_combo.setCurrentText(self.settings.get('docx_body_font', '맑은 고딕'))
         self.docx_body_combo.currentTextChanged.connect(self._on_font_changed)
         docx_card.add_field("본문 폰트", self.docx_body_combo, help_text="시스템에 설치된 폰트를 선택하세요.")
@@ -119,6 +122,7 @@ class FontPage(BasePage):
         # DOCX 이름 폰트 드롭다운
         self.docx_name_combo = ComboBox()
         self.docx_name_combo.addItems(self._system_fonts)
+        self.docx_name_combo.setMinimumWidth(220)
         self.docx_name_combo.setCurrentText(self.settings.get('docx_name_font', '맑은 고딕'))
         self.docx_name_combo.currentTextChanged.connect(self._on_font_changed)
         docx_card.add_field("이름 폰트", self.docx_name_combo, help_text="캐릭터 이름 표시용 폰트.")

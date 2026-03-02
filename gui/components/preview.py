@@ -247,7 +247,7 @@ class DocumentPreview(QFrame):
         self.format_combo = QComboBox()
         self.format_combo.addItems(list(self.DOCUMENT_FORMATS.keys()))
         self.format_combo.setCurrentText(self._current_format)
-        self.format_combo.setMaximumWidth(160)
+        self.format_combo.setMaximumWidth(200)
         self.format_combo.setStyleSheet("""
             QComboBox {
                 background: palette(base);

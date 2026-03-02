@@ -265,6 +265,10 @@ class MainWindow(FluentWindow):
         self._setup_shortcuts()
         self._load_recent_files()
 
+        # 타이틀바를 최상위로 올려서 드래그 이동 보장
+        if hasattr(self, 'titleBar') and self.titleBar:
+            self.titleBar.raise_()
+
     def _setup_navigation(self):
         """네비게이션 설정"""
         # 페이지 생성
@@ -391,6 +395,16 @@ class MainWindow(FluentWindow):
                 self.main_splitter.addWidget(self.stackedWidget)
                 self.main_splitter.addWidget(self.preview_container)
                 self.main_splitter.setSizes([550, 450])
+
+        # 타이틀바가 레이아웃 변경 후에도 최상위에 오도록 보장
+        if hasattr(self, 'titleBar') and self.titleBar:
+            self.titleBar.raise_()
+
+    def resizeEvent(self, e):
+        """창 크기 변경 시 타이틀바 정렬 보장"""
+        super().resizeEvent(e)
+        if hasattr(self, 'titleBar') and self.titleBar:
+            self.titleBar.raise_()
 
     def toggle_preview(self):
         """미리보기 패널 토글"""

@@ -403,7 +403,7 @@ QComboBox {
     font-size: 14px;
     color: palette(text);
     min-height: 22px;
-    min-width: 100px;
+    min-width: 140px;
 }
 
 QComboBox:hover {
@@ -450,7 +450,7 @@ QComboBox QAbstractItemView::item:selected {
 /* QFluentWidgets ComboBox overrides */
 ComboBox {
     min-height: 40px;
-    min-width: 120px;
+    min-width: 180px;
 }
 
 /* ==================== List Widget - Refined ==================== */
@@ -463,10 +463,10 @@ QListWidget {
 }
 
 QListWidget::item {
-    padding: 12px 16px;
-    border-radius: 10px;
+    padding: 8px 12px;
+    border-radius: 8px;
     color: palette(text);
-    margin: 2px 0;
+    margin: 1px 0;
 }
 
 QListWidget::item:hover {
@@ -1310,25 +1310,48 @@ QPushButton {
 /* ==================== Modern Scrollbar ==================== */
 QScrollBar:vertical {
     background: transparent;
-    width: 10px;
+    width: 12px;
     margin: 4px 2px;
-    border-radius: 5px;
+    border-radius: 6px;
 }
 
 QScrollBar::handle:vertical {
     background: rgba(128, 128, 128, 0.25);
-    border-radius: 5px;
-    min-height: 30px;
+    border-radius: 6px;
+    min-height: 40px;
 }
 
 QScrollBar::handle:vertical:hover {
-    background: rgba(128, 128, 128, 0.4);
+    background: rgba(128, 128, 128, 0.45);
 }
 
 QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical,
 QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
     background: transparent;
     height: 0;
+}
+
+QScrollBar:horizontal {
+    background: transparent;
+    height: 12px;
+    margin: 2px 4px;
+    border-radius: 6px;
+}
+
+QScrollBar::handle:horizontal {
+    background: rgba(128, 128, 128, 0.25);
+    border-radius: 6px;
+    min-width: 40px;
+}
+
+QScrollBar::handle:horizontal:hover {
+    background: rgba(128, 128, 128, 0.45);
+}
+
+QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal,
+QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
+    background: transparent;
+    width: 0;
 }
 
 /* ==================== Form Group Styling ==================== */
