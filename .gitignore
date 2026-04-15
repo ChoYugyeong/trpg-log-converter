@@ -29,6 +29,9 @@ Thumbs.db
 # Test output
 test_output/
 
+# Runtime user settings
+gui_settings.json
+
 # Logs
 *.log
 logs/
