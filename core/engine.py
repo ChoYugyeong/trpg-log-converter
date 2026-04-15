@@ -6,21 +6,18 @@ TRPG 로그 → EPUB/DOCX 변환기
 
 from ebooklib import epub
 from bs4 import BeautifulSoup
-from docx import Document
-from docx.shared import Pt, Inches, RGBColor
-from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.oxml.ns import qn
-from docx.oxml import OxmlElement
+from docx.shared import RGBColor
 import re
-import sys
 import os
 import uuid
 import yaml
 from pathlib import Path
-from typing import Dict, List, Optional, Any, Tuple, Callable
+from typing import Dict, List, Optional, Any, Tuple
 import mimetypes
 import io
 import logging
+
+from core.utils import deep_merge
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +37,7 @@ def optimize_image(img_path: Path, config: Dict[str, Any]) -> Tuple[bytes, str, 
     try:
         from PIL import Image
     except ImportError:
-        # Pillow 없으면 원본 그대로 반환
+        logger.warning("Pillow가 설치되지 않아 이미지 최적화를 건너뜁니다. 'pip install Pillow'로 설치하세요.")
         with open(img_path, 'rb') as f:
             data = f.read()
         mime, _ = mimetypes.guess_type(str(img_path))
@@ -107,7 +104,7 @@ def _get_default_config():
         from core.config_manager import ConfigManager
         return ConfigManager.DEFAULT_CONFIG.copy()
     except ImportError:
-        pass
+        logger.debug("ConfigManager를 임포트할 수 없습니다. 내장 기본 설정을 사용합니다.")
     # ConfigManager 임포트 실패 시 최소 폴백
     return {
         'paths': {'input_dir': './input', 'output_dir': './export', 'fonts_dir': './fonts', 'images_dir': './images'},
@@ -132,14 +129,6 @@ def _get_default_config():
 
 DEFAULT_CONFIG = _get_default_config()
 
-def deep_merge(base: Dict, override: Dict) -> Dict:
-    result = base.copy()
-    for key, value in override.items():
-        if key in result and isinstance(result[key], dict) and isinstance(value, dict):
-            result[key] = deep_merge(result[key], value)
-        else:
-            result[key] = value
-    return result
 
 def load_config(config_path: Optional[str] = None) -> Dict[str, Any]:
     config = DEFAULT_CONFIG.copy()
@@ -517,7 +506,7 @@ def parse_log(html_content: str, config: Dict[str, Any]) -> List[Dict[str, Any]]
     skip_channels = parsing_config.get('skip_channels', [])
     name_max_length = parsing_config.get('name_max_length', 50)
     normalize = parsing_config.get('normalize_punctuation', True)
-    scene_patterns = config.get('scene_detection', {}).get('patterns', [])
+    scene_patterns = config.get('chapter', {}).get('scene_patterns', [])
 
     # Roll20 형식 감지: id="textchat" 또는 class="message" 확인
     is_roll20 = soup.find(id='textchat') is not None or soup.find(class_='message') is not None
@@ -1057,175 +1046,10 @@ def create_epub(entries, output_path, config, title="TRPG 리플레이", author=
     return output_path
 
 # ============ DOCX ============
-def set_run_font(run, font_name, size_pt=None, bold=False, italic=False, color=None):
-    run.font.name = font_name
-    run._element.rPr.rFonts.set(qn('w:eastAsia'), font_name)
-    if size_pt:
-        run.font.size = Pt(size_pt)
-    if bold:
-        run.font.bold = True
-    if italic:
-        run.font.italic = True
-    if color:
-        run.font.color.rgb = hex_to_rgb(color) if isinstance(color, str) else color
+# ============ DOCX 빌더는 core.docx_builder로 이동되었다 ============
+# create_docx, set_run_font, add_paragraph_spacing은 이 파일 최하단에서
+# re-export되어 하위 호환성을 유지한다.
 
-def add_paragraph_spacing(paragraph, before_pt=0, after_pt=0, line_spacing=1.0):
-    pPr = paragraph._p.get_or_add_pPr()
-    spacing = OxmlElement('w:spacing')
-    spacing.set(qn('w:before'), str(int(before_pt * 20)))
-    spacing.set(qn('w:after'), str(int(after_pt * 20)))
-    spacing.set(qn('w:line'), str(int(line_spacing * 240)))
-    spacing.set(qn('w:lineRule'), 'auto')
-    pPr.append(spacing)
-
-def create_docx(entries, output_path, config, title="TRPG 리플레이", author=None, progress_callback=None):
-    if progress_callback:
-        progress_callback(0, 100, "DOCX 생성 준비 중...")
-    doc = Document()
-    
-    if author is None:
-        author = config.get('metadata', {}).get('author', 'GM')
-    
-    fonts = config.get('fonts', {})
-    embedded = get_font_files(config)
-    fallback = fonts.get('docx_fallback', {})
-    style_config = config.get('style', {})
-    narration_prefix = style_config.get('narration_prefix', '＿')
-    
-    body_font = get_font_family_name(embedded['body']) if embedded.get('body') else fallback.get('body', '맑은 고딕')
-    name_font = get_font_family_name(embedded['name']) if embedded.get('name') else fallback.get('name', '맑은 고딕')
-    
-    cover_config = config.get('cover', {})
-    if cover_config.get('include', True):
-        cover_image = cover_config.get('image', '')
-        if cover_image:
-            img_path = find_image_file(cover_image, config)
-            if img_path:
-                img_data, _, _ = optimize_image(img_path, config)
-                doc.add_picture(io.BytesIO(img_data), width=Inches(5))
-                doc.paragraphs[-1].alignment = WD_ALIGN_PARAGRAPH.CENTER
-        
-        if cover_config.get('title_on_cover', True):
-            title_para = doc.add_paragraph()
-            title_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
-            title_run = title_para.add_run(title)
-            set_run_font(title_run, name_font, size_pt=28, bold=True)
-            add_paragraph_spacing(title_para, before_pt=72, after_pt=24)
-        
-        if cover_config.get('author_on_cover', True):
-            auth_para = doc.add_paragraph()
-            auth_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
-            auth_run = auth_para.add_run(author)
-            set_run_font(auth_run, name_font, size_pt=12, color='#888888')
-        
-        doc.add_page_break()
-    
-    scenes = split_into_scenes(entries, config)
-
-    for scene_idx, scene in enumerate(scenes):
-        scene_title = scene.get('title')
-        scene_entries = scene.get('entries', [])
-        if progress_callback:
-            pct = 10 + int(80 * scene_idx / max(len(scenes), 1))
-            progress_callback(pct, 100, f"장면 {scene_idx+1}/{len(scenes)} 생성 중...")
-        
-        if scene_title:
-            if scene_idx > 0:
-                doc.add_page_break()
-            
-            title_para = doc.add_paragraph()
-            title_para.alignment = WD_ALIGN_PARAGRAPH.LEFT
-            
-            title_has_marker = scene_title.startswith('■')
-            display_title = scene_title if title_has_marker else f"■ {scene_title}"
-            
-            title_run = title_para.add_run(display_title)
-            set_run_font(title_run, name_font, size_pt=14, bold=True)
-            add_paragraph_spacing(title_para, before_pt=24, after_pt=16)
-        
-        for entry in scene_entries:
-            t = entry['type']
-            content = entry.get('content', '')
-            name = entry.get('name', '')
-            img = entry.get('image')
-            
-            if img:
-                img_path = find_image_file(img, config)
-                if img_path:
-                    img_data, _, _ = optimize_image(img_path, config)
-                    doc.add_picture(io.BytesIO(img_data), width=Inches(4))
-                    doc.paragraphs[-1].alignment = WD_ALIGN_PARAGRAPH.CENTER
-            
-            if t == 'image' or not content.strip():
-                continue
-            
-            para = doc.add_paragraph()
-            
-            if t == 'dialogue':
-                if name:
-                    name_run = para.add_run(f"{name}   ")
-                    set_run_font(name_run, name_font, size_pt=11, bold=True)
-                content_run = para.add_run(content)
-                set_run_font(content_run, body_font, size_pt=11)
-                add_paragraph_spacing(para, before_pt=2, after_pt=2, line_spacing=1.3)
-            
-            elif t == 'narration':
-                prefix = narration_prefix if narration_prefix else ''
-                content_run = para.add_run(f"{prefix}{content}")
-                set_run_font(content_run, body_font, size_pt=10.5)
-                para.paragraph_format.left_indent = Inches(0.3)
-                add_paragraph_spacing(para, before_pt=8, after_pt=8, line_spacing=1.4)
-            
-            elif t == 'dice':
-                dice_text = f"{name} : {content}" if name else content
-                content_run = para.add_run(dice_text)
-                set_run_font(content_run, name_font, size_pt=9, color='#888888')
-                para.paragraph_format.left_indent = Inches(0.2)
-                add_paragraph_spacing(para, before_pt=1, after_pt=1, line_spacing=1.2)
-            
-            elif t == 'system':
-                content_run = para.add_run(content)
-                set_run_font(content_run, name_font, size_pt=10, color='#666666')
-                add_paragraph_spacing(para, before_pt=12, after_pt=12)
-            
-            elif t == 'effect':
-                if name:
-                    name_run = para.add_run(f"{name}\n")
-                    set_run_font(name_run, name_font, size_pt=10, bold=True)
-                content_run = para.add_run(content)
-                set_run_font(content_run, name_font, size_pt=9, color='#444444')
-                para.paragraph_format.left_indent = Inches(0.3)
-                add_paragraph_spacing(para, before_pt=4, after_pt=4, line_spacing=1.2)
-            
-            elif t == 'whisper':
-                content_run = para.add_run(content)
-                set_run_font(content_run, body_font, size_pt=10, italic=True, color='#666666')
-                para.paragraph_format.left_indent = Inches(0.4)
-            
-            else:
-                content_run = para.add_run(content)
-                set_run_font(content_run, body_font, size_pt=11)
-    
-    if progress_callback:
-        progress_callback(95, 100, "DOCX 저장 중...")
-    # 원자적 쓰기: 임시 파일에 작성 후 rename
-    import tempfile
-    tmp_fd, tmp_path = tempfile.mkstemp(suffix='.docx', dir=os.path.dirname(output_path) or '.')
-    os.close(tmp_fd)
-    try:
-        doc.save(tmp_path)
-        if os.path.exists(output_path):
-            os.replace(tmp_path, output_path)
-        else:
-            os.rename(tmp_path, output_path)
-    except Exception:
-        if os.path.exists(tmp_path):
-            os.unlink(tmp_path)
-        raise
-    if progress_callback:
-        progress_callback(100, 100, "DOCX 생성 완료")
-    logger.info("DOCX created: %s", output_path)
-    return output_path
 
 # ============ ConversionEngine 클래스 ============
 class ConversionEngine:
@@ -1271,6 +1095,7 @@ class ConversionEngine:
                 return pdf_create(entries, output_path, self.config, title, author)
             return None
         except ImportError:
+            logger.warning("PDF 생성 모듈을 로드할 수 없습니다. reportlab 설치를 확인하세요.")
             return None
 
     def convert_file(self, input_path, output_path=None, title=None, author=None, format=None, progress_callback=None):
@@ -1398,8 +1223,16 @@ def batch_convert(input_dir=None, output_dir=None, config=None, format=None, pro
             logger.error("Conversion error: %s - %s", html_file, e)
 
     logger.info("Batch complete: %d files created", len(results))
-    
+
     return results
+
+
+# ============ 하위 호환성 re-export ============
+# core.docx_builder에서 DOCX 빌더를 가져와 기존 import 경로를 유지한다.
+# 이 블록은 모듈 로드 순서상 파일 최하단에 위치해야 한다
+# (docx_builder가 이 모듈의 헬퍼들을 import하기 때문).
+from core.docx_builder import set_run_font, add_paragraph_spacing, create_docx  # noqa: E402, F401
+
 
 if __name__ == '__main__':
     import argparse

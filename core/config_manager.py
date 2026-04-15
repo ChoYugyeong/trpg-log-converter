@@ -1,14 +1,27 @@
 import yaml
 import json
-import os
 import logging
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Dict
+
+from core.utils import deep_merge, safe_int, safe_float
 
 logger = logging.getLogger(__name__)
 
 
 CONFIG_SCHEMA_VERSION = 2
+
+
+def _default_gui_settings() -> dict:
+    """Pydantic AppSettings 기본값을 플랫 dict로 변환해 반환.
+
+    Why: GUI 설정의 유일한 스키마 소스는 gui.config_models.AppSettings이다.
+         이 함수는 기본값을 동적으로 생성해 상수 중복을 제거한다.
+    """
+    # 지연 import: core → gui 방향 계층 역전을 피함
+    from gui.config_models import AppSettings, flatten_settings
+    return flatten_settings(AppSettings())
+
 
 def _migrate_settings(settings: dict) -> dict:
     """설정 스키마 마이그레이션"""
@@ -46,78 +59,6 @@ class ConfigManager:
         'chapter': {'split_mode': 'scene', 'entries_per_chapter': 300, 'extract_scene_title': True,
                     'title_format': '장면 {n}', 'min_scene_entries': 10, 'scene_patterns': ['^■', '^씬\\s*\\d+', '^장면\\s*\\d+']},
         'parsing': {'name_max_length': 50, 'skip_channels': [], 'normalize_punctuation': True},
-    }
-
-    DEFAULT_GUI_SETTINGS = {
-        'platform': 'cocofolia',
-        'title': 'TRPG 리플레이',
-        'author': 'GM',
-        'narrators': 'GM, KP, DM, Keeper, 나레이터, 진행자',
-        'language': 'ko',
-        'split_mode': 'scene',
-        'scene_patterns': '■, 씬, Scene, 장면, Act',
-        'entries_per_chapter': '300',
-        'min_scene_entries': '10',
-        'title_format': '장면 {n}',
-        'narration_prefix': '＿',
-        'scene_marker': '■',
-        'chapter_ornament': '─────  ✦  ─────',
-        'scene_separator': '＊　＊　＊',
-        'body_line_height': '1.6',
-        'dialogue_line_height': '1.5',
-        'narration_line_height': '1.7',
-        'narration_indent': '1.5',
-        'base_font_size': '1.0',
-        'colors': {
-            'text_color': '#1a1a1a',
-            'name_color': '#2d2d2d',
-            'dice_color': '#888888',
-            'system_color': '#666666',
-            'effect_bg': '#f5f5f5',
-            'effect_border': '#cccccc',
-        },
-        'epub_body_font': "'Nanum Myeongjo', 'Batang', serif",
-        'epub_name_font': "'Pretendard', 'Apple SD Gothic Neo', sans-serif",
-        'embed_body_font': '',
-        'embed_name_font': '',
-        'docx_body_font': '맑은 고딕',
-        'docx_name_font': '맑은 고딕',
-        'include_dice': True,
-        'include_effects': True,
-        'include_system': True,
-        'include_ooc': False,
-        'merge_dialogue': False,
-        'merge_separator': 'newline',
-        'merge_max': '5',
-        'empty_dialogue': '……',
-        'images_enable': True,
-        'show_caption': True,
-        'image_align': 'center',
-        'image_max_width': '100',
-        'image_max_resolution': '1600',
-        'image_jpeg_quality': '85 (권장)',
-        'image_convert_webp': True,
-        'include_cover': True,
-        'title_on_cover': True,
-        'author_on_cover': True,
-        'cover_image': '',
-        'cover_subtitle': '',
-        'cover_bg': '#1a1a1a',
-        'cover_title_color': '#ffffff',
-        'include_toc': True,
-        'toc_title': '목차',
-        'output_format': 'both',
-        'output_dir': './export',
-        'margins': {'top': '1.0', 'bottom': '1.0', 'left': '1.0', 'right': '1.0'},
-        'session_gap': '60',
-        'emote_style': 'italic',
-        'include_whisper': False,
-        'name_max_length': '50',
-        'skip_channels': '[main], [잡담], [ooc]',
-        'normalize_punct': True,
-        'campaign_enable': False,
-        'campaign_title': '캠페인 리플레이',
-        'session_title_format': 'Session {n}: {filename}',
     }
 
     def __init__(self, app_dir=None):
@@ -169,29 +110,23 @@ class ConfigManager:
         return {}
 
     def _load_gui_settings(self):
-        """GUI 설정 로드 (Pydantic 검증 + 스키마 마이그레이션 포함)"""
+        """GUI 설정 로드 — 파일을 읽고 스키마 마이그레이션만 수행한다.
+
+        Pydantic 검증은 AppState가 수행하므로 여기서는 raw dict만 반환한다.
+        파일이 없거나 손상되면 Pydantic 기본값(플랫 dict)을 반환한다.
+        """
         if self.settings_path.exists():
             try:
                 with open(self.settings_path, 'r', encoding='utf-8') as f:
                     loaded = json.load(f)
-
-                # 스키마 마이그레이션 적용
                 loaded = _migrate_settings(loaded)
-
-                # Pydantic으로 설정 검증 (잘못된 값은 기본값으로 대체)
-                try:
-                    from core.services.config_schema import validate_gui_settings
-                    validated = validate_gui_settings(loaded)
-                    # extra 필드(검증 모델에 없는 필드)를 유지
-                    merged = self.DEFAULT_GUI_SETTINGS.copy()
-                    merged.update(loaded)
-                    merged.update(validated)
-                    return merged
-                except ImportError:
-                    return loaded
+                # 기본값과 병합: 사용자 파일에 없는 신규 키에 기본값을 채워준다
+                merged = _default_gui_settings()
+                merged.update(loaded)
+                return merged
             except Exception as e:
                 logger.warning("GUI 설정 파일 로드 실패, 기본값 사용: %s", e)
-        return self.DEFAULT_GUI_SETTINGS.copy()
+        return _default_gui_settings()
 
     def save_gui_settings(self, settings):
         """GUI 설정 저장"""
@@ -204,8 +139,8 @@ class ConfigManager:
         return self.gui_settings
 
     def get_default_gui_settings(self):
-        """기본 GUI 설정 반환"""
-        return self.DEFAULT_GUI_SETTINGS.copy()
+        """기본 GUI 설정 반환 (Pydantic AppSettings 기반)"""
+        return _default_gui_settings()
 
     def build_engine_config(self, gui_settings=None):
         """GUI 설정을 엔진이 이해하는 config 형식으로 변환"""
@@ -215,7 +150,7 @@ class ConfigManager:
         sep_map = {'newline': '\n', 'space': ' ', 'dash': ' — '}
 
         # 기본 설정과 병합
-        config = self._deep_merge(self.DEFAULT_CONFIG.copy(), self.yaml_config)
+        config = deep_merge(self.DEFAULT_CONFIG.copy(), self.yaml_config)
 
         # GUI 설정 적용
         gui_config = {
@@ -231,18 +166,22 @@ class ConfigManager:
                 'fonts_dir': str(self.app_dir / 'fonts'),
             },
             'narration': {
-                'users': [n.strip() for n in gui_settings.get('narrators', 'GM').split(',')],
+                'users': (
+                    gui_settings.get('narrators')
+                    if isinstance(gui_settings.get('narrators'), list)
+                    else [n.strip() for n in str(gui_settings.get('narrators', 'GM')).split(',')]
+                ),
             },
             'style': {
                 'narration_prefix': gui_settings.get('narration_prefix', '＿'),
                 'scene_marker': gui_settings.get('scene_marker', '■'),
                 'chapter_ornament': gui_settings.get('chapter_ornament', '─────  ✦  ─────'),
                 'scene_separator': gui_settings.get('scene_separator', '＊　＊　＊'),
-                'base_font_size': float(gui_settings.get('base_font_size', '1.0') or 1.0),
-                'body_line_height': float(gui_settings.get('body_line_height', '1.6') or 1.6),
-                'dialogue_line_height': float(gui_settings.get('dialogue_line_height', '1.5') or 1.5),
-                'narration_line_height': float(gui_settings.get('narration_line_height', '1.7') or 1.7),
-                'narration_indent': float(gui_settings.get('narration_indent', '1.5') or 1.5),
+                'base_font_size': safe_float(gui_settings.get('base_font_size', '1.0'), 1.0),
+                'body_line_height': safe_float(gui_settings.get('body_line_height', '1.6'), 1.6),
+                'dialogue_line_height': safe_float(gui_settings.get('dialogue_line_height', '1.5'), 1.5),
+                'narration_line_height': safe_float(gui_settings.get('narration_line_height', '1.7'), 1.7),
+                'narration_indent': safe_float(gui_settings.get('narration_indent', '1.5'), 1.5),
             },
             'fonts': {
                 'body_font': gui_settings.get('epub_body_font', "'Nanum Myeongjo', serif"),
@@ -265,16 +204,16 @@ class ConfigManager:
             'dialogue': {
                 'merge_consecutive': gui_settings.get('merge_dialogue', False),
                 'merge_separator': sep_map.get(gui_settings.get('merge_separator', 'newline'), '\n'),
-                'merge_max': int(gui_settings.get('merge_max', '5') or 5),
+                'merge_max': safe_int(gui_settings.get('merge_max', '5'), 5),
                 'empty_dialogue': gui_settings.get('empty_dialogue', '……'),
             },
             'images': {
                 'enable': gui_settings.get('images_enable', True),
                 'show_caption': gui_settings.get('show_caption', True),
                 'alignment': gui_settings.get('image_align', 'center'),
-                'max_width': int(gui_settings.get('image_max_width', '100') or 100),
-                'max_resolution': int(gui_settings.get('image_max_resolution', '1600') or 0),
-                'jpeg_quality': int(gui_settings.get('image_jpeg_quality', '85 (권장)').split()[0]),
+                'max_width': safe_int(gui_settings.get('image_max_width', '100'), 100),
+                'max_resolution': safe_int(gui_settings.get('image_max_resolution', '1600'), 1600),
+                'jpeg_quality': safe_int(gui_settings.get('image_jpeg_quality', '85 (권장)'), 85),
                 'convert_webp': gui_settings.get('image_convert_webp', True),
             },
             'cover': {
@@ -292,21 +231,28 @@ class ConfigManager:
             },
             'chapter': {
                 'split_mode': gui_settings.get('split_mode', 'scene'),
-                'scene_patterns': [p.strip() for p in gui_settings.get('scene_patterns', '■').split(',')],
-                'entries_per_chapter': int(gui_settings.get('entries_per_chapter', '300') or 300),
-                'min_scene_entries': int(gui_settings.get('min_scene_entries', '10') or 10),
+                'scene_patterns': (
+                    gui_settings.get('scene_patterns')
+                    if isinstance(gui_settings.get('scene_patterns'), list)
+                    else [p.strip() for p in str(gui_settings.get('scene_patterns', '■')).split(',')]
+                ),
+                'entries_per_chapter': safe_int(gui_settings.get('entries_per_chapter', '300'), 300),
+                'min_scene_entries': safe_int(gui_settings.get('min_scene_entries', '10'), 10),
                 'title_format': gui_settings.get('title_format', '장면 {n}'),
             },
             'layout': {
-                'docx_margin': {k: float(v or 1.0) for k, v in gui_settings.get('margins', {}).items()},
+                'docx_margin': {
+                    k: safe_float(gui_settings.get('margins', {}).get(k, '1.0'), 1.0)
+                    for k in ('top', 'bottom', 'left', 'right')
+                },
             },
             'parsing': {
-                'name_max_length': int(gui_settings.get('name_max_length', '50') or 50),
+                'name_max_length': safe_int(gui_settings.get('name_max_length', '50'), 50),
                 'skip_channels': [c.strip() for c in gui_settings.get('skip_channels', '').split(',') if c.strip()],
                 'normalize_punctuation': gui_settings.get('normalize_punct', True),
             },
             'roll20': {
-                'session_gap_minutes': int(gui_settings.get('session_gap', '60') or 60),
+                'session_gap_minutes': safe_int(gui_settings.get('session_gap', '60'), 60),
                 'emote_style': gui_settings.get('emote_style', 'italic'),
                 'include_whisper': gui_settings.get('include_whisper', False),
             },
@@ -333,17 +279,17 @@ class ConfigManager:
         gui_config['style'].update({
             'body_bg': gui_settings.get('style_body_bg', '#ffffff'),
             'body_text': gui_settings.get('style_body_text', '#1a1a1a'),
-            'body_font_size': int(gui_settings.get('style_font_size', 14) or 14),
+            'body_font_size': safe_int(gui_settings.get('style_font_size', 14), 14),
             'name_color': gui_settings.get('style_name_color', '#2d2d2d'),
             'name_bold': gui_settings.get('style_name_bold', True),
-            'visual_line_height': float(gui_settings.get('style_line_height', 1.6) or 1.6),
+            'visual_line_height': safe_float(gui_settings.get('style_line_height', 1.6), 1.6),
             'dialogue_separator': gui_settings.get('style_separator', '「 」 (꺾쇠)'),
         })
 
         # 커스텀 CSS
         gui_config['custom_css'] = gui_settings.get('custom_css', '')
 
-        merged = self._deep_merge(config, gui_config)
+        merged = deep_merge(config, gui_config)
 
         # Pydantic으로 최종 설정 검증
         try:
@@ -356,16 +302,6 @@ class ConfigManager:
             return validated
         except ImportError:
             return merged
-
-    def _deep_merge(self, base, override):
-        """딕셔너리 깊은 병합"""
-        result = base.copy()
-        for key, value in override.items():
-            if key in result and isinstance(result[key], dict) and isinstance(value, dict):
-                result[key] = self._deep_merge(result[key], value)
-            else:
-                result[key] = value
-        return result
 
     def get_config(self):
         """엔진 config 반환 (호환성 유지)"""

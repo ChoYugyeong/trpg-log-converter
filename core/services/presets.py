@@ -596,7 +596,7 @@ class PresetService:
             description="POD(Print on Demand) 출판용 DOCX 설정",
             platform="all",
             config={
-                "page_format": "신국판 (152×225mm)",
+                "page_format": "신국판 (152x225mm)",
                 "margins": {
                     "top": "0.8",
                     "bottom": "0.8",

@@ -3,7 +3,7 @@
 각 캐릭터에 고유한 색상을 자동으로 지정
 """
 
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 import hashlib
 import colorsys
 

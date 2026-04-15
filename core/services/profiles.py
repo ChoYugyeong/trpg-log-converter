@@ -9,7 +9,7 @@ import logging
 from datetime import datetime
 from pathlib import Path
 from typing import List, Dict, Optional
-from dataclasses import dataclass, asdict, field
+from dataclasses import dataclass, asdict
 import copy
 
 logger = logging.getLogger(__name__)

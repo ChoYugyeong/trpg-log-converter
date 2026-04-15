@@ -7,19 +7,25 @@
 import re
 from pathlib import Path
 
+# 모듈 레벨에서 정규식 미리 컴파일 (성능 최적화)
+_RE_COLON = re.compile(r'^.{1,30}\s*:\s*.+')
+_RE_BRACKET = re.compile(r'^\[(.+?)\]\s*(.+)$')
+_RE_PAREN = re.compile(r'^\((.+?)\)\s*(.+)$')
+_RE_DICE = re.compile(r'(CCB|1D100|2D6|\d+D\d+)', re.IGNORECASE)
+
 
 def detect_format(content):
     """텍스트 형식 자동 감지"""
     lines = content.strip().split('\n')[:50]
 
     # 코코포리아 스타일: "이름 : 대사"
-    colon_count = sum(1 for line in lines if re.match(r'^.{1,30}\s*:\s*.+', line))
+    colon_count = sum(1 for line in lines if _RE_COLON.match(line))
 
     # 대괄호 스타일: "[이름] 대사"
-    bracket_count = sum(1 for line in lines if re.match(r'^\[.+?\]\s*.+', line))
+    bracket_count = sum(1 for line in lines if _RE_BRACKET.match(line))
 
     # 괄호 스타일: "(이름) 대사"
-    paren_count = sum(1 for line in lines if re.match(r'^\(.+?\)\s*.+', line))
+    paren_count = sum(1 for line in lines if _RE_PAREN.match(line))
 
     # 탭 구분: "이름\t대사"
     tab_count = sum(1 for line in lines if '\t' in line and line.count('\t') == 1)
@@ -59,7 +65,7 @@ def parse_colon_format(line, config):
 
 def parse_bracket_format(line):
     """대괄호 형식 파싱: "[이름] 대사" """
-    match = re.match(r'^\[(.+?)\]\s*(.+)$', line)
+    match = _RE_BRACKET.match(line)
     if match:
         return {'name': match.group(1).strip(), 'content': match.group(2).strip()}
     return None
@@ -67,7 +73,7 @@ def parse_bracket_format(line):
 
 def parse_paren_format(line):
     """괄호 형식 파싱: "(이름) 대사" """
-    match = re.match(r'^\((.+?)\)\s*(.+)$', line)
+    match = _RE_PAREN.match(line)
     if match:
         return {'name': match.group(1).strip(), 'content': match.group(2).strip()}
     return None
@@ -91,7 +97,7 @@ def is_narration_user(name, config):
 
 def is_dice_roll(text):
     """다이스 롤인지 확인"""
-    if re.search(r'(CCB|1D100|2D6|\d+D\d+)', text.upper()) and ('→' in text or '=' in text or '>' in text):
+    if _RE_DICE.search(text) and ('→' in text or '=' in text or '>' in text):
         return True
     return False
 
@@ -201,8 +207,18 @@ def parse_file(file_path, config):
     """파일 파싱 (HTML 또는 TXT)"""
     path = Path(file_path)
 
-    with open(path, 'r', encoding='utf-8') as f:
-        content = f.read()
+    # 여러 인코딩을 시도하여 파일 읽기 (한국어 파일은 EUC-KR/CP949일 수 있음)
+    content = None
+    for encoding in ('utf-8', 'utf-8-sig', 'euc-kr', 'cp949', 'latin-1'):
+        try:
+            with open(path, 'r', encoding=encoding) as f:
+                content = f.read()
+            break
+        except (UnicodeDecodeError, UnicodeError):
+            continue
+
+    if content is None:
+        raise UnicodeDecodeError('utf-8', b'', 0, 1, f'지원되지 않는 인코딩: {path.name}')
 
     # HTML 파일 감지
     if path.suffix.lower() in ['.html', '.htm'] or '<html' in content.lower()[:1000]:

@@ -4,7 +4,7 @@
 """
 
 import logging
-from typing import Dict, List, Optional
+from typing import Dict, List
 from pydantic import BaseModel, Field, field_validator
 
 logger = logging.getLogger(__name__)
@@ -171,43 +171,6 @@ class EngineConfig(BaseModel):
         return v if v in valid else 'auto'
 
 
-class GUISettings(BaseModel):
-    """GUI 설정 검증 스키마"""
-    platform: str = 'cocofolia'
-    title: str = 'TRPG 리플레이'
-    author: str = 'GM'
-    narrators: str = 'GM, KP, DM, Keeper, 나레이터, 진행자'
-    language: str = 'ko'
-    output_format: str = 'both'
-    output_dir: str = './export'
-
-    # 장면 설정
-    split_mode: str = 'scene'
-    scene_patterns: str = '■, 씬, Scene, 장면, Act'
-    entries_per_chapter: str = '300'
-    min_scene_entries: str = '10'
-    title_format: str = '장면 {n}'
-
-    # 스타일 설정
-    narration_prefix: str = '＿'
-    scene_marker: str = '■'
-
-    # 이미지 설정
-    images_enable: bool = True
-    show_caption: bool = True
-    image_max_resolution: str = '1600'
-    image_jpeg_quality: str = '85 (권장)'
-    image_convert_webp: bool = True
-
-    # 콘텐츠 설정
-    include_dice: bool = True
-    include_effects: bool = True
-    include_system: bool = True
-
-    class Config:
-        extra = 'allow'  # GUI 설정은 추가 필드 허용
-
-
 def validate_engine_config(config_dict: dict) -> dict:
     """엔진 설정을 검증하고 안전한 값으로 반환.
 
@@ -221,11 +184,7 @@ def validate_engine_config(config_dict: dict) -> dict:
         return EngineConfig().model_dump()
 
 
-def validate_gui_settings(settings_dict: dict) -> dict:
-    """GUI 설정을 검증하고 안전한 값으로 반환."""
-    try:
-        validated = GUISettings(**settings_dict)
-        return validated.model_dump()
-    except Exception as e:
-        logger.warning("GUI 설정 검증 실패, 기본값 사용: %s", e)
-        return GUISettings().model_dump()
+# GUI 설정 스키마는 gui.config_models.AppSettings가 SSOT이다.
+# GUISettings 클래스는 중복이었기에 제거되었다. 필요 시
+# `from gui.config_models import AppSettings, unflatten_settings, flatten_settings`
+# 를 사용할 것.
