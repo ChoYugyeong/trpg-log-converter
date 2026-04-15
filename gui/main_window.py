@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (
     QSplitter, QFileDialog, QFrame
 )
 from PySide6.QtCore import Qt, QThread, Signal
+import threading
 from PySide6.QtGui import QIcon, QShortcut, QKeySequence
 from pathlib import Path
 import os
@@ -22,12 +23,12 @@ from qfluentwidgets import (
 )
 from qfluentwidgets import FluentIcon as FIF
 
-from .pages import (
-    ConvertPage, BasicPage, StylePage, FontPage,
-    ContentPage, CoverPage, OutputPage, AdvancedPage, PresetPage, DecorationPage,
-    ParsingRulePage
-)
+from .pages.home_page import HomePage
+from .pages.format_style_page import FormatStylePage
+from .pages.parsing_content_page import ParsingContentPage
+from .pages.advanced_settings_page import AdvancedSettingsPage
 from .components import InspectorBar, DocumentPreview
+from .state import AppState
 from core.services import CacheService, CharacterColorService
 
 
@@ -94,6 +95,7 @@ class ConversionWorker(QThread):
         self.preset_config = preset_config
         self.character_colors = character_colors or {}
         self.cache_service = cache_service
+        self._stop_event = threading.Event()
 
     def run(self):
         """변환 실행"""
@@ -128,6 +130,9 @@ class ConversionWorker(QThread):
                 self.progress.emit(min(pct, 99), message)
 
             def parse_with_cache(file_path):
+                if self._stop_event.is_set():
+                    raise InterruptedError("작업이 중단되었습니다.")
+
                 if self.cache_service:
                     cached = self.cache_service.get(file_path, config)
                     if cached:
@@ -146,6 +151,9 @@ class ConversionWorker(QThread):
                 all_entries = []
 
                 for i, file_path in enumerate(self.files):
+                    if self._stop_event.is_set():
+                        raise InterruptedError("작업이 중단되었습니다.")
+
                     progress = int(10 + (40 * (i / len(self.files))))
                     self.progress.emit(progress, f"파싱 중: {Path(file_path).name}")
                     entries = parse_with_cache(file_path)
@@ -176,6 +184,9 @@ class ConversionWorker(QThread):
                     return fp, parse_with_cache(fp)
 
                 with ThreadPoolExecutor(max_workers=min(4, total_files)) as pool:
+                    # 스레드 풀에 작업을 제출하기 전에 중단 신호를 확인합니다.
+                    if self._stop_event.is_set():
+                        raise InterruptedError("작업이 중단되었습니다.")
                     for fp, entries in pool.map(lambda fp: _parse_one(fp), self.files):
                         parsed_files[fp] = entries
 
@@ -183,6 +194,9 @@ class ConversionWorker(QThread):
                 for i, file_path in enumerate(self.files):
                     progress = int(30 + (60 * (i / total_files)))
                     file_name = Path(file_path).name
+                    if self._stop_event.is_set():
+                        raise InterruptedError("작업이 중단되었습니다.")
+
                     self.progress.emit(progress, f"변환 중: {file_name}")
 
                     entries = parsed_files.get(file_path, [])
@@ -222,15 +236,21 @@ class ConversionWorker(QThread):
 
             success_count = sum(1 for r in results if r)
             self.finished.emit(True, f"변환 완료!\n{success_count}개 파일 생성\n출력 위치: {output_dir}")
-
+        
+        except InterruptedError:
+            logger.info("변환 작업이 사용자에 의해 중단되었습니다.")
+            self.finished.emit(False, "작업이 중단되었습니다.")
         except UnicodeDecodeError as e:
             logger.error("인코딩 오류: %s", e)
             self.finished.emit(False, f"파일 인코딩 오류: 지원되지 않는 인코딩입니다. UTF-8, EUC-KR, CP949 형식의 파일을 사용해주세요.")
         except Exception as e:
             logger.error("변환 실패: %s", e, exc_info=True)
             self.finished.emit(False, f"변환 실패: {str(e)}")
-
-
+    
+    def stop(self):
+        """스레드에 중지 신호를 보냅니다 (스레드 안전)."""
+        self._stop_event.set()
+        
 class MainWindow(FluentWindow):
     """메인 애플리케이션 윈도우 - Fluent Design"""
 
@@ -247,17 +267,24 @@ class MainWindow(FluentWindow):
         cache_enabled = gui_settings.get('cache_enabled', True)
         self.cache_service = CacheService(enabled=cache_enabled)
 
+        # 중앙 반응형 상태 관리자
+        self.app_state = AppState(config_manager, parent=self)
+
+        # 모든 페이지에서 AppState에 접근할 수 있도록 주입
+        from .pages.base_page import BasePage
+        BasePage.set_app_state(self.app_state)
+
         # 최근 파일 관리자
         self.recent_files_manager = RecentFilesManager(config_manager)
 
         # 윈도우 설정
         self.setWindowTitle("TRPG Log Converter Pro")
-        self.setMinimumSize(900, 600)  # 최소 크기 축소로 유연성 확보
+        self.setMinimumSize(900, 600)
         self.resize(1300, 800)
 
         # 테마 설정 (시스템 테마 따라감)
         setTheme(Theme.AUTO)
-        setThemeColor('#0A84FF')  # Apple 블루
+        setThemeColor('#0A84FF')
 
         self._setup_navigation()
         self._setup_main_layout()
@@ -270,59 +297,32 @@ class MainWindow(FluentWindow):
             self.titleBar.raise_()
 
     def _setup_navigation(self):
-        """네비게이션 설정"""
-        # 페이지 생성
-        self.convert_page = ConvertPage(self.config_manager)
-        self.basic_page = BasicPage(self.config_manager)
-        self.style_page = StylePage(self.config_manager)
-        self.font_page = FontPage(self.config_manager)
-        self.content_page = ContentPage(self.config_manager)
-        self.cover_page = CoverPage(self.config_manager)
-        self.decoration_page = DecorationPage(self.config_manager)
-        self.output_page = OutputPage(self.config_manager)
-        self.advanced_page = AdvancedPage(self.config_manager)
-        self.preset_page = PresetPage(self.config_manager)
-        self.parsing_rules_page = ParsingRulePage(self.config_manager)
+        """네비게이션 설정 - 4탭 구조 (홈, 서식, 파싱, 고급)"""
+        # 4개 메인 페이지 생성
+        self.home_page = HomePage(self.config_manager)
+        self.format_style_page = FormatStylePage(self.config_manager)
+        self.parsing_content_page = ParsingContentPage(self.config_manager)
+        self.advanced_settings_page = AdvancedSettingsPage(self.config_manager)
 
         # 페이지 저장
         self.pages = {
-            'convert': self.convert_page,
-            'basic': self.basic_page,
-            'style': self.style_page,
-            'font': self.font_page,
-            'content': self.content_page,
-            'cover': self.cover_page,
-            'decoration': self.decoration_page,
-            'output': self.output_page,
-            'advanced': self.advanced_page,
-            'preset': self.preset_page,
-            'parsing_rules': self.parsing_rules_page,
+            'home': self.home_page,
+            'format_style': self.format_style_page,
+            'parsing_content': self.parsing_content_page,
+            'advanced': self.advanced_settings_page,
         }
 
-        # 네비게이션 아이템 추가
-        self.addSubInterface(self.convert_page, FIF.PLAY_SOLID, '변환')
-        self.addSubInterface(self.basic_page, FIF.SETTING, '기본')
-
-        self.navigationInterface.addSeparator()
-
-        self.addSubInterface(self.style_page, FIF.PALETTE, '스타일')
-        self.addSubInterface(self.font_page, FIF.FONT_SIZE, '폰트')
-        self.addSubInterface(self.content_page, FIF.DOCUMENT, '콘텐츠')
-        self.addSubInterface(self.cover_page, FIF.PHOTO, '표지')
-        self.addSubInterface(self.decoration_page, FIF.BRUSH, '장식')
-
-        self.navigationInterface.addSeparator()
-
-        self.addSubInterface(self.output_page, FIF.FOLDER, '출력')
-        self.addSubInterface(self.preset_page, FIF.BOOK_SHELF, '프리셋')
-        self.addSubInterface(self.parsing_rules_page, FIF.CODE, '파싱 규칙')
+        # 네비게이션 아이템 추가 (4개 탭)
+        self.addSubInterface(self.home_page, FIF.PLAY_SOLID, '홈')
+        self.addSubInterface(self.format_style_page, FIF.PALETTE, '서식 및 스타일')
+        self.addSubInterface(self.parsing_content_page, FIF.DOCUMENT, '파싱 및 콘텐츠')
 
         self.navigationInterface.addSeparator(NavigationItemPosition.BOTTOM)
 
-        self.addSubInterface(self.advanced_page, FIF.DEVELOPER_TOOLS, '고급',
+        self.addSubInterface(self.advanced_settings_page, FIF.DEVELOPER_TOOLS, '고급 설정',
                             position=NavigationItemPosition.BOTTOM)
 
-        # 종료 버튼 추가
+        # 종료 버튼
         self.navigationInterface.addItem(
             routeKey='quit',
             icon=FIF.POWER_BUTTON,
@@ -332,7 +332,7 @@ class MainWindow(FluentWindow):
             position=NavigationItemPosition.BOTTOM
         )
 
-        # 네비게이션 확장 모드로 설정 (종료 버튼 표시 보장)
+        # 네비게이션 확장 모드
         self.navigationInterface.setExpandWidth(200)
         self.navigationInterface.setMinimumExpandWidth(200)
 
@@ -355,46 +355,28 @@ class MainWindow(FluentWindow):
 
         # 스플리터 생성 및 설정
         self.main_splitter = QSplitter(Qt.Horizontal)
+        self.main_splitter.setObjectName("MainSplitter")
         self.main_splitter.setHandleWidth(4)
-        self.main_splitter.setStyleSheet("""
-            QSplitter::handle {
-                background-color: rgba(128, 128, 128, 0.12);
-            }
-            QSplitter::handle:hover {
-                background-color: rgba(10, 132, 255, 0.4);
-            }
-        """)
         self.main_splitter.setChildrenCollapsible(False)
 
-        # FluentWindow 내부 구조를 안전하게 조작
-        stacked_parent = self.stackedWidget.parent()
-        if stacked_parent and stacked_parent.layout():
-            parent_layout = stacked_parent.layout()
+        # FluentWindow의 widgetLayout에 직접 삽입 (48px 상단 여백 보장)
+        if hasattr(self, 'widgetLayout'):
+            self.widgetLayout.removeWidget(self.stackedWidget)
+            self.main_splitter.addWidget(self.stackedWidget)
+            self.main_splitter.addWidget(self.preview_container)
+            self.widgetLayout.addWidget(self.main_splitter)
+        else:
+            # 폴백
+            stacked_parent = self.stackedWidget.parent()
+            if stacked_parent and stacked_parent.layout():
+                stacked_parent.layout().addWidget(self.main_splitter)
+            self.main_splitter.addWidget(self.stackedWidget)
+            self.main_splitter.addWidget(self.preview_container)
 
-            # stackedWidget의 현재 인덱스 위치 찾기
-            index = -1
-            for i in range(parent_layout.count()):
-                item = parent_layout.itemAt(i)
-                if item and item.widget() == self.stackedWidget:
-                    index = i
-                    break
-
-            if index >= 0:
-                parent_layout.removeWidget(self.stackedWidget)
-                self.main_splitter.addWidget(self.stackedWidget)
-                self.main_splitter.addWidget(self.preview_container)
-                parent_layout.insertWidget(index, self.main_splitter)
-
-                # 비율 설정 (약 55:45)
-                self.main_splitter.setSizes([550, 450])
-                self.main_splitter.setStretchFactor(0, 3)
-                self.main_splitter.setStretchFactor(1, 2)
-            else:
-                # 폴백: 인덱스를 못 찾은 경우에도 작동하도록
-                parent_layout.addWidget(self.main_splitter)
-                self.main_splitter.addWidget(self.stackedWidget)
-                self.main_splitter.addWidget(self.preview_container)
-                self.main_splitter.setSizes([550, 450])
+        # 비율 설정 (약 55:45)
+        self.main_splitter.setSizes([550, 450])
+        self.main_splitter.setStretchFactor(0, 3)
+        self.main_splitter.setStretchFactor(1, 2)
 
         # 타이틀바가 레이아웃 변경 후에도 최상위에 오도록 보장
         if hasattr(self, 'titleBar') and self.titleBar:
@@ -416,41 +398,30 @@ class MainWindow(FluentWindow):
 
     def _connect_signals(self):
         """시그널 연결"""
-        if hasattr(self.convert_page, 'conversion_started'):
-            self.convert_page.conversion_started.connect(self._start_conversion)
-
-        # 파일 추가 시 최근 파일 목록 업데이트 및 미리보기 동기화
-        if hasattr(self.convert_page, 'files_updated'):
-            self.convert_page.files_updated.connect(self._on_files_updated)
-
-        # 엔트리 파싱 시 미리보기 업데이트
-        if hasattr(self.convert_page, 'entries_parsed'):
-            self.convert_page.entries_parsed.connect(self._on_entries_parsed)
+        self.home_page.conversion_started.connect(self._start_conversion)
+        self.home_page.files_updated.connect(self._on_files_updated)
+        self.home_page.entries_parsed.connect(self._on_entries_parsed)
 
         # 각 페이지의 설정 변경 시 미리보기 업데이트
-        pages_with_settings = [
-            self.style_page, self.font_page, self.content_page,
-            self.cover_page, self.decoration_page
-        ]
-        for page in pages_with_settings:
-            if hasattr(page, 'settings_changed'):
-                page.settings_changed.connect(self._update_document_preview)
+        for page in (self.format_style_page, self.parsing_content_page,
+                     self.advanced_settings_page):
+            page.settings_changed.connect(self._update_document_preview)
+
+        # AppState 그룹 변경 시 미리보기 자동 갱신
+        self.app_state.group_changed.connect(self._on_state_group_changed)
 
         # 페이지 전환 시 on_page_enter 호출 (설정 동기화)
         self.stackedWidget.currentChanged.connect(self._on_page_changed)
 
     def _on_page_changed(self, index: int):
         """페이지 전환 시 호출"""
-        # 이전 페이지의 on_page_leave 호출 (설정 저장)
-        if self._current_page and hasattr(self._current_page, 'on_page_leave'):
+        if self._current_page is not None:
             self._current_page.on_page_leave()
 
-        # 현재 페이지 업데이트
         current_widget = self.stackedWidget.widget(index)
         self._current_page = current_widget
 
-        # 새 페이지의 on_page_enter 호출 (설정 동기화)
-        if current_widget and hasattr(current_widget, 'on_page_enter'):
+        if current_widget is not None:
             current_widget.on_page_enter()
 
     def _setup_shortcuts(self):
@@ -479,9 +450,9 @@ class MainWindow(FluentWindow):
         preview_shortcut = QShortcut(QKeySequence("Ctrl+P"), self)
         preview_shortcut.activated.connect(self.toggle_preview)
 
-        # ⌘+1~9: 페이지 전환
-        page_keys = ['convert', 'basic', 'style', 'font', 'content', 'cover', 'decoration', 'output', 'preset', 'parsing_rules']
-        for i, key in enumerate(page_keys[:9], 1):
+        # ⌘+1~4: 4탭 페이지 전환
+        page_keys = ['home', 'format_style', 'parsing_content', 'advanced']
+        for i, key in enumerate(page_keys, 1):
             shortcut = QShortcut(QKeySequence(f"Ctrl+{i}"), self)
             shortcut.activated.connect(lambda k=key: self._switch_to_page(k))
 
@@ -493,9 +464,9 @@ class MainWindow(FluentWindow):
             "",
             "지원 형식 (*.html *.htm *.txt);;모든 파일 (*.*)"
         )
-        if files and hasattr(self.convert_page, '_on_files_dropped'):
-            self.convert_page._on_files_dropped(files)
-            self._switch_to_page('convert')
+        if files:
+            self.home_page._on_files_dropped(files)
+            self._switch_to_page('home')
 
     def _switch_to_page(self, page_key: str):
         """특정 페이지로 전환"""
@@ -505,52 +476,42 @@ class MainWindow(FluentWindow):
     def _on_files_updated(self, files: list):
         """파일 목록 업데이트 시"""
         if files:
-            # 최근 파일에 추가
             self.recent_files_manager.add_files(files)
-            # UI 갱신
             self._load_recent_files()
         else:
-            # 파일이 비어있으면 엔트리 초기화
-            if hasattr(self.convert_page, '_parsed_entries'):
-                self.convert_page._parsed_entries = []
+            self.home_page._parsed_entries = []
 
     def _on_entries_parsed(self, entries: list):
         """엔트리 파싱 완료 시 - 미리보기 업데이트"""
         if self.document_preview and entries:
-            settings = self._collect_preview_settings()
+            settings = self.app_state.get_preview_settings()
             self.document_preview.update_preview(entries=entries, settings=settings)
 
     def _update_document_preview(self):
         """문서 미리보기 업데이트 (설정 변경 시)"""
-        if not self.document_preview:
-            return
+        if self.document_preview and self.home_page._parsed_entries:
+            settings = self.app_state.get_preview_settings()
+            self.document_preview.update_settings(**settings)
 
-        # 파싱된 엔트리가 있으면 설정만 업데이트
-        if hasattr(self.convert_page, '_parsed_entries') and self.convert_page._parsed_entries:
-            settings = self._collect_preview_settings()
+    def _on_state_group_changed(self, group: str):
+        """AppState 그룹 변경 시 미리보기 자동 갱신.
+
+        style, font, decoration, cover, basic 그룹이 변경되면
+        DocumentPreview를 업데이트합니다.
+        """
+        if not AppState.is_preview_group(group):
+            return
+        if self.document_preview and self.home_page._parsed_entries:
+            settings = self.app_state.get_preview_settings()
             self.document_preview.update_settings(**settings)
 
     def _collect_preview_settings(self) -> dict:
-        """미리보기용 설정 수집"""
-        settings = self.config_manager.get_gui_settings()
+        """미리보기용 설정 수집 - AppState에서 통합 설정 반환.
 
-        # 스타일 페이지 설정
-        if hasattr(self.style_page, 'bg_picker'):
-            settings['style_body_bg'] = self.style_page.bg_picker.get_color()
-        if hasattr(self.style_page, 'text_picker'):
-            settings['dialogue_color'] = self.style_page.text_picker.get_color()
-
-        # 폰트 페이지 설정
-        if hasattr(self.font_page, 'font_combo'):
-            settings['font_family'] = self.font_page.font_combo.currentText()
-        if hasattr(self.font_page, 'size_slider'):
-            settings['font_size'] = self.font_page.size_slider.value()
-
-        # 장식 페이지 설정
-        if hasattr(self.decoration_page, 'divider_text'):
-            settings['scene_marker'] = self.decoration_page.divider_text.text()
-
-        return settings
+        하위 호환성을 위해 유지합니다.
+        새로운 코드에서는 self.app_state.get_preview_settings()를 직접 사용하세요.
+        """
+        return self.app_state.get_preview_settings()
 
     def export_settings(self):
         """설정 내보내기"""
@@ -611,10 +572,12 @@ class MainWindow(FluentWindow):
             current.update(imported)
             self.config_manager.save_gui_settings(current)
 
+            # AppState 다시 로드
+            self.app_state.load()
+
             # 각 페이지 다시 로드
             for page in self.pages.values():
-                if hasattr(page, 'load_settings'):
-                    page.load_settings()
+                page.load_settings()
 
             InfoBar.success(
                 title='가져오기 완료',
@@ -664,14 +627,13 @@ class MainWindow(FluentWindow):
         return self.recent_files_manager.get_files()
 
     def _load_recent_files(self):
-        """최근 파일 목록을 convert_page에 로드"""
+        """최근 파일 목록을 홈 페이지에 로드"""
         recent = self.recent_files_manager.get_files()
-        if hasattr(self.convert_page, 'load_recent_files'):
-            self.convert_page.load_recent_files(recent)
+        self.home_page.load_recent_files(recent)
 
     def _start_conversion(self):
         """변환 시작"""
-        files = self.convert_page.get_files()
+        files = self.home_page.get_files()
         if not files:
             InfoBar.warning(
                 title='파일 없음',
@@ -682,22 +644,17 @@ class MainWindow(FluentWindow):
             )
             return
 
-        title = self.convert_page.get_title()
-        mode = self.convert_page.get_convert_mode()
-        output_format = self.convert_page.get_output_format()
-        preset_config = self.convert_page.get_preset_config()
+        title = self.home_page.get_title()
+        mode = self.home_page.get_convert_mode()
+        output_format = self.home_page.get_output_format()
+        preset_config = self.home_page.get_preset_config()
 
-        character_colors = {}
-        if hasattr(self.style_page, 'get_character_colors'):
-            character_colors = self.style_page.get_character_colors()
+        character_colors = self.format_style_page.get_character_colors()
 
-        # 모든 페이지 설정 저장 (먼저 각 페이지 위젯을 settings에서 동기화)
+        # 모든 페이지 설정 저장 (위젯 값을 AppState로 동기화)
         for page in self.pages.values():
-            # 공유 설정(output_dir 등)을 다른 페이지와 동기화
-            if hasattr(page, 'on_page_enter'):
-                page.on_page_enter()
-            if hasattr(page, 'save_settings'):
-                page.save_settings()
+            page.on_page_enter()
+            page.save_settings()
 
         # 변환 워커 시작
         self._worker = ConversionWorker(
@@ -712,16 +669,12 @@ class MainWindow(FluentWindow):
 
     def _on_conversion_progress(self, value: int, message: str):
         """변환 진행 상태 업데이트"""
-        if hasattr(self.convert_page, 'update_progress'):
-            self.convert_page.update_progress(value, message)
-
-        # 로그 기록
+        self.home_page.update_progress(value, message)
         self.add_conversion_log(f"[{value}%] {message}")
 
     def _on_conversion_finished(self, success: bool, message: str):
         """변환 완료 처리"""
-        if hasattr(self.convert_page, 'conversion_complete'):
-            self.convert_page.conversion_complete(success, message)
+        self.home_page.conversion_complete(success, message)
 
         if success:
             InfoBar.success(
@@ -743,8 +696,10 @@ class MainWindow(FluentWindow):
     def closeEvent(self, event):
         """윈도우 닫기 이벤트"""
         for page in self.pages.values():
-            if hasattr(page, 'save_settings'):
-                page.save_settings()
+            page.save_settings()
+
+        # AppState를 통해 설정 영속화
+        self.app_state.save()
 
         if self._worker and self._worker.isRunning():
             reply = QMessageBox.question(
@@ -758,8 +713,7 @@ class MainWindow(FluentWindow):
                 event.ignore()
                 return
 
-            self._worker.terminate()
+            self._worker.stop()  # 스레드에 종료 요청
             self._worker.wait()
 
         event.accept()
-
