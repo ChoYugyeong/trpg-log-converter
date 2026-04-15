@@ -7,13 +7,15 @@ from PySide6.QtWidgets import (
     QListWidget, QListWidgetItem, QMenu, QAbstractItemView,
     QStyledItemDelegate, QStyle, QApplication
 )
-from PySide6.QtCore import Qt, Signal, QSize, QRect, QPoint
+from PySide6.QtCore import Qt, Signal, QSize, QRect
 from PySide6.QtGui import (
-    QPainter, QColor, QFont, QFontMetrics, QPen, QBrush,
-    QLinearGradient, QPainterPath, QAction, QCursor
+    QPainter, QColor, QFont, QFontMetrics,
+    QPainterPath, QAction
 )
 from pathlib import Path
 import os
+
+from ..theme import Colors, Typography
 
 
 class FileItemDelegate(QStyledItemDelegate):
@@ -33,10 +35,10 @@ class FileItemDelegate(QStyledItemDelegate):
 
         # 배경
         if is_selected:
-            bg_color = QColor("#007AFF")
+            bg_color = QColor(Colors.ACCENT)
             bg_color.setAlpha(200)
         elif is_hover:
-            bg_color = QColor("#007AFF")
+            bg_color = QColor(Colors.ACCENT)
             bg_color.setAlpha(30)
         else:
             bg_color = QColor(128, 128, 128, 15)
@@ -108,11 +110,11 @@ class FileItemDelegate(QStyledItemDelegate):
         """파일 아이콘 그리기"""
         # 아이콘 배경
         if status == "error":
-            icon_bg = QColor("#FF3B30")
+            icon_bg = QColor(Colors.ERROR)
         elif status == "parsing":
-            icon_bg = QColor("#FF9500")
+            icon_bg = QColor(Colors.WARNING)
         else:
-            icon_bg = QColor("#007AFF") if is_selected else QColor("#E8E8E8")
+            icon_bg = QColor(Colors.ACCENT) if is_selected else QColor("#E8E8E8")
 
         icon_bg.setAlpha(230 if is_selected or status != "ready" else 180)
 
@@ -141,10 +143,10 @@ class FileItemDelegate(QStyledItemDelegate):
             return
 
         if status == "parsing":
-            badge_color = QColor("#FF9500")
+            badge_color = QColor(Colors.WARNING)
             badge_text = "처리중"
         elif status == "error":
-            badge_color = QColor("#FF3B30")
+            badge_color = QColor(Colors.ERROR)
             badge_text = "오류"
         else:
             return
@@ -258,18 +260,18 @@ class EnterpriseFileList(QFrame):
 
         icon = QLabel("+")
         icon.setAlignment(Qt.AlignCenter)
-        icon.setStyleSheet("font-size: 36px; font-weight: 300; color: #22C55E;")
+        icon.setStyleSheet(f"font-size: 36px; font-weight: 300; color: {Colors.SUCCESS};")
         layout.addWidget(icon)
 
         title = QLabel("파일을 추가하세요")
         title.setAlignment(Qt.AlignCenter)
-        title.setStyleSheet("font-size: 16px; font-weight: 600; color: palette(text);")
+        title.setStyleSheet(f"font-size: {Typography.SIZE_XL}px; font-weight: 600; color: palette(text);")
         layout.addWidget(title)
 
         desc = QLabel("드래그 앤 드롭하거나\n상단의 버튼으로 파일을 추가할 수 있습니다")
         desc.setAlignment(Qt.AlignCenter)
         desc.setWordWrap(True)
-        desc.setStyleSheet("font-size: 13px; color: palette(mid); line-height: 1.5;")
+        desc.setStyleSheet(f"font-size: {Typography.SIZE_MD}px; color: palette(mid); line-height: 1.5;")
         layout.addWidget(desc)
 
         return widget
@@ -359,21 +361,21 @@ class EnterpriseFileList(QFrame):
             return
 
         menu = QMenu(self)
-        menu.setStyleSheet("""
-            QMenu {
+        menu.setStyleSheet(f"""
+            QMenu {{
                 background: palette(base);
-                border: 1px solid rgba(128, 128, 128, 0.2);
+                border: 1px solid {Colors.BORDER};
                 border-radius: 8px;
                 padding: 6px;
-            }
-            QMenu::item {
+            }}
+            QMenu::item {{
                 padding: 8px 24px;
                 border-radius: 4px;
-            }
-            QMenu::item:selected {
-                background: #007AFF;
+            }}
+            QMenu::item:selected {{
+                background: {Colors.ACCENT};
                 color: white;
-            }
+            }}
         """)
 
         # 메뉴 항목

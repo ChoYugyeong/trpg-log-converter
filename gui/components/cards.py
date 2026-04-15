@@ -4,42 +4,96 @@ QFluentWidgets 기반 Fluent Design
 """
 
 from PySide6.QtWidgets import (
-    QVBoxLayout, QHBoxLayout, QWidget, QButtonGroup
+    QVBoxLayout, QHBoxLayout, QWidget, QButtonGroup, QPushButton
 )
-from PySide6.QtCore import Qt, QSize
+from PySide6.QtCore import Qt, Signal
 
 from qfluentwidgets import (
-    CardWidget, BodyLabel, LineEdit, ComboBox,
-    CheckBox, RadioButton, ToolTipFilter, ToolTipPosition,
-    TransparentToolButton, FluentIcon, Flyout, FlyoutView
+    CardWidget, BodyLabel, StrongBodyLabel, CaptionLabel,
+    LineEdit, ComboBox, CheckBox, RadioButton,
+    ToolTipFilter, Flyout, FlyoutView
 )
 
+from ..theme import Colors, Sizes, Spacing, Typography
 
-class HelpButton(TransparentToolButton):
-    """? 도움말 버튼 - 원형 디자인, 클릭 시 설명 팝업"""
+
+class CollapsibleSection(QWidget):
+    """접을 수 있는 아코디언 섹션 위젯.
+
+    헤더 클릭으로 본문을 펼치거나 접을 수 있다.
+    QSS: #CollapsibleHeader, #CollapsibleBody
+    """
+    toggled = Signal(bool)
+
+    def __init__(self, title: str, expanded: bool = False, parent=None):
+        super().__init__(parent)
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, Spacing.SM)
+        layout.setSpacing(0)
+
+        # 헤더 버튼 (QSS #CollapsibleHeader로 스타일링)
+        arrow = "▼" if expanded else "▶"
+        self._header = QPushButton(f"{arrow}  {title}")
+        self._header.setObjectName("CollapsibleHeader")
+        self._header.setProperty("expanded", expanded)
+        self._header.setCursor(Qt.PointingHandCursor)
+        self._header.clicked.connect(self._toggle)
+        layout.addWidget(self._header)
+
+        # 본문 (QSS #CollapsibleBody로 스타일링)
+        self._body = QWidget()
+        self._body.setObjectName("CollapsibleBody")
+        self._body_layout = QVBoxLayout(self._body)
+        self._body_layout.setContentsMargins(Spacing.MD, Spacing.MD, Spacing.MD, Spacing.MD)
+        self._body_layout.setSpacing(Spacing.MD)
+        self._body.setVisible(expanded)
+        layout.addWidget(self._body)
+
+        self._expanded = expanded
+        self._title = title
+
+    def _toggle(self):
+        """펼침/접힘 토글"""
+        self._expanded = not self._expanded
+        self._body.setVisible(self._expanded)
+        arrow = "▼" if self._expanded else "▶"
+        self._header.setText(f"{arrow}  {self._title}")
+        self._header.setProperty("expanded", self._expanded)
+        # QSS 동적 속성 갱신
+        self._header.style().unpolish(self._header)
+        self._header.style().polish(self._header)
+        self.toggled.emit(self._expanded)
+
+    def add_card(self, card):
+        """ContentCard 또는 CardWidget을 본문에 추가"""
+        self._body_layout.addWidget(card)
+
+    def add_widget(self, widget):
+        """일반 위젯을 본문에 추가"""
+        self._body_layout.addWidget(widget)
+
+    def add_layout(self, layout):
+        """레이아웃을 본문에 추가"""
+        self._body_layout.addLayout(layout)
+
+    def is_expanded(self) -> bool:
+        return self._expanded
+
+    def set_expanded(self, expanded: bool):
+        if self._expanded != expanded:
+            self._toggle()
+
+
+class HelpButton(QPushButton):
+    """도움말 버튼 - 원형 ? 아이콘, 클릭 시 설명 팝업 (Notion/Figma 스타일)"""
 
     def __init__(self, help_text: str, parent=None):
-        super().__init__(parent)
+        super().__init__("?", parent)
         self.help_text = help_text
-        self.setIcon(FluentIcon.QUESTION)
-        self.setFixedSize(20, 20)
-        self.setIconSize(QSize(12, 12))
+        self.setObjectName("HelpButton")
+        self.setFixedSize(Sizes.HELP_BUTTON, Sizes.HELP_BUTTON)
+        self.setCursor(Qt.PointingHandCursor)
         self.clicked.connect(self._show_help)
-
-        # 원형 스타일 적용
-        self.setStyleSheet("""
-            TransparentToolButton {
-                background: rgba(128, 128, 128, 0.15);
-                border: 1px solid rgba(128, 128, 128, 0.2);
-                border-radius: 10px;
-                padding: 0px;
-                margin: 0px;
-            }
-            TransparentToolButton:hover {
-                background: #0A84FF;
-                border-color: #0A84FF;
-            }
-        """)
 
     def _show_help(self):
         """도움말 팝업 표시"""
@@ -54,58 +108,73 @@ class HelpButton(TransparentToolButton):
 class ContentCard(CardWidget):
     """Fluent 스타일 설정 카드"""
 
-    def __init__(self, title: str = None, subtitle: str = None, parent=None):
+    def __init__(self, title: str = None, subtitle: str = None,
+                 help_text: str = None, parent=None):
         super().__init__(parent)
         self._fields = {}
 
-        # 메인 레이아웃 - 컴팩트 마진
+        # 메인 레이아웃
         self._layout = QVBoxLayout(self)
-        self._layout.setContentsMargins(16, 14, 16, 16)  # 마진 축소
-        self._layout.setSpacing(6)  # 간격 축소
+        self._layout.setContentsMargins(
+            Sizes.CARD_PADDING_H, Sizes.CARD_PADDING_V_TOP,
+            Sizes.CARD_PADDING_H, Sizes.CARD_PADDING_V_BOTTOM
+        )
+        self._layout.setSpacing(Sizes.CARD_SPACING)
 
-        # 헤더
+        # 헤더 (제목 + 도움말 버튼)
         if title:
-            header = BodyLabel(title)
+            header_row = QHBoxLayout()
+            header_row.setSpacing(8)
+            header_row.setContentsMargins(0, 0, 0, 0)
+
+            header = StrongBodyLabel(title)
+            header.setObjectName("CardTitle")
             header.setMinimumHeight(26)
-            header.setStyleSheet("font-size: 16px; font-weight: 600; padding: 2px 0;")
-            self._layout.addWidget(header)
+            header_row.addWidget(header)
+            header_row.addStretch()
+
+            if help_text:
+                help_btn = HelpButton(help_text)
+                header_row.addWidget(help_btn)
+
+            self._layout.addLayout(header_row)
 
         if subtitle:
-            sub = BodyLabel(subtitle)
+            sub = CaptionLabel(subtitle)
+            sub.setObjectName("CardSubtitle")
             sub.setMinimumHeight(22)
             sub.setWordWrap(True)
-            sub.setStyleSheet("font-size: 13px; color: palette(mid); padding: 2px 0;")
             self._layout.addWidget(sub)
 
         # 콘텐츠 영역
         self._content_layout = QVBoxLayout()
-        self._content_layout.setSpacing(10)
-        self._content_layout.setContentsMargins(0, 8, 0, 0)
+        self._content_layout.setSpacing(Sizes.CARD_CONTENT_SPACING)
+        self._content_layout.setContentsMargins(0, 10, 0, 0)
         self._layout.addLayout(self._content_layout)
 
     def add_field(self, label: str, widget: QWidget, key: str = None,
                   stretch: int = 1, help_text: str = None) -> QWidget:
         """라벨 + 위젯 행 추가"""
         row = QHBoxLayout()
-        row.setSpacing(12)
-        row.setContentsMargins(0, 4, 0, 4)
+        row.setSpacing(Sizes.FIELD_SPACING)
+        row.setContentsMargins(0, Spacing.XS, 0, Spacing.XS)
 
         if label:
             lbl = BodyLabel(label)
-            lbl.setMinimumWidth(100)
-            lbl.setMinimumHeight(28)
+            lbl.setMinimumWidth(Sizes.FIELD_LABEL_MIN_WIDTH)
+            lbl.setMinimumHeight(Sizes.FIELD_MIN_HEIGHT)
             row.addWidget(lbl, 0)
 
         row.addWidget(widget, stretch)
 
         # ? 도움말 버튼 추가
         if help_text:
-            row.addSpacing(4)
+            row.addSpacing(Spacing.XS)
             help_btn = HelpButton(help_text)
             row.addWidget(help_btn)
             # 툴팁도 함께 설정
             widget.setToolTip(help_text)
-            widget.installEventFilter(ToolTipFilter(widget, showDelay=500))
+            widget.installEventFilter(ToolTipFilter(widget, showDelay=300))
 
         if key:
             self._fields[key] = widget
@@ -120,7 +189,7 @@ class ContentCard(CardWidget):
         entry = LineEdit()
         entry.setPlaceholderText(placeholder)
         entry.setClearButtonEnabled(clear_button)
-        entry.setMinimumHeight(38)
+        entry.setMinimumHeight(Sizes.INPUT_MIN_HEIGHT)
         if default:
             entry.setText(default)
         return self.add_field(label, entry, key, help_text=help_text)
@@ -130,8 +199,18 @@ class ContentCard(CardWidget):
         """드롭다운 추가"""
         combo = ComboBox()
         combo.addItems(options)
-        combo.setMinimumHeight(38)
-        combo.setMinimumWidth(180)
+        combo.setMinimumHeight(Sizes.INPUT_MIN_HEIGHT)
+        # 가장 긴 옵션 텍스트에 맞춰 최소 너비 설정
+        if options:
+            fm = combo.fontMetrics()
+            max_text_width = max(fm.horizontalAdvance(opt) for opt in options)
+            min_w = max(180, max_text_width + 80)  # 80px = 화살표+패딩+여백
+            combo.setMinimumWidth(min_w)
+            # 팝업 리스트도 충분한 너비 확보
+            if hasattr(combo, 'view') and callable(combo.view):
+                combo.view().setMinimumWidth(max(min_w, max_text_width + 40))
+        else:
+            combo.setMinimumWidth(180)
         if default and default in options:
             combo.setCurrentText(default)
         return self.add_field(label, combo, key, help_text=help_text)
@@ -157,7 +236,7 @@ class ContentCard(CardWidget):
             self._content_layout.addLayout(row)
 
             checkbox.setToolTip(help_text)
-            checkbox.installEventFilter(ToolTipFilter(checkbox, showDelay=500))
+            checkbox.installEventFilter(ToolTipFilter(checkbox, showDelay=300))
         else:
             self._content_layout.addWidget(checkbox)
 

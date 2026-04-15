@@ -5,7 +5,7 @@
 /* ==================== Global ==================== */
 * {
     font-family: "Pretendard", "Pretendard Variable", "Noto Sans KR", "Malgun Gothic", "맑은 고딕", sans-serif;
-    font-size: 13px;
+    font-size: __FS_MD__px;
     outline: none;
     line-height: 1.6;
 }
@@ -13,6 +13,8 @@
 /* 기본 라벨 설정 - 텍스트 잘림 방지 */
 QLabel {
     font-family: "Pretendard", "Malgun Gothic", sans-serif;
+    color: palette(text);
+    background: transparent;
     min-height: 20px;
     padding: 2px 0;
 }
@@ -22,12 +24,6 @@ QMainWindow {
 }
 
 QWidget {
-    font-family: "Pretendard", "Malgun Gothic", sans-serif;
-    color: palette(text);
-    background: transparent;
-}
-
-QLabel {
     font-family: "Pretendard", "Malgun Gothic", sans-serif;
     color: palette(text);
     background: transparent;
@@ -44,7 +40,7 @@ QPushButton, QLineEdit, QComboBox, QCheckBox, QRadioButton, QPlainTextEdit, QTex
 }
 
 #SidebarTitle {
-    font-size: 20px;
+    font-size: __FS_XXL__px;
     font-weight: 700;
     color: palette(text);
     padding: 4px 0;
@@ -52,7 +48,7 @@ QPushButton, QLineEdit, QComboBox, QCheckBox, QRadioButton, QPlainTextEdit, QTex
 }
 
 #SidebarSubtitle {
-    font-size: 11px;
+    font-size: __FS_XS__px;
     font-weight: 500;
     color: palette(dark);
     letter-spacing: 0.5px;
@@ -65,7 +61,7 @@ QPushButton, QLineEdit, QComboBox, QCheckBox, QRadioButton, QPlainTextEdit, QTex
     border-radius: 10px;
     padding: 12px 16px;
     text-align: left;
-    font-size: 14px;
+    font-size: __FS_LG__px;
     font-weight: 500;
     color: palette(text);
     margin: 2px 0;
@@ -86,7 +82,7 @@ QPushButton, QLineEdit, QComboBox, QCheckBox, QRadioButton, QPlainTextEdit, QTex
 
 #VersionLabel {
     color: palette(dark);
-    font-size: 11px;
+    font-size: __FS_XS__px;
     font-weight: 500;
     padding-top: 12px;
 }
@@ -97,7 +93,7 @@ QPushButton, QLineEdit, QComboBox, QCheckBox, QRadioButton, QPlainTextEdit, QTex
 }
 
 #PageHeader {
-    font-size: 32px;
+    font-size: __FS_HERO__px;
     font-weight: 700;
     color: palette(text);
     padding-bottom: 4px;
@@ -105,7 +101,7 @@ QPushButton, QLineEdit, QComboBox, QCheckBox, QRadioButton, QPlainTextEdit, QTex
 }
 
 #PageSubheader {
-    font-size: 15px;
+    font-size: __FS_LG_PLUS__px;
     color: palette(dark);
     padding-bottom: 20px;
     font-weight: 400;
@@ -124,28 +120,29 @@ QPushButton, QLineEdit, QComboBox, QCheckBox, QRadioButton, QPlainTextEdit, QTex
 }
 
 #CardTitle {
-    font-size: 15px;
+    font-size: __FS_XL__px;
     font-weight: 600;
     color: palette(text);
     letter-spacing: -0.3px;
+    padding: 2px 0;
 }
 
 #CardSubtitle {
-    font-size: 13px;
+    font-size: __FS_MD__px;
     color: palette(dark);
     font-weight: 400;
-    margin-top: -4px;
+    padding: 2px 0;
 }
 
 #FieldLabel {
-    font-size: 13px;
+    font-size: __FS_MD__px;
     color: palette(dark);
     font-weight: 500;
     min-width: 100px;
 }
 
 #SectionTitle {
-    font-size: 11px;
+    font-size: __FS_XS__px;
     font-weight: 600;
     color: palette(dark);
     text-transform: uppercase;
@@ -160,7 +157,7 @@ QLineEdit {
     border: 1.5px solid rgba(128, 128, 128, 0.2);
     border-radius: 10px;
     padding: 10px 14px;
-    font-size: 14px;
+    font-size: __FS_LG__px;
     color: palette(text);
     selection-background-color: palette(highlight);
     selection-color: palette(highlighted-text);
@@ -202,7 +199,7 @@ QTextEdit, QPlainTextEdit {
     border: 1.5px solid rgba(128, 128, 128, 0.2);
     border-radius: 12px;
     padding: 14px;
-    font-size: 14px;
+    font-size: __FS_LG__px;
     color: palette(text);
     selection-background-color: palette(highlight);
 }
@@ -220,7 +217,7 @@ QPushButton {
     padding: 8px 16px;
     min-height: 32px;
     min-width: 60px;
-    font-size: 14px;
+    font-size: __FS_LG__px;
     font-weight: 500;
     color: palette(button-text);
 }
@@ -299,7 +296,7 @@ QPushButton#cta, #ConvertButton {
     border-radius: 12px;
     color: white;
     font-weight: 700;
-    font-size: 15px;
+    font-size: __FS_LG_PLUS__px;
     min-width: 120px;
     min-height: 48px;
     padding: 14px 28px;
@@ -322,7 +319,7 @@ QPushButton#cta:disabled, #ConvertButton:disabled {
 
 #SmallButton {
     padding: 6px 14px;
-    font-size: 12px;
+    font-size: __FS_SM__px;
     min-height: 28px;
     min-width: 50px;
     border-radius: 6px;
@@ -344,7 +341,7 @@ PrimaryPushButton {
 /* ==================== Checkboxes & Radio - Refined ==================== */
 QCheckBox {
     spacing: 12px;
-    font-size: 14px;
+    font-size: __FS_LG__px;
     color: palette(text);
     padding: 6px 4px;
     min-height: 28px;
@@ -370,7 +367,7 @@ QCheckBox::indicator:checked {
 
 QRadioButton {
     spacing: 12px;
-    font-size: 14px;
+    font-size: __FS_LG__px;
     color: palette(text);
     padding: 6px 8px;
     min-height: 28px;
@@ -400,7 +397,7 @@ QComboBox {
     border-radius: 10px;
     padding: 10px 14px;
     padding-right: 40px;
-    font-size: 14px;
+    font-size: __FS_LG__px;
     color: palette(text);
     min-height: 22px;
     min-width: 140px;
@@ -451,6 +448,16 @@ QComboBox QAbstractItemView::item:selected {
 ComboBox {
     min-height: 40px;
     min-width: 180px;
+    padding-right: 40px;
+}
+
+ComboBox QAbstractItemView {
+    min-width: 200px;
+}
+
+ComboBox QAbstractItemView::item {
+    padding: 8px 14px;
+    min-height: 28px;
 }
 
 /* ==================== List Widget - Refined ==================== */
@@ -559,7 +566,7 @@ QProgressBar {
     border-radius: 8px;
     height: 14px;
     text-align: center;
-    font-size: 11px;
+    font-size: __FS_XS__px;
     font-weight: 600;
     color: white;
 }
@@ -585,7 +592,7 @@ QTabBar {
 QTabBar::tab {
     background: transparent;
     padding: 12px 20px;
-    font-size: 14px;
+    font-size: __FS_LG__px;
     font-weight: 500;
     color: palette(dark);
     border-bottom: 3px solid transparent;
@@ -610,7 +617,7 @@ QToolTip {
     border: 1px solid rgba(128, 128, 128, 0.2);
     border-radius: 8px;
     padding: 10px 14px;
-    font-size: 13px;
+    font-size: __FS_MD__px;
 }
 
 /* ==================== Menu - Refined ==================== */
@@ -659,7 +666,7 @@ QSplitter::handle:vertical {
 /* ==================== Group Box ==================== */
 QGroupBox {
     font-weight: 600;
-    font-size: 14px;
+    font-size: __FS_LG__px;
     border: 1px solid rgba(128, 128, 128, 0.15);
     border-radius: 12px;
     margin-top: 16px;
@@ -679,9 +686,10 @@ QSpinBox, QDoubleSpinBox {
     background: palette(base);
     border: 1.5px solid rgba(128, 128, 128, 0.2);
     border-radius: 8px;
-    padding: 8px 14px;
+    padding: 6px 10px;
     color: palette(text);
-    font-size: 14px;
+    font-size: __FS_LG__px;
+    min-height: 28px;
 }
 
 QSpinBox:hover, QDoubleSpinBox:hover {
@@ -705,7 +713,7 @@ QSpinBox:focus, QDoubleSpinBox:focus {
 }
 
 #PreviewTitle {
-    font-size: 11px;
+    font-size: __FS_XS__px;
     font-weight: 600;
     color: palette(dark);
     text-transform: uppercase;
@@ -732,11 +740,11 @@ QSpinBox:focus, QDoubleSpinBox:focus {
 }
 
 #FileIcon {
-    font-size: 18px;
+    font-size: __FS_XL_PLUS__px;
 }
 
 #FileName {
-    font-size: 14px;
+    font-size: __FS_LG__px;
     font-weight: 500;
     color: palette(text);
 }
@@ -746,7 +754,7 @@ QSpinBox:focus, QDoubleSpinBox:focus {
     background: rgba(128, 128, 128, 0.1);
     border-radius: 16px;
     padding: 6px 14px;
-    font-size: 13px;
+    font-size: __FS_MD__px;
     font-weight: 500;
     color: palette(text);
 }
@@ -758,7 +766,7 @@ QSpinBox:focus, QDoubleSpinBox:focus {
 #TagChipDelete {
     background: transparent;
     border: none;
-    font-size: 12px;
+    font-size: __FS_SM__px;
     color: palette(dark);
     padding: 0;
     margin-left: 6px;
@@ -802,7 +810,7 @@ QMessageBox {
 
 QMessageBox QLabel {
     color: palette(text);
-    font-size: 14px;
+    font-size: __FS_LG__px;
 }
 
 QDialog {
@@ -824,7 +832,7 @@ QToolBar QToolButton {
     padding: 8px 16px;
     color: palette(text);
     font-weight: 500;
-    font-size: 14px;
+    font-size: __FS_LG__px;
 }
 
 QToolBar QToolButton:hover {
@@ -846,7 +854,7 @@ QStatusBar {
     background: palette(window);
     border-top: 1px solid rgba(128, 128, 128, 0.15);
     color: palette(dark);
-    font-size: 12px;
+    font-size: __FS_SM__px;
 }
 
 /* ==================== Header View (Table/Tree) ==================== */
@@ -858,7 +866,7 @@ QHeaderView::section {
     border-right: 1px solid rgba(128, 128, 128, 0.15);
     border-bottom: 1px solid rgba(128, 128, 128, 0.15);
     font-weight: 600;
-    font-size: 13px;
+    font-size: __FS_MD__px;
 }
 
 /* ==================== File/Color Dialog ==================== */
@@ -880,7 +888,7 @@ QColorDialog QSpinBox {
 /* ==================== Custom Labels ==================== */
 #InfoLabel {
     color: palette(dark);
-    font-size: 13px;
+    font-size: __FS_MD__px;
     padding: 14px 16px;
     background: rgba(128, 128, 128, 0.06);
     border-radius: 10px;
@@ -888,7 +896,7 @@ QColorDialog QSpinBox {
 
 #HintLabel {
     color: palette(dark);
-    font-size: 13px;
+    font-size: __FS_MD__px;
     font-weight: 400;
     padding: 0px;
     margin: 0px;
@@ -897,7 +905,7 @@ QColorDialog QSpinBox {
 
 #CharacterName {
     font-weight: 600;
-    font-size: 14px;
+    font-size: __FS_LG__px;
     color: palette(text);
 }
 
@@ -914,7 +922,7 @@ QColorDialog QSpinBox {
     border-radius: 12px;
     padding: 16px;
     font-family: "Monaco", "Menlo", "Consolas", monospace;
-    font-size: 13px;
+    font-size: __FS_MD__px;
 }
 
 /* ==================== File Drop Area ==================== */
@@ -938,7 +946,7 @@ QColorDialog QSpinBox {
 }
 
 #DropIcon {
-    font-size: 24px;
+    font-size: __FS_TITLE__px;
     color: palette(dark);
     padding: 0px;
     margin: 0px;
@@ -947,44 +955,52 @@ QColorDialog QSpinBox {
 
 /* ==================== Preview Labels ==================== */
 #FontPreviewLabel {
-    font-size: 15px;
+    font-size: __FS_LG_PLUS__px;
     color: palette(text);
 }
 
 #ContentPreviewText {
     background: transparent;
     border: none;
-    font-size: 12px;
+    font-size: __FS_SM__px;
     color: palette(text);
 }
 
 #CoverPreviewTitle {
-    font-size: 12px;
+    font-size: __FS_SM__px;
     font-weight: 600;
 }
 
 #CoverPreviewAuthor {
-    font-size: 10px;
+    font-size: __FS_TINY__px;
 }
 
-/* ==================== Help Button ==================== */
+/* ==================== Help Button - Notion/Figma ? Style ==================== */
 #HelpButton {
-    background: rgba(128, 128, 128, 0.15);
-    border: none;
+    background: rgba(128, 128, 128, 0.05);
+    border: 1px solid rgba(128, 128, 128, 0.22);
     border-radius: 10px;
-    font-size: 11px;
-    font-weight: 700;
-    color: palette(dark);
-    padding: 0;
+    font-family: "Segoe UI", "Arial", sans-serif;
+    font-size: __FS_XS__px;
+    font-weight: 600;
+    color: rgba(128, 128, 128, 0.55);
+    padding: 0px 0px 1px 0px;
+    min-width: 20px;
+    min-height: 20px;
+    max-width: 20px;
+    max-height: 20px;
 }
 
 #HelpButton:hover {
-    background: palette(highlight);
-    color: palette(highlighted-text);
+    background: rgba(10, 132, 255, 0.08);
+    border-color: rgba(10, 132, 255, 0.30);
+    color: rgba(10, 132, 255, 0.85);
 }
 
 #HelpButton:pressed {
-    background: palette(dark);
+    background: rgba(10, 132, 255, 0.15);
+    border-color: rgba(10, 132, 255, 0.50);
+    color: #005BBB;
 }
 
 /* ==================== Accent Colors ==================== */
@@ -1015,21 +1031,21 @@ BodyLabel, CaptionLabel, StrongBodyLabel, SubtitleLabel, TitleLabel {
 TitleLabel {
     min-height: 36px;
     padding: 4px 0;
-    font-size: 24px;
+    font-size: __FS_TITLE__px;
 }
 
 /* Subtitle Label - 페이지 부제목 */
 SubtitleLabel {
     min-height: 28px;
     padding: 4px 0;
-    font-size: 14px;
+    font-size: __FS_LG__px;
 }
 
 /* Body Label - 일반 텍스트 */
 BodyLabel {
     padding: 4px 0;
     min-height: 26px;
-    font-size: 14px;
+    font-size: __FS_LG__px;
 }
 
 /* Caption Label */
@@ -1043,7 +1059,7 @@ CheckBox {
     spacing: 12px;
     padding: 8px 4px;
     min-height: 32px;
-    font-size: 14px;
+    font-size: __FS_LG__px;
 }
 
 /* RadioButton - 텍스트 잘림 방지 */
@@ -1051,7 +1067,7 @@ RadioButton {
     spacing: 12px;
     padding: 8px 10px;
     min-height: 34px;
-    font-size: 14px;
+    font-size: __FS_LG__px;
 }
 
 /* SwitchButton 텍스트 잘림 방지 */
@@ -1063,22 +1079,23 @@ SwitchButton {
 /* ComboBox 텍스트 잘림 방지 */
 ComboBox {
     padding: 10px 14px;
+    padding-right: 40px;
     min-height: 40px;
-    font-size: 14px;
+    font-size: __FS_LG__px;
 }
 
 /* LineEdit 텍스트 잘림 방지 */
 LineEdit {
     padding: 10px 14px;
     min-height: 40px;
-    font-size: 14px;
+    font-size: __FS_LG__px;
 }
 
 /* PushButton 텍스트 잘림 방지 */
 PushButton, PrimaryPushButton, TransparentPushButton {
     padding: 10px 18px;
     min-height: 38px;
-    font-size: 14px;
+    font-size: __FS_LG__px;
 }
 
 /* ToolButton 텍스트 잘림 방지 */
@@ -1091,7 +1108,7 @@ ToolButton, TransparentToolButton {
 #SidebarButton {
     padding: 14px 18px;
     min-height: 46px;
-    font-size: 14px;
+    font-size: __FS_LG__px;
 }
 
 /* 카드 내부 레이블 */
@@ -1144,7 +1161,7 @@ SpinBox, DoubleSpinBox {
 
 /* ==================== Better Label Styling ==================== */
 #FieldLabel {
-    font-size: 14px;
+    font-size: __FS_LG__px;
     color: palette(text);
     font-weight: 500;
     min-width: 100px;
@@ -1172,8 +1189,8 @@ QPushButton, PushButton {
 
 /* ==================== Better Dropdown Items ==================== */
 ComboBox QAbstractItemView::item {
-    padding: 8px 12px;
-    min-height: 28px;
+    padding: 10px 14px;
+    min-height: 30px;
 }
 
 /* ==================== Enterprise File List ==================== */
@@ -1230,7 +1247,7 @@ ComboBox QAbstractItemView::item {
     background: transparent;
     border: none;
     border-radius: 6px;
-    font-size: 14px;
+    font-size: __FS_LG__px;
     font-weight: bold;
     color: palette(dark);
     min-width: 28px;
@@ -1260,7 +1277,7 @@ ComboBox QAbstractItemView::item {
     border: 1px solid rgba(0, 122, 255, 0.3);
     border-radius: 6px;
     padding: 4px 6px;
-    font-size: 13px;
+    font-size: __FS_MD__px;
     font-weight: 500;
     min-width: 50px;
     max-width: 70px;
@@ -1274,7 +1291,7 @@ ComboBox QAbstractItemView::item {
 #PreviewToolbar QComboBox {
     background: transparent;
     border: none;
-    font-size: 12px;
+    font-size: __FS_SM__px;
     font-weight: 500;
     padding: 4px 6px;
     min-width: 60px;
@@ -1286,6 +1303,7 @@ CardWidget {
     border-radius: 16px;
     background: palette(base);
     border: 1px solid rgba(128, 128, 128, 0.1);
+    margin-bottom: 4px;
 }
 
 CardWidget:hover {
@@ -1360,7 +1378,7 @@ QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
 }
 
 .form-label {
-    font-size: 13px;
+    font-size: __FS_MD__px;
     font-weight: 500;
     color: palette(dark);
     margin-bottom: 6px;
@@ -1376,7 +1394,7 @@ QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
 .badge {
     padding: 4px 10px;
     border-radius: 12px;
-    font-size: 11px;
+    font-size: __FS_XS__px;
     font-weight: 600;
 }
 
@@ -1388,6 +1406,191 @@ QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
 .badge-success {
     background: #30D158;
     color: white;
+}
+
+/* ==================== Inline Style Migrations ==================== */
+/* 아래 규칙은 Python 인라인 setStyleSheet() 호출을 제거하고 QSS로 이동한 것입니다. */
+
+/* --- home_page.py: 프리셋 설명 라벨 --- */
+#PresetDescription {
+    color: palette(dark);
+    padding: 8px;
+    background: rgba(128, 128, 128, 0.05);
+    border-radius: 6px;
+}
+
+/* --- home_page.py: 파일 상태 라벨 (기본 상태) --- */
+#FileCountLabel {
+    font-size: __FS_LG__px;
+    font-weight: 500;
+    color: palette(mid);
+}
+
+/* --- home_page.py: 파일 준비됨 상태 (파일이 선택된 경우) --- */
+#FileCountLabel[state="ready"] {
+    font-weight: 600;
+    color: #0A84FF;
+}
+
+/* --- home_page.py: 파일 크기 라벨 --- */
+#FileSizeLabel {
+    font-size: __FS_SM__px;
+    color: palette(mid);
+}
+
+/* --- home_page.py: 진행 상태 프레임 --- */
+#ProgressFrame {
+    background: rgba(10, 132, 255, 0.06);
+    border: 1px solid rgba(10, 132, 255, 0.15);
+    border-radius: 10px;
+}
+
+/* --- home_page.py: 진행 상태 라벨 --- */
+#ProgressLabel {
+    font-size: __FS_MD__px;
+    font-weight: 500;
+    color: #0A84FF;
+}
+
+/* --- home_page.py: 변환 시작 버튼 --- */
+#ConvertStartButton {
+    font-size: __FS_LG_PLUS__px;
+    font-weight: 600;
+    border-radius: 10px;
+    padding: 0 32px;
+    background: #0A84FF;
+    color: white;
+    border: none;
+    min-height: 46px;
+    min-width: 180px;
+}
+
+#ConvertStartButton:hover {
+    background: #0070E0;
+}
+
+#ConvertStartButton:pressed {
+    background: #005BBB;
+}
+
+#ConvertStartButton:disabled {
+    background: rgba(128, 128, 128, 0.2);
+    color: rgba(128, 128, 128, 0.5);
+}
+
+/* --- format_style_page.py: ImagePreview --- */
+#ImagePreview {
+    background: palette(base);
+    border: 2px dashed rgba(128, 128, 128, 0.3);
+    border-radius: 8px;
+}
+
+/* --- format_style_page.py: ImagePreview 내부 라벨 --- */
+#ImagePreviewLabel {
+    color: palette(mid);
+    font-size: __FS_SM__px;
+}
+
+/* --- format_style_page.py: DecorationPreview --- */
+#DecorationPreview {
+    background: palette(base);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+}
+
+/* --- format_style_page.py: DecorationPreview 제목 --- */
+#DecoPreviewTitle {
+    color: palette(mid);
+    font-size: __FS_XS__px;
+    font-weight: 600;
+}
+
+/* --- format_style_page.py: DecorationPreview 샘플 텍스트 --- */
+#DecoSampleBefore, #DecoSampleAfter {
+    font-size: __FS_MD__px;
+    color: palette(text);
+}
+
+/* --- format_style_page.py: DecorationPreview 구분선 --- */
+#DecoDivider {
+    font-size: __FS_LG__px;
+    color: palette(mid);
+    padding: 8px 0;
+}
+
+/* --- format_style_page.py: DecorationPreview 다이스 라벨 --- */
+#DecoDiceLabel {
+    font-size: __FS_MD__px;
+    color: #0066cc;
+}
+
+/* --- format_style_page.py: 프리셋 색상 스워치 --- */
+#PresetSwatchBg, #PresetSwatchText, #PresetSwatchName {
+    border-radius: 6px;
+    border: 1px solid rgba(128, 128, 128, 0.2);
+}
+
+/* --- format_style_page.py: 스워치 라벨 --- */
+#PresetSwatchLabel {
+    font-size: __FS_SM__px;
+    color: palette(mid);
+}
+
+/* --- format_style_page.py: 폰트 임베드 도움말 --- */
+#FontEmbedHelp {
+    color: palette(mid);
+    font-size: __FS_XS__px;
+}
+
+/* --- format_style_page.py: CSS 에디터 --- */
+#CssEditor {
+    background: palette(base);
+    color: palette(text);
+    border: 1px solid rgba(128, 128, 128, 0.2);
+    border-radius: 8px;
+    padding: 12px;
+}
+
+/* --- parsing_content_page.py: 파싱 테스트 결과 --- */
+#ParsingTestResult {
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: __FS_SM__px;
+    background: rgba(0, 0, 0, 0.03);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+}
+
+/* --- advanced_settings_page.py: 단축키 안내 --- */
+#ShortcutHintLabel {
+    color: palette(mid);
+    font-size: __FS_XS__px;
+    margin-top: 8px;
+}
+
+/* --- preview.py: 문서 미리보기 스크롤 영역 --- */
+#PreviewScrollArea {
+    background: rgba(128, 128, 128, 0.15);
+}
+
+/* --- preview.py: 페이지 컨테이너 --- */
+#PreviewPageContainer {
+    background: rgba(128, 128, 128, 0.15);
+}
+
+/* --- preview.py: 페이지 위젯 --- */
+#PreviewPage {
+    background: palette(base);
+    border-radius: 6px;
+    border: none;
+}
+
+/* --- main_window.py: 스플리터 핸들 (accent hover) --- */
+#MainSplitter::handle {
+    background-color: rgba(128, 128, 128, 0.12);
+}
+
+#MainSplitter::handle:hover {
+    background-color: rgba(10, 132, 255, 0.4);
 }
 
 .badge-warning {
@@ -1406,7 +1609,7 @@ QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
     border: 1px solid rgba(0, 122, 255, 0.3);
     border-radius: 6px;
     color: #007AFF;
-    font-size: 14px;
+    font-size: __FS_LG__px;
     min-width: 36px;
     min-height: 32px;
 }
@@ -1430,7 +1633,7 @@ QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
     background: rgba(128, 128, 128, 0.1);
     border: 1px solid rgba(128, 128, 128, 0.3);
     border-radius: 6px;
-    font-size: 16px;
+    font-size: __FS_XL__px;
     font-weight: bold;
     min-width: 32px;
     min-height: 32px;
@@ -1452,7 +1655,7 @@ QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
     border-radius: 10px;
     color: white;
     font-weight: 600;
-    font-size: 15px;
+    font-size: __FS_LG_PLUS__px;
     padding: 12px 24px;
     min-height: 44px;
 }
@@ -1499,7 +1702,7 @@ QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
     border: 1px solid rgba(0, 122, 255, 0.3);
     border-radius: 8px;
     color: #007AFF;
-    font-size: 20px;
+    font-size: __FS_XXL__px;
     font-weight: bold;
 }
 
@@ -1516,7 +1719,7 @@ QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
     background: rgba(255, 59, 48, 0.1);
     border: none;
     border-radius: 12px;
-    font-size: 14px;
+    font-size: __FS_LG__px;
     font-weight: bold;
     color: #FF3B30;
 }
@@ -1548,7 +1751,7 @@ QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
         stop:0 #22C55E, stop:1 #16A34A);
     border-radius: 12px;
     color: white;
-    font-size: 13px;
+    font-size: __FS_MD__px;
     font-weight: 700;
     padding: 6px 14px;
     min-width: 24px;
@@ -1557,7 +1760,7 @@ QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
 /* File Size Label */
 #FileSizeLabel {
     color: rgba(128, 128, 128, 0.8);
-    font-size: 12px;
+    font-size: __FS_SM__px;
     font-weight: 500;
 }
 
@@ -1634,7 +1837,7 @@ QToolTip {
     border: 1px solid #334155;
     border-radius: 8px;
     padding: 10px 14px;
-    font-size: 13px;
+    font-size: __FS_MD__px;
 }
 
 /* Section divider */
@@ -1663,18 +1866,18 @@ QToolTip {
 /* Empty state styling */
 #EmptyStateIcon {
     color: rgba(128, 128, 128, 0.3);
-    font-size: 48px;
+    font-size: __FS_DISPLAY__px;
 }
 
 #EmptyStateTitle {
     color: palette(text);
-    font-size: 16px;
+    font-size: __FS_XL__px;
     font-weight: 600;
 }
 
 #EmptyStateDescription {
     color: rgba(128, 128, 128, 0.7);
-    font-size: 14px;
+    font-size: __FS_LG__px;
 }
 
 /* Loading spinner placeholder */
@@ -1689,7 +1892,7 @@ QToolTip {
 /* Recent files section */
 #RecentFilesHeader {
     color: palette(dark);
-    font-size: 12px;
+    font-size: __FS_SM__px;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -1701,7 +1904,7 @@ QToolTip {
     border-radius: 8px;
     padding: 10px 14px;
     text-align: left;
-    font-size: 13px;
+    font-size: __FS_MD__px;
     color: palette(text);
 }
 
@@ -1714,8 +1917,149 @@ QToolTip {
     background: rgba(128, 128, 128, 0.1);
     border-radius: 4px;
     color: rgba(128, 128, 128, 0.7);
-    font-size: 11px;
+    font-size: __FS_XS__px;
     font-weight: 600;
     padding: 3px 6px;
     font-family: "Monaco", "Menlo", "Consolas", monospace;
+}
+
+/* ==================== Preview Panel - Refined ==================== */
+#PreviewPanelTitle {
+    font-size: __FS_MD__px;
+    font-weight: 700;
+    padding: 0;
+    margin: 0;
+    min-height: 0px;
+    letter-spacing: -0.3px;
+    color: palette(text);
+}
+
+#PreviewFormatCombo {
+    background: palette(base);
+    border: 1px solid rgba(128, 128, 128, 0.2);
+    border-radius: 6px;
+    padding: 4px 8px;
+    padding-right: 26px;
+    font-size: __FS_SM__px;
+    min-height: 0px;
+}
+
+#PreviewFormatCombo::drop-down {
+    border: none;
+    width: 22px;
+}
+
+#PreviewFormatCombo QAbstractItemView {
+    min-width: 240px;
+}
+
+#PreviewFormatCombo QAbstractItemView::item {
+    padding: 6px 12px;
+    min-height: 24px;
+}
+
+#PreviewZoomCombo {
+    background: transparent;
+    border: 1px solid rgba(128, 128, 128, 0.15);
+    border-radius: 6px;
+    font-size: __FS_XS__px;
+    font-weight: 600;
+    padding: 2px 6px;
+    min-width: 0px;
+    min-height: 0px;
+}
+
+#PreviewZoomCombo::drop-down {
+    border: none;
+    width: 14px;
+}
+
+#PreviewZoomCombo QAbstractItemView::item {
+    padding: 4px 8px;
+    min-height: 20px;
+}
+
+#PreviewPageSpin {
+    background: palette(base);
+    border: 1px solid rgba(0, 122, 255, 0.3);
+    border-radius: 6px;
+    padding: 2px 4px;
+    font-size: __FS_SM__px;
+    font-weight: 600;
+    min-width: 0px;
+    min-height: 0px;
+}
+
+#PreviewPageSpin:focus {
+    border: 1.5px solid #007AFF;
+}
+
+#PreviewPageLabel {
+    color: palette(dark);
+    font-size: __FS_SM__px;
+    font-weight: 500;
+    padding: 0 2px;
+    margin: 0;
+    min-height: 0px;
+}
+
+/* ==================== Collapsible Section (Accordion) ==================== */
+#CollapsibleHeader {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 rgba(128, 128, 128, 0.06), stop:1 rgba(128, 128, 128, 0.02));
+    border: 1px solid rgba(128, 128, 128, 0.12);
+    border-radius: 12px;
+    padding: 14px 20px;
+    font-size: __FS_LG_PLUS__px;
+    font-weight: 600;
+    color: palette(text);
+    text-align: left;
+    min-height: 24px;
+    letter-spacing: -0.2px;
+}
+
+#CollapsibleHeader:hover {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 rgba(10, 132, 255, 0.06), stop:1 rgba(10, 132, 255, 0.02));
+    border-color: rgba(10, 132, 255, 0.25);
+    color: #0A84FF;
+}
+
+#CollapsibleHeader:pressed {
+    background: rgba(10, 132, 255, 0.08);
+    border-color: rgba(10, 132, 255, 0.35);
+}
+
+/* 펼쳐진 상태 */
+#CollapsibleHeader[expanded="true"] {
+    background: rgba(10, 132, 255, 0.04);
+    border-color: rgba(10, 132, 255, 0.2);
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+/* 아코디언 본문 영역 */
+#CollapsibleBody {
+    border: 1px solid rgba(128, 128, 128, 0.1);
+    border-top: none;
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+    background: palette(base);
+    padding: 12px 8px;
+}
+
+/* 아코디언 내부 카드 - 테두리 제거 */
+#CollapsibleBody CardWidget {
+    border: none;
+    background: transparent;
+    margin-bottom: 4px;
+}
+
+/* 가이드 라벨 */
+#GuideLabel {
+    font-size: __FS_SM__px;
+    line-height: 1.8;
+    color: palette(dark);
+    padding: 4px 8px;
+    font-family: "Pretendard", "Consolas", "Malgun Gothic", monospace;
 }

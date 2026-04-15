@@ -5,10 +5,10 @@ TRPG Log Converter Pro - 엔터프라이즈급 액션 바
 
 from PySide6.QtWidgets import (
     QFrame, QHBoxLayout, QVBoxLayout, QLabel, QPushButton,
-    QProgressBar, QWidget, QGraphicsDropShadowEffect
+    QProgressBar, QGraphicsDropShadowEffect
 )
-from PySide6.QtCore import Qt, Signal, QTimer, QPropertyAnimation, QEasingCurve
-from PySide6.QtGui import QColor, QFont
+from PySide6.QtCore import Qt, Signal, QTimer
+from PySide6.QtGui import QColor
 
 
 class ActionButton(QPushButton):

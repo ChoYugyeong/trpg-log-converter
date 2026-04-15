@@ -3,7 +3,7 @@ TRPG Log Converter Pro - UI 컴포넌트
 재사용 가능한 현대적 위젯
 """
 
-from .cards import ContentCard, HelpButton
+from .cards import ContentCard, HelpButton, CollapsibleSection
 from .inputs import ColorPicker, TagInput, FileDropArea
 from .preview import InspectorBar, CoverPreview, DocumentPreview
 from .buttons import ActionButton, SidebarButton
@@ -14,7 +14,7 @@ from .action_bar import (
 )
 
 __all__ = [
-    'ContentCard', 'HelpButton',
+    'ContentCard', 'HelpButton', 'CollapsibleSection',
     'ColorPicker', 'TagInput', 'FileDropArea',
     'InspectorBar', 'CoverPreview', 'DocumentPreview',
     'ActionButton', 'SidebarButton',

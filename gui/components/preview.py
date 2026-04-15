@@ -8,8 +8,10 @@ from PySide6.QtWidgets import (
     QPlainTextEdit, QSizePolicy, QScrollArea, QTextEdit,
     QPushButton, QSpinBox, QComboBox
 )
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QFont, QTextDocument, QColor
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QColor
+
+from ..theme import Sizes, Colors
 
 
 class InspectorBar(QFrame):
@@ -159,6 +161,7 @@ class CoverPreview(QFrame):
 
     def _update_style(self):
         """스타일 업데이트 - 표지 색상은 사용자 선택값 사용"""
+        # Dynamic: 사용자 선택에 따라 변경됨
         self.setStyleSheet(f"""
             #CoverPreview {{
                 background: {self._bg_color};
@@ -183,16 +186,16 @@ class DocumentPreview(QFrame):
 
     # 문서 형식별 비율 (너비, 높이) - mm 단위
     DOCUMENT_FORMATS = {
-        "A4 (210×297mm)": (210, 297),
-        "A5 (148×210mm)": (148, 210),
-        "B5 (182×257mm)": (182, 257),
-        "신국판 (152×225mm)": (152, 225),
-        "국판 (148×210mm)": (148, 210),
-        "46배판 (128×188mm)": (128, 188),
-        "문고판 (105×148mm)": (105, 148),
-        "Letter (216×279mm)": (216, 279),
-        "EPUB (6×9)": (152, 229),
-        "EPUB (5×8)": (127, 203),
+        "A4 (210x297mm)": (210, 297),
+        "A5 (148x210mm)": (148, 210),
+        "B5 (182x257mm)": (182, 257),
+        "신국판 (152x225mm)": (152, 225),
+        "국판 (148x210mm)": (148, 210),
+        "46배판 (128x188mm)": (128, 188),
+        "문고판 (105x148mm)": (105, 148),
+        "Letter (216x279mm)": (216, 279),
+        "EPUB (6x9)": (152, 229),
+        "EPUB (5x8)": (127, 203),
     }
 
     # 줌 프리셋
@@ -201,13 +204,13 @@ class DocumentPreview(QFrame):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setObjectName("DocumentPreview")
-        self.setMinimumWidth(280)
+        self.setMinimumWidth(Sizes.PREVIEW_MIN_WIDTH)
 
         self._entries = []
         self._settings = {}
         self._current_page = 1
         self._total_pages = 1
-        self._current_format = "A5 (148×210mm)"
+        self._current_format = "A5 (148x210mm)"
         self._page_width = 240
         self._zoom_level = 100
         self._fit_mode = "width"  # width, height, page
@@ -220,123 +223,121 @@ class DocumentPreview(QFrame):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
 
-        # === 상단 툴바 ===
+        # === 상단 툴바 (스타일은 QSS #PreviewToolbar에서 관리) ===
         toolbar = QFrame()
         toolbar.setObjectName("PreviewToolbar")
-        toolbar.setStyleSheet("""
-            #PreviewToolbar {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 palette(window), stop:1 rgba(128, 128, 128, 0.05));
-                border-bottom: 1px solid rgba(128, 128, 128, 0.15);
-            }
-        """)
 
         toolbar_layout = QVBoxLayout(toolbar)
         toolbar_layout.setContentsMargins(8, 6, 8, 6)
         toolbar_layout.setSpacing(6)
 
-        # 1행: 제목 + 판형
+        # 1행: 제목만 (공간 절약)
         row1 = QHBoxLayout()
         row1.setSpacing(6)
 
         title = QLabel("미리보기")
-        title.setStyleSheet("font-size: 13px; font-weight: 600; padding: 0; margin: 0; min-height: 0;")
+        title.setObjectName("PreviewPanelTitle")
         row1.addWidget(title)
         row1.addStretch()
 
+        toolbar_layout.addLayout(row1)
+
+        # 2행: 판형 콤보 (자체 행 full-width → 어떤 폭에서도 잘림 없음)
+        row_format = QHBoxLayout()
+        row_format.setSpacing(6)
+        row_format.setContentsMargins(0, 0, 0, 0)
+
+        format_label = QLabel("판형")
+        format_label.setObjectName("PreviewFormatLabel")
+        row_format.addWidget(format_label)
+
         self.format_combo = QComboBox()
+        self.format_combo.setObjectName("PreviewFormatCombo")
         self.format_combo.addItems(list(self.DOCUMENT_FORMATS.keys()))
         self.format_combo.setCurrentText(self._current_format)
-        self.format_combo.setMaximumWidth(200)
-        self.format_combo.setStyleSheet("""
-            QComboBox {
-                background: palette(base);
-                border: 1px solid rgba(128, 128, 128, 0.2);
-                border-radius: 4px;
-                padding: 3px 8px;
-                font-size: 11px;
-            }
-            QComboBox::drop-down { border: none; width: 18px; }
-        """)
+        # full-width 확장 → 부모 폭 전부 차지
+        self.format_combo.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.format_combo.currentTextChanged.connect(self._on_format_changed)
-        row1.addWidget(self.format_combo)
+        row_format.addWidget(self.format_combo, 1)
 
-        toolbar_layout.addLayout(row1)
+        toolbar_layout.addLayout(row_format)
 
         # 2행: 줌 + 페이지
         row2 = QHBoxLayout()
         row2.setSpacing(4)
+        row2.setContentsMargins(0, 2, 0, 2)
 
-        # 축소
+        # --- 줌 컨트롤 그룹 ---
+        zoom_group = QHBoxLayout()
+        zoom_group.setSpacing(2)
+        zoom_group.setContentsMargins(0, 0, 0, 0)
+
         self.zoom_out_btn = QPushButton("−")
-        self.zoom_out_btn.setFixedSize(26, 26)
+        self.zoom_out_btn.setObjectName("PreviewZoomButton")
+        self.zoom_out_btn.setFixedSize(Sizes.PREVIEW_TOOLBAR_BTN, Sizes.PREVIEW_TOOLBAR_BTN)
         self.zoom_out_btn.setCursor(Qt.PointingHandCursor)
-        self.zoom_out_btn.setStyleSheet(self._get_tool_button_style())
         self.zoom_out_btn.clicked.connect(self._zoom_out)
-        row2.addWidget(self.zoom_out_btn)
+        zoom_group.addWidget(self.zoom_out_btn)
 
-        # 줌 레벨
         self.zoom_combo = QComboBox()
+        self.zoom_combo.setObjectName("PreviewZoomCombo")
         for z in self.ZOOM_PRESETS:
             self.zoom_combo.addItem(f"{z}%", z)
         self.zoom_combo.setCurrentText("100%")
-        self.zoom_combo.setFixedWidth(62)
-        self.zoom_combo.setStyleSheet("""
-            QComboBox { background: transparent; border: none; font-size: 11px; font-weight: 500; padding: 2px 4px; }
-            QComboBox::drop-down { border: none; width: 14px; }
-        """)
+        self.zoom_combo.setFixedWidth(Sizes.PREVIEW_ZOOM_COMBO_W)
+        self.zoom_combo.setFixedHeight(Sizes.PREVIEW_TOOLBAR_BTN)
+        # 스타일은 QSS #PreviewZoomCombo에서 관리
         self.zoom_combo.currentIndexChanged.connect(self._on_zoom_preset_changed)
-        row2.addWidget(self.zoom_combo)
+        zoom_group.addWidget(self.zoom_combo)
 
-        # 확대
         self.zoom_in_btn = QPushButton("+")
-        self.zoom_in_btn.setFixedSize(26, 26)
+        self.zoom_in_btn.setObjectName("PreviewZoomButton")
+        self.zoom_in_btn.setFixedSize(Sizes.PREVIEW_TOOLBAR_BTN, Sizes.PREVIEW_TOOLBAR_BTN)
         self.zoom_in_btn.setCursor(Qt.PointingHandCursor)
-        self.zoom_in_btn.setStyleSheet(self._get_tool_button_style())
         self.zoom_in_btn.clicked.connect(self._zoom_in)
-        row2.addWidget(self.zoom_in_btn)
+        zoom_group.addWidget(self.zoom_in_btn)
 
+        row2.addLayout(zoom_group)
         row2.addStretch()
 
-        # 이전 페이지
-        self.prev_btn = QPushButton("◀")
-        self.prev_btn.setFixedSize(26, 26)
-        self.prev_btn.setCursor(Qt.PointingHandCursor)
-        self.prev_btn.setStyleSheet(self._get_nav_button_style())
-        self.prev_btn.clicked.connect(self._prev_page)
-        row2.addWidget(self.prev_btn)
+        # --- 페이지 네비게이션 그룹 ---
+        nav_group = QHBoxLayout()
+        nav_group.setSpacing(4)
+        nav_group.setContentsMargins(0, 0, 0, 0)
 
-        # 페이지 번호
+        self.prev_btn = QPushButton("◀")
+        self.prev_btn.setObjectName("PreviewNavButton")
+        self.prev_btn.setFixedSize(Sizes.PREVIEW_TOOLBAR_BTN, Sizes.PREVIEW_TOOLBAR_BTN)
+        self.prev_btn.setCursor(Qt.PointingHandCursor)
+        self.prev_btn.clicked.connect(self._prev_page)
+        nav_group.addWidget(self.prev_btn)
+
         self.page_spin = QSpinBox()
+        self.page_spin.setObjectName("PreviewPageSpin")
         self.page_spin.setMinimum(1)
         self.page_spin.setMaximum(1)
-        self.page_spin.setFixedSize(44, 26)
+        self.page_spin.setFixedSize(Sizes.PREVIEW_PAGE_SPIN_W, Sizes.PREVIEW_TOOLBAR_BTN)
         self.page_spin.setAlignment(Qt.AlignCenter)
         self.page_spin.setButtonSymbols(QSpinBox.NoButtons)
-        self.page_spin.setStyleSheet("""
-            QSpinBox {
-                background: palette(base);
-                border: 1px solid rgba(0, 122, 255, 0.3);
-                border-radius: 4px;
-                padding: 2px;
-                font-size: 11px;
-                font-weight: 500;
-            }
-        """)
+        # 스타일은 QSS #PreviewPageSpin에서 관리
         self.page_spin.valueChanged.connect(self._on_page_changed)
-        row2.addWidget(self.page_spin)
+        nav_group.addWidget(self.page_spin)
 
         self.page_label = QLabel("/ 1")
-        self.page_label.setStyleSheet("color: palette(dark); font-size: 11px; font-weight: 500; padding: 0; margin: 0; min-height: 0;")
-        row2.addWidget(self.page_label)
+        self.page_label.setObjectName("PreviewPageLabel")
+        self.page_label.setFixedHeight(Sizes.PREVIEW_TOOLBAR_BTN)
+        self.page_label.setAlignment(Qt.AlignVCenter)
+        # 스타일은 QSS #PreviewPageLabel에서 관리
+        nav_group.addWidget(self.page_label)
 
-        # 다음 페이지
         self.next_btn = QPushButton("▶")
-        self.next_btn.setFixedSize(26, 26)
+        self.next_btn.setObjectName("PreviewNavButton")
+        self.next_btn.setFixedSize(Sizes.PREVIEW_TOOLBAR_BTN, Sizes.PREVIEW_TOOLBAR_BTN)
         self.next_btn.setCursor(Qt.PointingHandCursor)
-        self.next_btn.setStyleSheet(self._get_nav_button_style())
         self.next_btn.clicked.connect(self._next_page)
-        row2.addWidget(self.next_btn)
+        nav_group.addWidget(self.next_btn)
+
+        row2.addLayout(nav_group)
 
         toolbar_layout.addLayout(row2)
 
@@ -360,30 +361,46 @@ class DocumentPreview(QFrame):
             return """
                 QPushButton {
                     background: rgba(0, 122, 255, 0.15);
-                    border: none; border-radius: 4px; padding: 0;
-                    font-size: 13px; font-weight: bold; color: #007AFF;
+                    border: 1px solid rgba(0, 122, 255, 0.25);
+                    border-radius: 6px; padding: 0;
+                    font-size: 14px; font-weight: bold; color: #007AFF;
+                    min-width: 0px; min-height: 0px;
                 }
                 QPushButton:hover { background: rgba(0, 122, 255, 0.25); }
             """
         return """
             QPushButton {
-                background: transparent;
-                border: none; border-radius: 4px; padding: 0;
-                font-size: 13px; font-weight: bold; color: palette(dark);
+                background: rgba(128, 128, 128, 0.06);
+                border: 1px solid rgba(128, 128, 128, 0.12);
+                border-radius: 6px; padding: 0;
+                font-size: 14px; font-weight: bold; color: palette(dark);
+                min-width: 0px; min-height: 0px;
             }
-            QPushButton:hover { background: rgba(128, 128, 128, 0.15); }
+            QPushButton:hover {
+                background: rgba(128, 128, 128, 0.15);
+                border-color: rgba(128, 128, 128, 0.25);
+            }
         """
 
     def _get_nav_button_style(self):
         """네비게이션 버튼 스타일"""
         return """
             QPushButton {
-                background: rgba(0, 122, 255, 0.1);
-                border: none; border-radius: 4px; padding: 0;
+                background: rgba(0, 122, 255, 0.08);
+                border: 1px solid rgba(0, 122, 255, 0.2);
+                border-radius: 6px; padding: 0;
                 font-size: 11px; color: #007AFF;
+                min-width: 0px; min-height: 0px;
             }
-            QPushButton:hover { background: rgba(0, 122, 255, 0.2); }
-            QPushButton:disabled { background: transparent; color: rgba(128,128,128,0.4); }
+            QPushButton:hover {
+                background: rgba(0, 122, 255, 0.18);
+                border-color: rgba(0, 122, 255, 0.4);
+            }
+            QPushButton:disabled {
+                background: transparent;
+                border-color: rgba(128, 128, 128, 0.1);
+                color: rgba(128,128,128,0.3);
+            }
         """
 
     def _on_zoom_preset_changed(self, index):
@@ -396,7 +413,7 @@ class DocumentPreview(QFrame):
     def _set_fit_mode(self, mode: str):
         """맞춤 모드 설정"""
         self._fit_mode = mode
-        # 버튼 스타일 업데이트
+        # Dynamic: 사용자 선택에 따라 변경됨
         self.fit_width_btn.setStyleSheet(self._get_tool_button_style(active=(mode == "width")))
         self.fit_page_btn.setStyleSheet(self._get_tool_button_style(active=(mode == "page")))
 
@@ -414,18 +431,14 @@ class DocumentPreview(QFrame):
         """문서 영역 설정 - _setup_ui에서 호출"""
         # 문서 영역
         scroll = QScrollArea()
+        scroll.setObjectName("PreviewScrollArea")
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QFrame.NoFrame)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        scroll.setStyleSheet("""
-            QScrollArea {
-                background: rgba(128, 128, 128, 0.15);
-            }
-        """)
 
         # 페이지 컨테이너
         self.page_container = QWidget()
-        self.page_container.setStyleSheet("background: rgba(128, 128, 128, 0.15);")
+        self.page_container.setObjectName("PreviewPageContainer")
         page_layout = QVBoxLayout(self.page_container)
         page_layout.setContentsMargins(16, 16, 16, 16)
         page_layout.setSpacing(16)
@@ -435,13 +448,6 @@ class DocumentPreview(QFrame):
         self.page_widget = QFrame()
         self.page_widget.setObjectName("PreviewPage")
         self._update_page_size()
-        self.page_widget.setStyleSheet("""
-            #PreviewPage {
-                background: palette(base);
-                border-radius: 6px;
-                border: none;
-            }
-        """)
         # 그림자 효과
         from PySide6.QtWidgets import QGraphicsDropShadowEffect
         shadow = QGraphicsDropShadowEffect(self.page_widget)
@@ -461,14 +467,6 @@ class DocumentPreview(QFrame):
         self.content_view.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.content_view.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.content_view.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.content_view.setStyleSheet("""
-            QTextEdit {
-                background: palette(base);
-                color: palette(text);
-                font-size: 10px;
-                line-height: 1.5;
-            }
-        """)
 
         # 기본 안내 텍스트
         self._show_placeholder()
@@ -481,11 +479,25 @@ class DocumentPreview(QFrame):
         layout.addWidget(scroll)
 
     def _show_placeholder(self):
-        """플레이스홀더 표시"""
+        """빈 상태(Empty State) 안내 화면 표시"""
         placeholder_html = """
-        <div style="text-align: center; color: gray; padding: 40px 20px;">
-            <p style="font-size: 14px; margin-bottom: 8px; color: silver;">---</p>
-            <p style="font-size: 12px;">파일을 추가하고 설정을 변경하면<br>여기에 미리보기가 표시됩니다</p>
+        <div style="text-align: center; padding: 60px 24px; font-family: 'Segoe UI', 'Malgun Gothic', sans-serif;">
+            <div style="font-size: 36px; margin-bottom: 16px; opacity: 0.3;">
+                &#128214;
+            </div>
+            <p style="font-size: 15px; font-weight: 600; color: rgba(128,128,128,0.7); margin: 0 0 8px 0;">
+                미리보기 준비 중
+            </p>
+            <p style="font-size: 12px; color: rgba(128,128,128,0.5); margin: 0 0 20px 0; line-height: 1.6;">
+                HTML 또는 TXT 로그 파일을 추가하면<br>
+                변환 결과를 미리 확인할 수 있습니다
+            </p>
+            <div style="display: inline-block; padding: 6px 14px; border-radius: 6px;
+                        background: rgba(0, 122, 255, 0.08); margin-top: 4px;">
+                <span style="font-size: 11px; color: rgba(0, 122, 255, 0.6);">
+                    변환 탭에서 파일을 드래그하여 추가하세요
+                </span>
+            </div>
         </div>
         """
         self.content_view.setHtml(placeholder_html)
@@ -562,6 +574,7 @@ class DocumentPreview(QFrame):
 
         # content_view가 있을 때만 스타일 설정
         if hasattr(self, 'content_view'):
+            # Dynamic: 사용자 선택에 따라 변경됨 (줌 레벨 → 폰트 크기)
             font_size = max(9, int(11 * self._zoom_level / 100))  # 최소 9px
             self.content_view.setStyleSheet(f"""
                 QTextEdit {{
@@ -621,8 +634,14 @@ class DocumentPreview(QFrame):
         narration_users = [u.strip() for u in narration_users]
 
         font_family = settings.get('font_family', 'Noto Serif KR')
-        font_size = int(settings.get('font_size', 11))
-        line_height = float(settings.get('line_height', 1.8))
+        try:
+            font_size = int(settings.get('font_size', 11))
+        except (ValueError, TypeError):
+            font_size = 11
+        try:
+            line_height = float(settings.get('line_height', 1.8))
+        except (ValueError, TypeError):
+            line_height = 1.8
 
         # HTML 시작 - 모든 요소에 일관된 폰트 크기 적용
         html_parts = [f"""
@@ -686,18 +705,20 @@ class DocumentPreview(QFrame):
     def set_document_format(self, format_name: str):
         """외부에서 문서 형식 설정"""
         # 출력 설정의 판형을 미리보기 형식으로 매핑
+        # × (U+00D7) → x (ASCII) 변환도 처리
+        normalized = format_name.replace('\u00d7', 'x')
         format_mapping = {
-            "A4 (210×297mm)": "A4 (210×297mm)",
-            "A5 (148×210mm)": "A5 (148×210mm)",
-            "B5 (182×257mm)": "B5 (182×257mm)",
-            "신국판 (152×225mm)": "신국판 (152×225mm)",
-            "국판 (148×210mm)": "국판 (148×210mm)",
-            "46배판 (128×188mm)": "46배판 (128×188mm)",
-            "문고판 (105×148mm)": "문고판 (105×148mm)",
-            "Letter (8.5×11in)": "Letter (216×279mm)",
+            "A4 (210x297mm)": "A4 (210x297mm)",
+            "A5 (148x210mm)": "A5 (148x210mm)",
+            "B5 (182x257mm)": "B5 (182x257mm)",
+            "신국판 (152x225mm)": "신국판 (152x225mm)",
+            "국판 (148x210mm)": "국판 (148x210mm)",
+            "46배판 (128x188mm)": "46배판 (128x188mm)",
+            "문고판 (105x148mm)": "문고판 (105x148mm)",
+            "Letter (8.5x11in)": "Letter (216x279mm)",
         }
 
-        mapped_format = format_mapping.get(format_name)
+        mapped_format = format_mapping.get(normalized)
         if mapped_format and mapped_format in self.DOCUMENT_FORMATS:
             self._current_format = mapped_format
             self.format_combo.setCurrentText(mapped_format)
@@ -711,7 +732,7 @@ class DocumentPreview(QFrame):
     def set_custom_size(self, width_mm: int, height_mm: int):
         """사용자 정의 문서 크기 설정"""
         # 사용자 정의 크기를 동적으로 추가
-        custom_name = f"사용자 정의 ({width_mm}×{height_mm}mm)"
+        custom_name = f"사용자 정의 ({width_mm}x{height_mm}mm)"
         self.DOCUMENT_FORMATS[custom_name] = (width_mm, height_mm)
 
         # 콤보박스에 추가 (없는 경우만)

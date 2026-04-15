@@ -105,11 +105,32 @@ class Theme:
 
     @staticmethod
     def get_stylesheet() -> str:
-        """Qt 스타일시트 로드"""
+        """Qt 스타일시트 로드 - Typography 토큰(__FS_*__) 치환"""
         qss_path = Path(__file__).parent / "stylesheet.qss"
-        if qss_path.exists():
-            return qss_path.read_text(encoding='utf-8')
-        return ""
+        if not qss_path.exists():
+            return ""
+
+        qss = qss_path.read_text(encoding='utf-8')
+
+        # Typography 토큰 → px 값 치환
+        from gui.theme import Typography
+        tokens = {
+            "__FS_TINY__": Typography.SIZE_TINY,
+            "__FS_XS__": Typography.SIZE_XS,
+            "__FS_SM__": Typography.SIZE_SM,
+            "__FS_MD__": Typography.SIZE_MD,
+            "__FS_LG__": Typography.SIZE_LG,
+            "__FS_LG_PLUS__": Typography.SIZE_LG_PLUS,
+            "__FS_XL__": Typography.SIZE_XL,
+            "__FS_XL_PLUS__": Typography.SIZE_XL_PLUS,
+            "__FS_XXL__": Typography.SIZE_XXL,
+            "__FS_TITLE__": Typography.SIZE_TITLE,
+            "__FS_HERO__": Typography.SIZE_HERO,
+            "__FS_DISPLAY__": Typography.SIZE_DISPLAY,
+        }
+        for token, value in tokens.items():
+            qss = qss.replace(token, str(value))
+        return qss
 
     @staticmethod
     def get_preset(name: str) -> dict:

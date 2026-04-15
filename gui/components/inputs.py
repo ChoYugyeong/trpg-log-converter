@@ -5,29 +5,31 @@ ColorPicker, TagInput, FileDropArea 등
 
 from PySide6.QtWidgets import (
     QWidget, QHBoxLayout, QVBoxLayout, QLabel, QPushButton,
-    QLineEdit, QFrame, QFileDialog, QColorDialog, QScrollArea
+    QLineEdit, QFrame, QFileDialog, QColorDialog
 )
 from PySide6.QtCore import Signal, Qt, QTimer
 from PySide6.QtGui import QColor, QDragEnterEvent, QDropEvent
+
+from ..theme import Colors, Sizes, Spacing, Typography
 
 
 class ColorPicker(QWidget):
     """macOS 스타일 컬러 피커"""
     color_changed = Signal(str)
 
-    def __init__(self, initial_color: str = "#007AFF", parent=None):
+    def __init__(self, initial_color: str = None, parent=None):
         super().__init__(parent)
-        self._color = initial_color
-        self.setMinimumHeight(44)
+        self._color = initial_color or Colors.ACCENT
+        self.setFixedHeight(Sizes.BUTTON_LG_H)
 
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(0, 2, 0, 2)
-        layout.setSpacing(10)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(Spacing.SM)
 
         # 색상 스와치
         self.swatch = QPushButton()
         self.swatch.setObjectName("ColorSwatch")
-        self.swatch.setFixedSize(36, 36)
+        self.swatch.setFixedSize(Sizes.COLOR_SWATCH, Sizes.COLOR_SWATCH)
         self.swatch.setCursor(Qt.PointingHandCursor)
         self.swatch.setToolTip("클릭하여 색상 선택")
         self.swatch.clicked.connect(self._open_picker)
@@ -35,11 +37,23 @@ class ColorPicker(QWidget):
         layout.addWidget(self.swatch)
 
         # Hex 입력
-        self.hex_input = QLineEdit(initial_color)
-        self.hex_input.setMinimumWidth(90)
-        self.hex_input.setMaximumWidth(100)
-        self.hex_input.setMinimumHeight(36)
+        self.hex_input = QLineEdit(self._color)
+        self.hex_input.setMinimumWidth(Sizes.COLOR_HEX_MIN_W)
+        self.hex_input.setMaximumWidth(Sizes.COLOR_HEX_MAX_W)
+        self.hex_input.setFixedHeight(Sizes.COLOR_SWATCH)
         self.hex_input.setPlaceholderText("#RRGGBB")
+        self.hex_input.setStyleSheet(f"""
+            QLineEdit {{
+                border: 1px solid rgba(128, 128, 128, 0.3);
+                border-radius: 6px;
+                padding: {Spacing.XS}px {Spacing.SM}px;
+                font-family: {Typography.FONT_MONO};
+                font-size: {Typography.SIZE_SM}px;
+            }}
+            QLineEdit:focus {{
+                border-color: {Colors.ACCENT};
+            }}
+        """)
         self.hex_input.textChanged.connect(self._on_hex_change)
         layout.addWidget(self.hex_input)
 
@@ -83,16 +97,16 @@ class ColorPicker(QWidget):
         self.swatch.setStyleSheet(f"""
             QPushButton {{
                 background: {self._color};
-                border: 2px solid rgba(0, 0, 0, 0.15);
-                border-radius: 8px;
+                border: 2px solid rgba(0, 0, 0, 0.12);
+                border-radius: 6px;
                 padding: 0px;
                 margin: 0px;
             }}
             QPushButton:hover {{
-                border: 2px solid #007AFF;
+                border: 2px solid {Colors.ACCENT};
             }}
             QPushButton:pressed {{
-                border: 2px solid #0056CC;
+                border: 2px solid {Colors.ACCENT_PRESSED};
             }}
         """)
 
@@ -120,23 +134,23 @@ class TagInput(QWidget):
         input_row.addWidget(self.input, 1)
 
         add_btn = QPushButton("+")
-        add_btn.setFixedSize(40, 40)
+        add_btn.setFixedSize(Sizes.BUTTON_LG_H, Sizes.BUTTON_LG_H)
         add_btn.setCursor(Qt.PointingHandCursor)
-        add_btn.setStyleSheet("""
-            QPushButton {
-                font-size: 20px;
+        add_btn.setStyleSheet(f"""
+            QPushButton {{
+                font-size: {Typography.SIZE_XXL}px;
                 font-weight: bold;
-                background: rgba(0, 122, 255, 0.1);
-                border: 1px solid rgba(0, 122, 255, 0.3);
+                background: {Colors.ACCENT_BG};
+                border: 1px solid {Colors.BORDER_ACCENT};
                 border-radius: 8px;
-                color: #007AFF;
-            }
-            QPushButton:hover {
-                background: rgba(0, 122, 255, 0.2);
-            }
-            QPushButton:pressed {
-                background: rgba(0, 122, 255, 0.3);
-            }
+                color: {Colors.ACCENT};
+            }}
+            QPushButton:hover {{
+                background: {Colors.ACCENT_BG_HOVER};
+            }}
+            QPushButton:pressed {{
+                background: {Colors.ACCENT_BG_PRESSED};
+            }}
         """)
         add_btn.clicked.connect(self._add_tag)
         input_row.addWidget(add_btn)
@@ -193,28 +207,28 @@ class TagInput(QWidget):
 
         label = QLabel(text)
         label.setMinimumHeight(20)
-        label.setStyleSheet("font-size: 13px;")
+        label.setStyleSheet(f"font-size: {Typography.SIZE_MD}px;")
         layout.addWidget(label)
 
         delete_btn = QPushButton("×")
         delete_btn.setObjectName("TagChipDelete")
         delete_btn.setFixedSize(24, 24)
         delete_btn.setCursor(Qt.PointingHandCursor)
-        delete_btn.setStyleSheet("""
-            QPushButton {
-                background: rgba(255, 59, 48, 0.1);
+        delete_btn.setStyleSheet(f"""
+            QPushButton {{
+                background: {Colors.ERROR_BG_SOFT};
                 border: none;
                 border-radius: 12px;
-                font-size: 14px;
+                font-size: {Typography.SIZE_LG}px;
                 font-weight: bold;
-                color: #FF3B30;
-            }
-            QPushButton:hover {
-                background: rgba(255, 59, 48, 0.2);
-            }
-            QPushButton:pressed {
-                background: rgba(255, 59, 48, 0.3);
-            }
+                color: {Colors.ERROR};
+            }}
+            QPushButton:hover {{
+                background: {Colors.ERROR_BG_HOVER};
+            }}
+            QPushButton:pressed {{
+                background: {Colors.ERROR_BG_PRESSED};
+            }}
         """)
         delete_btn.clicked.connect(lambda: self._remove_tag(text))
         layout.addWidget(delete_btn)
@@ -262,14 +276,14 @@ class FileDropArea(QFrame):
         self.icon = QLabel("+")
         self.icon.setObjectName("DropIcon")
         self.icon.setAlignment(Qt.AlignCenter)
-        self.icon.setStyleSheet("font-size: 24px; font-weight: 300; color: #0A84FF; padding: 0; margin: 0;")
+        self.icon.setStyleSheet(f"font-size: 24px; font-weight: 300; color: {Colors.ACCENT}; padding: 0; margin: 0;")
         layout.addWidget(self.icon)
 
         self.text = QLabel("파일을 드래그하거나 클릭하여 추가")
         self.text.setObjectName("HintLabel")
         self.text.setAlignment(Qt.AlignCenter)
         self.text.setWordWrap(True)
-        self.text.setStyleSheet("font-size: 13px; color: #0A84FF; font-weight: 500; padding: 0; margin: 0;")
+        self.text.setStyleSheet(f"font-size: {Typography.SIZE_MD}px; color: {Colors.ACCENT}; font-weight: 500; padding: 0; margin: 0;")
         layout.addWidget(self.text)
 
         self._files = []
@@ -294,18 +308,18 @@ class FileDropArea(QFrame):
         self.setProperty("invalid", True)
         self.style().unpolish(self)
         self.style().polish(self)
-        self.setStyleSheet("""
-            #FileDropArea[invalid="true"] {
-                background: rgba(255, 59, 48, 0.06);
-                border: 2px solid rgba(255, 59, 48, 0.5);
+        self.setStyleSheet(f"""
+            #FileDropArea[invalid="true"] {{
+                background: {Colors.ERROR_BG};
+                border: 2px solid {Colors.ERROR_BORDER};
                 border-radius: 14px;
-            }
+            }}
         """)
         names = ", ".join(rejected_names[:3])
         suffix = f" 외 {len(rejected_names) - 3}개" if len(rejected_names) > 3 else ""
         self.text.setText(f"지원하지 않는 파일: {names}{suffix}")
-        self.text.setStyleSheet("font-size: 12px; color: #FF3B30; font-weight: 500; padding: 0; margin: 0;")
-        self.icon.setStyleSheet("font-size: 24px; font-weight: 300; color: #FF3B30; padding: 0; margin: 0;")
+        self.text.setStyleSheet(f"font-size: {Typography.SIZE_SM}px; color: {Colors.ERROR}; font-weight: 500; padding: 0; margin: 0;")
+        self.icon.setStyleSheet(f"font-size: 24px; font-weight: 300; color: {Colors.ERROR}; padding: 0; margin: 0;")
         self.icon.setText("!")
         # 2초 후 원래 상태로 복원
         self._reset_timer.start(2500)
@@ -313,8 +327,8 @@ class FileDropArea(QFrame):
     def _show_success_feedback(self, count: int):
         """성공적으로 파일 추가 시 시각 피드백"""
         self.text.setText(f"{count}개 파일 추가됨")
-        self.text.setStyleSheet("font-size: 13px; color: #22C55E; font-weight: 600; padding: 0; margin: 0;")
-        self.icon.setStyleSheet("font-size: 24px; font-weight: 300; color: #22C55E; padding: 0; margin: 0;")
+        self.text.setStyleSheet(f"font-size: {Typography.SIZE_MD}px; color: {Colors.SUCCESS}; font-weight: 600; padding: 0; margin: 0;")
+        self.icon.setStyleSheet(f"font-size: 24px; font-weight: 300; color: {Colors.SUCCESS}; padding: 0; margin: 0;")
         self.icon.setText("✓")
         self._reset_timer.start(2000)
 
@@ -325,9 +339,9 @@ class FileDropArea(QFrame):
         self.style().unpolish(self)
         self.style().polish(self)
         self.icon.setText("+")
-        self.icon.setStyleSheet("font-size: 24px; font-weight: 300; color: #0A84FF; padding: 0; margin: 0;")
+        self.icon.setStyleSheet(f"font-size: 24px; font-weight: 300; color: {Colors.ACCENT}; padding: 0; margin: 0;")
         self.text.setText("파일을 드래그하거나 클릭하여 추가")
-        self.text.setStyleSheet("font-size: 13px; color: #0A84FF; font-weight: 500; padding: 0; margin: 0;")
+        self.text.setStyleSheet(f"font-size: {Typography.SIZE_MD}px; color: {Colors.ACCENT}; font-weight: 500; padding: 0; margin: 0;")
 
     def dragEnterEvent(self, event: QDragEnterEvent):
         if event.mimeData().hasUrls():
@@ -342,12 +356,12 @@ class FileDropArea(QFrame):
                 self._update_style(True)
             else:
                 event.acceptProposedAction()
-                self.setStyleSheet("""
-                    #FileDropArea {
-                        background: rgba(255, 59, 48, 0.06);
-                        border: 2px dashed rgba(255, 59, 48, 0.5);
+                self.setStyleSheet(f"""
+                    #FileDropArea {{
+                        background: {Colors.ERROR_BG};
+                        border: 2px dashed {Colors.ERROR_BORDER};
                         border-radius: 14px;
-                    }
+                    }}
                 """)
 
     def dragLeaveEvent(self, event):
@@ -380,7 +394,7 @@ class FileDropArea(QFrame):
             # 일부만 유효한 경우 - 성공 피드백 후 경고
             self._reset_timer.stop()
             self.text.setText(f"{len(valid_files)}개 추가 / {len(invalid_names)}개 지원 안 됨")
-            self.text.setStyleSheet("font-size: 13px; color: #FF9500; font-weight: 500;")
+            self.text.setStyleSheet(f"font-size: {Typography.SIZE_MD}px; color: {Colors.WARNING}; font-weight: 500;")
             self._reset_timer.start(3000)
 
         self._update_style(False)
