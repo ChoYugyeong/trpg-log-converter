@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Roll20 Chat Archive - 크툴루의 부름 7판</title>
+<style>
+body { font-family: Arial, Helvetica, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
+#textchat { max-width: 800px; margin: 0 auto; background: #fff; padding: 15px; border: 1px solid #ddd; }
+.message { padding: 5px 10px; border-bottom: 1px solid #eee; margin: 2px 0; }
+.message .spacer { display: none; }
+.message .avatar { width: 30px; height: 30px; border-radius: 50%; display: inline-block; vertical-align: top; margin-right: 5px; }
+.message .tstamp { color: #999; font-size: 0.75em; display: block; text-align: right; }
+.message .by { font-weight: bold; }
+.message.general { }
+.message.desc { background: #f0f5f0; font-style: italic; padding-left: 20px; border-left: 3px solid #8bc34a; }
+.message.emote { background: #fff3e0; font-style: italic; }
+.message.whisper { background: #fce4ec; border-left: 3px solid #e91e63; }
+.message.rollresult { background: #e3f2fd; }
+.message.system { background: #f5f5f5; color: #666; font-size: 0.9em; }
+.message.hidden-message { display: none; }
+.sheet-rolltemplate-default { background: #fafafa; border: 1px solid #ddd; border-radius: 4px; padding: 5px 8px; margin: 2px 0; }
+.inlinerollresult { background: #bbdefb; padding: 1px 4px; border-radius: 2px; font-weight: bold; }
+.inlinerollresult.fullcrit { color: #2e7d32; }
+.inlinerollresult.fullfail { color: #c62828; }
+</style>
+</head>
+<body>
+<div id="textchat">
+
+<!-- 세션 시작 시스템 메시지 -->
+<div class="message system">
+    <span class="tstamp">2024-12-21 19:00:12</span>
+    <span class="by">::</span> Campaign "공포의 저택" started
+</div>
+
+<!-- KP 인사 -->
+<div class="message general">
+    <span class="tstamp">19:00:30</span>
+    <div class="spacer"></div>
+    <div class="avatar"></div>
+    <span class="by">KP:</span> 안녕하세요, 오늘 세션을 시작하겠습니다. 지난 시간에 이어 진행합니다.
+</div>
+
+<!-- 장면 마커 -->
+<div class="message general">
+    <span class="tstamp">19:01:05</span>
+    <span class="by">KP:</span> ■ 장면 1: 아캄 시립 도서관
+</div>
+
+<!-- 플레이어 대화 - 한국어 CoC -->
+<div class="message general">
+    <span class="tstamp">19:01:30</span>
+    <span class="by">김형사:</span> 「도서관에 도착했습니다. 어떤 책을 찾아야 하죠?」
+</div>
+
+<div class="message general">
+    <span class="tstamp">19:02:00</span>
+    <span class="by">박교수:</span> 「고대 언어학 관련 서적이 필요합니다. 특히 R'lyeh에 관한 기록이요.」
+</div>
+
+<!-- KP 묘사 (나레이션) -->
+<div class="message desc">
+    <span class="tstamp">19:02:30</span>
+    오래된 도서관의 지하 서고. 먼지 냄새와 함께 어딘가에서 습기가 올라온다. 형광등 하나가 깜빡이며 불안정하게 빛나고 있다.
+</div>
+
+<!-- 기능 판정 - CCB 형식 -->
+<div class="message general">
+    <span class="tstamp">19:03:15</span>
+    <span class="by">박교수:</span> 도서관 기능으로 책을 찾아보겠습니다.
+</div>
+
+<div class="message general rollresult">
+    <span class="tstamp">19:03:20</span>
+    <span class="by">박교수:</span> CCB<=75 【도서관】 → <span class="inlinerollresult">23</span> → 대성공!
+</div>
+
+<div class="message general">
+    <span class="tstamp">19:03:45</span>
+    <span class="by">KP:</span> 대성공입니다! 박교수는 곧바로 원하는 서적을 찾아냈습니다. 그런데 그 옆에 이상한 양피지 조각이 끼워져 있는 것을 발견합니다.
+</div>
+
+<!-- 플레이어 행동 -->
+<div class="message general">
+    <span class="tstamp">19:04:30</span>
+    <span class="by">김형사:</span> 양피지를 조심스럽게 꺼내봅니다. 【목격】으로 관찰하겠습니다.
+</div>
+
+<div class="message general rollresult">
+    <span class="tstamp">19:04:35</span>
+    <span class="by">김형사:</span> CCB<=65 【목격】 → <span class="inlinerollresult">42</span> → 성공
+</div>
+
+<div class="message general">
+    <span class="tstamp">19:05:00</span>
+    <span class="by">KP:</span> 양피지에는 알 수 없는 문자와 함께 별자리 같은 도형이 그려져 있습니다. 뒷면에는 주소가 적혀 있습니다: "아캄 외곽 13번지, 블랙우드 저택"
+</div>
+
+<!-- 이모트 메시지 -->
+<div class="message emote">
+    <span class="tstamp">19:05:30</span>
+    <span class="by">최기자:</span> 카메라를 들어 양피지의 사진을 찍는다.
+</div>
+
+<!-- 연속 대화 (이름 없는 메시지 - 이전 화자 계속) -->
+<div class="message general">
+    <span class="tstamp">19:05:45</span>
+    <span class="by">최기자:</span> 「이건 특종감이야! 블랙우드 저택이라면 10년 전 실종 사건이 있었던 곳 아닌가?」
+</div>
+
+<div class="message general">
+    <span class="tstamp">19:06:15</span>
+    <span class="by">김형사:</span> 「그 사건... 결국 미제로 끝났죠. 가봐야겠습니다.」
+</div>
+
+<!-- 새 장면 -->
+<div class="message general">
+    <span class="tstamp">19:07:00</span>
+    <span class="by">KP:</span> ■ 장면 2: 블랙우드 저택
+</div>
+
+<div class="message desc">
+    <span class="tstamp">19:07:15</span>
+    아캄 외곽의 블랙우드 저택. 한때 화려했을 빅토리안 양식의 건물은 지금은 폐허에 가깝다. 정원의 나무들은 비정상적으로 뒤틀려 있고, 창문은 모두 판자로 막혀 있다.
+</div>
+
+<div class="message general">
+    <span class="tstamp">19:08:00</span>
+    <span class="by">박교수:</span> 「이 정원... 식물학적으로 설명할 수 없는 형태입니다.」
+</div>
+
+<!-- SAN 체크 -->
+<div class="message general">
+    <span class="tstamp">19:08:30</span>
+    <span class="by">KP:</span> 저택에 접근하자 알 수 없는 불안감이 밀려옵니다. 모든 탐사자는 SAN 체크를 해주세요.
+</div>
+
+<div class="message general rollresult">
+    <span class="tstamp">19:08:40</span>
+    <span class="by">김형사:</span> CCB<=60 【SAN】 → <span class="inlinerollresult">55</span> → 성공
+</div>
+
+<div class="message general rollresult">
+    <span class="tstamp">19:08:45</span>
+    <span class="by">박교수:</span> CCB<=65 【SAN】 → <span class="inlinerollresult">78</span> → 실패
+</div>
+
+<div class="message general rollresult">
+    <span class="tstamp">19:08:50</span>
+    <span class="by">최기자:</span> CCB<=55 【SAN】 → <span class="inlinerollresult">12</span> → 성공
+</div>
+
+<div class="message general">
+    <span class="tstamp">19:09:00</span>
+    <span class="by">KP:</span> 박교수는 SAN 실패입니다. 1D3의 SAN 감소를 받습니다.
+</div>
+
+<div class="message general rollresult">
+    <span class="tstamp">19:09:10</span>
+    <span class="by">박교수:</span> 1D3 SAN 감소 → <span class="inlinerollresult">2</span>
+</div>
+
+<div class="message general">
+    <span class="tstamp">19:09:30</span>
+    <span class="by">KP:</span> 박교수는 잠시 현기증을 느낍니다. 저택의 창문 사이로 무언가가 움직이는 것을 본 것 같은 착각에 빠집니다.
+</div>
+
+<!-- 귓속말 (Whisper) -->
+<div class="message whisper">
+    <span class="tstamp">19:10:00</span>
+    <span class="by">KP (whispering to 박교수):</span> 당신만이 보았습니다: 2층 창문에서 창백한 얼굴이 당신을 바라보고 있었습니다.
+</div>
+
+<!-- 행동 판정 -->
+<div class="message general">
+    <span class="tstamp">19:10:30</span>
+    <span class="by">김형사:</span> 저택 정문을 조사합니다. 잠겨있나요?
+</div>
+
+<div class="message general rollresult">
+    <span class="tstamp">19:10:40</span>
+    <span class="by">김형사:</span> CCB<=50 【자물쇠 따기】 → <span class="inlinerollresult">96</span> → 대실패!
+</div>
+
+<div class="message general">
+    <span class="tstamp">19:11:00</span>
+    <span class="by">KP:</span> 퍼미블! 자물쇠 따기 도구가 부러져 안에 끼어버렸습니다. 더 이상 이 도구로는 사용할 수 없습니다.
+</div>
+
+<div class="message general">
+    <span class="tstamp">19:11:30</span>
+    <span class="by">최기자:</span> 「에이, 옆문이나 찾아보자. 기자 생활 10년인데 이런 건 익숙해.」
+</div>
+
+<!-- 숨겨진 메시지 (파서에서 스킵) -->
+<div class="message hidden-message">
+    <span class="tstamp">19:12:00</span>
+    <span class="by">KP:</span> [GM 메모] 옆문은 열려있다. 다음 방에서 첫 번째 단서 발견 예정.
+</div>
+
+<!-- 새 장면 -->
+<div class="message general">
+    <span class="tstamp">19:13:00</span>
+    <span class="by">KP:</span> ■ 장면 3: 저택 내부
+</div>
+
+<div class="message desc">
+    <span class="tstamp">19:13:15</span>
+    옆문을 통해 저택에 들어서자, 썩은 나무와 곰팡이 냄새가 코를 찌른다. 홀의 벽에는 찢어진 그림들이 걸려 있고, 바닥에는 무언가 질질 끌려간 흔적이 남아있다.
+</div>
+
+<div class="message general">
+    <span class="tstamp">19:14:00</span>
+    <span class="by">김형사:</span> 「이 흔적... 사람이 끌려간 거야. 전문가의 눈은 속일 수 없어.」
+</div>
+
+<div class="message general">
+    <span class="tstamp">19:14:30</span>
+    <span class="by">박교수:</span> 「벽의 그림들을 자세히 보겠습니다. 무엇이 그려져 있나요?」
+</div>
+
+<div class="message general">
+    <span class="tstamp">19:15:00</span>
+    <span class="by">KP:</span> 그림들은 이 저택의 역대 주인들을 그린 초상화입니다. 마지막 초상화의 인물은... 양피지에 기록된 문자와 같은 상징이 새겨진 목걸이를 하고 있습니다.
+</div>
+
+<!-- D&D 스타일 롤 (1d20) -->
+<div class="message general">
+    <span class="tstamp">19:16:00</span>
+    <span class="by">최기자:</span> 벽 뒤에 비밀 통로가 없는지 두드려봅니다.
+</div>
+
+<div class="message general rollresult">
+    <span class="tstamp">19:16:05</span>
+    <span class="by">최기자:</span> Rolling 1d100 vs 60 Spot Hidden → <span class="inlinerollresult">33</span> → 성공
+</div>
+
+<div class="message general">
+    <span class="tstamp">19:16:30</span>
+    <span class="by">KP:</span> 벽의 한 부분이 다른 곳과 소리가 다릅니다. 밀어보니... 비밀 통로가 열립니다!
+</div>
+
+<!-- 세션 마무리 -->
+<div class="message general">
+    <span class="tstamp">19:30:00</span>
+    <span class="by">KP:</span> 오늘 세션은 여기까지입니다. 다음 시간에 비밀 통로를 탐험합니다.
+</div>
+
+<div class="message system">
+    <span class="tstamp">19:30:15</span>
+    <span class="by">::</span> Session ended
+</div>
+
+</div>
+</body>
+</html>
