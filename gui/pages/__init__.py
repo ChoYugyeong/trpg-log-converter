@@ -1,32 +1,20 @@
 """
 TRPG Log Converter Pro - 페이지 모듈
-각 설정 페이지 컴포넌트
+4탭 구조: 홈, 서식 및 스타일, 파싱 및 콘텐츠, 고급 설정
 """
 
 from .base_page import BasePage
-from .convert_page import ConvertPage
-from .basic_page import BasicPage
-from .style_page import StylePage
-from .font_page import FontPage
-from .content_page import ContentPage
-from .cover_page import CoverPage
-from .output_page import OutputPage
-from .advanced_page import AdvancedPage
-from .preset_page import PresetPage
-from .decoration_page import DecorationPage
-from .parsing_rules_page import ParsingRulePage
+
+# === 새 4탭 페이지 (메인) ===
+from .home_page import HomePage
+from .format_style_page import FormatStylePage
+from .parsing_content_page import ParsingContentPage
+from .advanced_settings_page import AdvancedSettingsPage
 
 __all__ = [
     'BasePage',
-    'ConvertPage',
-    'BasicPage',
-    'StylePage',
-    'FontPage',
-    'ContentPage',
-    'CoverPage',
-    'OutputPage',
-    'AdvancedPage',
-    'PresetPage',
-    'DecorationPage',
-    'ParsingRulePage',
+    'HomePage',
+    'FormatStylePage',
+    'ParsingContentPage',
+    'AdvancedSettingsPage',
 ]
