@@ -19,29 +19,30 @@ def install_pyinstaller():
 
 def clean_dist():
     """기존 dist 폴더 정리"""
-    global APP_NAME
     import shutil
     import time
-    import datetime
 
     app_dir = Path(__file__).parent
     dist_path = app_dir / "dist" / APP_NAME
 
-    if dist_path.exists():
-        print(f"기존 빌드 폴더 정리 중: {dist_path}")
-        for attempt in range(3):
-            try:
-                shutil.rmtree(dist_path)
-                print("정리 완료")
-                break
-            except PermissionError:
-                print(f"폴더 잠김, 재시도 {attempt + 1}/3...")
-                time.sleep(2)
-        else:
-            # 폴더 삭제 실패시 새 이름으로 빌드
-            timestamp = datetime.datetime.now().strftime("%H%M%S")
-            APP_NAME = f"TRPG_Converter_Pro_{timestamp}"
-            print(f"새 이름으로 빌드: {APP_NAME}")
+    if not dist_path.exists():
+        return
+
+    print(f"기존 빌드 폴더 정리 중: {dist_path}")
+    for attempt in range(3):
+        try:
+            shutil.rmtree(dist_path)
+            print("정리 완료")
+            return
+        except PermissionError:
+            print(f"폴더 잠김, 재시도 {attempt + 1}/3...")
+            time.sleep(2)
+
+    print(
+        f"\n[FAIL] dist 폴더가 다른 프로세스에 잠겨 있습니다: {dist_path}\n"
+        f"       실행 중인 {APP_NAME}.exe / 탐색기 창을 닫고 다시 시도하세요."
+    )
+    sys.exit(1)
 
 def build_app():
     """앱 빌드"""
@@ -90,6 +91,12 @@ def build_app():
         "--hidden-import", "docx",
         "--hidden-import", "yaml",
         "--hidden-import", "PIL",
+
+        # pydantic v2: pydantic_core C 확장과 동적 모듈을 모두 수집
+        # (GUI 설정 스키마 SSOT인 gui.config_models.AppSettings가 의존함)
+        "--collect-all", "pydantic",
+        "--collect-all", "pydantic_core",
+        "--hidden-import", "annotated_types",
 
         # macOS 전용
         "--osx-bundle-identifier", "com.trpg.converter",
