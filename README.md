@@ -94,6 +94,12 @@ cd TRPG_Converter_Pro
 pip install -r requirements.txt
 ```
 
+재현 가능한 빌드를 원하면 lockfile 사용:
+```bash
+pip install -r requirements.lock          # 런타임만
+pip install -r requirements-dev.lock      # 테스트/빌드 도구 포함
+```
+
 ### 실행
 ```bash
 python main.py
@@ -101,7 +107,7 @@ python main.py
 
 ### 배포용 빌드
 ```bash
-python build.py
+python scripts/build.py
 ```
 → `dist/` 폴더에 실행 파일 생성
 

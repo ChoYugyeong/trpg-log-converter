@@ -75,6 +75,8 @@ style:
 
 narration:
   users:
+    # '-' 는 cocofolia GM 메시지의 기본 표기. 포함해야 나레이션으로 정확히 분류됨
+    - "-"
     - "GM"
     - "KP"
     - "DM"
@@ -125,6 +127,8 @@ chapter:
   min_scene_entries: 10
   scene_patterns:
     - "^■"
+    - "^▶Scene"            # cocofolia DX3 / Insane 등에서 흔한 마커
+    - "^▶씬"
     - "^씬\\s*\\d+"
     - "^장면\\s*\\d+"
     - "^Scene\\s*\\d+"
@@ -142,8 +146,8 @@ campaign:
 
 parsing:
   name_max_length: 50
+  # [main] 은 cocofolia 기본 채널이라 스킵 대상이 아닙니다. 잡담/OOC 만 스킵.
   skip_channels:
-    - "[main]"
     - "[잡담]"
     - "[ooc]"
   normalize_punctuation: true

@@ -32,16 +32,13 @@ pyinstaller --name TRPG_Converter_Pro ^
     --noconfirm ^
     --add-data "core;core" ^
     --add-data "gui;gui" ^
-    --add-data "utils;utils" ^
+    --add-data "resources;resources" ^
     --add-data "config.yaml;." ^
-    --hidden-import PySide6 ^
-    --hidden-import PySide6.QtWidgets ^
-    --hidden-import PySide6.QtCore ^
-    --hidden-import PySide6.QtGui ^
-    --hidden-import qfluentwidgets ^
-    --hidden-import qfluentwidgets.components ^
-    --hidden-import qfluentwidgets.common ^
-    --hidden-import qfluentwidgets.window ^
+    --collect-all PySide6 ^
+    --collect-all shiboken6 ^
+    --collect-all qfluentwidgets ^
+    --collect-all pydantic ^
+    --collect-all pydantic_core ^
     --hidden-import ebooklib ^
     --hidden-import bs4 ^
     --hidden-import lxml ^

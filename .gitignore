@@ -11,6 +11,7 @@ __pycache__/
 *.so
 .Python
 venv/
+.venv/
 test_venv/
 path/
 *.egg-info/
@@ -28,6 +29,14 @@ Thumbs.db
 
 # Test output
 test_output/
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+
+# Type checking / lint caches
+.mypy_cache/
+.ruff_cache/
 
 # Runtime user settings
 gui_settings.json
@@ -38,3 +47,8 @@ logs/
 
 # Claude
 .claude/
+
+# Personal working files (excluded from VCS)
+병동/
+input/
+docs/
