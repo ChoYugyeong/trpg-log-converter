@@ -12,7 +12,7 @@ from typing import List, Dict, Optional, Any
 try:
     from reportlab.lib.pagesizes import A4, A5, B5, letter
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-    from reportlab.lib.units import mm, cm
+    from reportlab.lib.units import mm, cm, inch
     from reportlab.lib.colors import HexColor, black, gray, white
     from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_JUSTIFY
     from reportlab.platypus import (
@@ -43,25 +43,29 @@ PAGE_SIZES = {
 
 
 class NumberedCanvas(canvas.Canvas):
-    """페이지 번호가 있는 캔버스"""
+    """페이지 번호가 있는 캔버스.
+
+    ``skip_first_pages`` 는 표지 + 목차 등 본문 앞에 붙는 페이지 수를 반영해야
+    하며, ``make_numbered_canvas(skip)`` 으로 생성된 콜러블을
+    ``SimpleDocTemplate.build(canvasmaker=...)`` 에 전달해 주입한다.
+    """
+
+    skip_first_pages: int = 0
 
     def __init__(self, *args, **kwargs):
         canvas.Canvas.__init__(self, *args, **kwargs)
         self._saved_page_states = []
         self._page_number_start = 1
-        self._skip_first_pages = 2  # 표지, 목차 스킵
 
     def showPage(self):
         self._saved_page_states.append(dict(self.__dict__))
         self._startPage()
 
     def save(self):
-        num_pages = len(self._saved_page_states)
         for idx, state in enumerate(self._saved_page_states):
             self.__dict__.update(state)
-            # 페이지 번호 (표지, 목차 이후부터)
-            if idx >= self._skip_first_pages:
-                self.draw_page_number(idx - self._skip_first_pages + 1)
+            if idx >= self.skip_first_pages:
+                self.draw_page_number(idx - self.skip_first_pages + 1)
             canvas.Canvas.showPage(self)
         canvas.Canvas.save(self)
 
@@ -74,8 +78,24 @@ class NumberedCanvas(canvas.Canvas):
         self.restoreState()
 
 
+def make_numbered_canvas(skip_first_pages: int) -> type:
+    """Return a NumberedCanvas subclass bound to ``skip_first_pages``.
+
+    ``SimpleDocTemplate.build(canvasmaker=...)`` instantiates the canvas itself,
+    so we can't pass constructor args. We bake the value into a fresh subclass.
+    """
+    skip = max(0, int(skip_first_pages))
+    cls_name = f"NumberedCanvas_skip{skip}"
+    return type(cls_name, (NumberedCanvas,), {"skip_first_pages": skip})
+
+
 def register_fonts(config: Dict) -> tuple:
-    """한글 폰트 등록"""
+    """한글 폰트 등록.
+
+    DOCX 와 동일한 폰트(``fonts.docx_fallback.body/name``)를 우선 사용한다.
+    해당 이름의 TTF/OTF 파일을 시스템 폰트 디렉터리에서 찾아 reportlab 에
+    등록한다. 못 찾으면 기존 fallback(malgun / NanumGothic 등).
+    """
     if not PDF_AVAILABLE:
         return None, None
 
@@ -83,6 +103,11 @@ def register_fonts(config: Dict) -> tuple:
     body_font = 'Helvetica'
     name_font = 'Helvetica-Bold'
     registered_fonts = set()
+
+    # DOCX 와 동일하게 fonts.docx_fallback 의 폰트 이름을 우선 탐색
+    fallback = config.get('fonts', {}).get('docx_fallback', {}) or {}
+    requested_body = fallback.get('body')
+    requested_name = fallback.get('name')
 
     # 시스템 폰트 경로 동적 탐색
     import sys
@@ -167,6 +192,55 @@ def register_fonts(config: Dict) -> tuple:
                 except Exception as e:
                     logger.warning(f"시스템 폰트 로드 실패: {font_path} - {e}")
 
+    # DOCX 와 동일한 한글 폰트 이름(본명조/부크크 고딕 등)을 reportlab 에 등록 시도.
+    # Windows 에서는 폰트 family name 과 파일명이 다를 수 있어 QFontDatabase 를
+    # 이용해 family → 파일 경로 매핑을 시도한다.
+    try:
+        from PySide6.QtGui import QFont, QFontInfo, QRawFont  # noqa: F401
+        from PySide6.QtWidgets import QApplication
+        if QApplication.instance() is not None:
+            import sys as _sys
+            win_dir = Path(os.environ.get('WINDIR', 'C:/Windows')) / 'Fonts' if _sys.platform == 'win32' else None
+            for label, family in (('body', requested_body), ('name', requested_name)):
+                if not family:
+                    continue
+                try:
+                    qf = QFont(family)
+                    raw = QRawFont.fromFont(qf)
+                    actual_family = raw.familyName()
+                    if not actual_family:
+                        continue
+                    # Windows 폰트 폴더에서 파일명으로 매칭 시도
+                    if win_dir and win_dir.exists():
+                        candidates = []
+                        for ext in ('*.ttf', '*.otf', '*.ttc'):
+                            candidates.extend(win_dir.glob(ext))
+                        # 한글 가족명 혹은 파일명 prefix 매칭
+                        base_key = family.replace(' ', '').lower()
+                        for f in candidates:
+                            stem = f.stem.lower().replace(' ', '').replace('_', '').replace('-', '')
+                            if base_key in stem or any(k in stem for k in (base_key[:4], base_key[-4:])):
+                                try:
+                                    reg_name = f.stem
+                                    if reg_name not in registered_fonts:
+                                        if f.suffix.lower() == '.ttc':
+                                            pdfmetrics.registerFont(TTFont(reg_name, str(f), subfontIndex=0))
+                                        else:
+                                            pdfmetrics.registerFont(TTFont(reg_name, str(f)))
+                                        registered_fonts.add(reg_name)
+                                    if label == 'body':
+                                        body_font = reg_name
+                                    else:
+                                        name_font = reg_name
+                                    logger.info("PDF 폰트 매칭: %s → %s", family, f.name)
+                                    break
+                                except Exception as fe:
+                                    logger.debug("폰트 등록 실패 %s: %s", f, fe)
+                except Exception as fe:
+                    logger.debug("폰트 매칭 실패 %s: %s", family, fe)
+    except ImportError:
+        pass
+
     if body_font == 'Helvetica':
         logger.warning("한글 폰트를 찾을 수 없음 - 한글이 깨질 수 있습니다")
 
@@ -223,6 +297,7 @@ def create_styles(body_font: str, name_font: str, config: Dict) -> Dict[str, Par
     """PDF 스타일 정의"""
     styles = getSampleStyleSheet()
     style_config = config.get('style', {})
+    cover_config = config.get('cover', {})
 
     custom_styles = {
         'CoverTitle': ParagraphStyle(
@@ -233,7 +308,7 @@ def create_styles(body_font: str, name_font: str, config: Dict) -> Dict[str, Par
             leading=36,
             alignment=TA_CENTER,
             spaceAfter=20,
-            textColor=HexColor(style_config.get('cover_title_color', '#ffffff')),
+            textColor=HexColor(cover_config.get('title_color', '#ffffff')),
         ),
         'CoverSubtitle': ParagraphStyle(
             'CoverSubtitle',
@@ -270,15 +345,29 @@ def create_styles(body_font: str, name_font: str, config: Dict) -> Dict[str, Par
             leading=20,
             leftIndent=20,
         ),
-        'SceneTitle': ParagraphStyle(
+        'SceneTitle': (lambda hc: ParagraphStyle(
             'SceneTitle',
             parent=styles['Heading2'],
             fontName=name_font,
-            fontSize=14,
-            spaceBefore=25,
-            spaceAfter=15,
-            textColor=black,
+            fontSize=hc['size'],
+            spaceBefore=hc['size'] * 2.5,
+            spaceAfter=hc['size'] * 1.2,
+            alignment=TA_CENTER,
+            textColor=HexColor(hc['color']) if isinstance(hc['color'], str) and hc['color'].startswith('#') else black,
             keepWithNext=True,
+        ))({
+            'size': float((config.get('header', {}) or {}).get('size', 24)),
+            'color': (config.get('header', {}) or {}).get('color', '#1a1a1a'),
+        }),
+        'SceneEnd': ParagraphStyle(
+            'SceneEnd',
+            parent=styles['Normal'],
+            fontName=name_font,
+            fontSize=9,
+            textColor=HexColor('#999999'),
+            alignment=TA_CENTER,
+            spaceBefore=18,
+            spaceAfter=6,
         ),
         'Dialogue': ParagraphStyle(
             'Dialogue',
@@ -466,16 +555,17 @@ def create_pdf(entries: List[Dict], output_path: str, config: Dict,
         # 폰트 등록
         body_font, name_font = register_fonts(config)
 
-        # 페이지 크기
-        page_format = config.get('page', {}).get('format', 'A5')
-        page_size = PAGE_SIZES.get(page_format, A5)
+        # 페이지 크기 — DOCX 와 공용인 core.layout 헬퍼 사용
+        from core.layout import parse_page_format, get_page_format, get_page_margins_inch
+        page_w_mm, page_h_mm = parse_page_format(get_page_format(config))
+        page_size = (page_w_mm * mm, page_h_mm * mm)
 
-        # 여백
-        margins = config.get('page', {}).get('margins', {})
-        left_margin = margins.get('left', 15) * mm
-        right_margin = margins.get('right', 15) * mm
-        top_margin = margins.get('top', 20) * mm
-        bottom_margin = margins.get('bottom', 20) * mm
+        # 여백 — DOCX 와 같은 inch 단위
+        margins_inch = get_page_margins_inch(config)
+        left_margin = margins_inch['left'] * inch
+        right_margin = margins_inch['right'] * inch
+        top_margin = margins_inch['top'] * inch
+        bottom_margin = margins_inch['bottom'] * inch
 
         # 문서 생성
         doc = SimpleDocTemplate(
@@ -497,7 +587,7 @@ def create_pdf(entries: List[Dict], output_path: str, config: Dict,
         story = []
 
         # 장면 분할
-        from core.engine import split_into_scenes
+        from core.parsers.pipeline import split_into_scenes
         scenes = split_into_scenes(entries, config)
 
         # 표지
@@ -514,9 +604,11 @@ def create_pdf(entries: List[Dict], output_path: str, config: Dict,
             if scene_idx > 0:
                 story.append(PageBreak())
 
-            # 장면 제목
+            # 장면 제목 — 시각적 마커는 제거하고 prefix/suffix 적용
             if scene_title:
-                display_title = scene_title if scene_title.startswith('■') else f"■ {scene_title}"
+                header_cfg = config.get('header', {}) or {}
+                base_title = scene_title.lstrip('■▶ ').strip() or scene_title
+                display_title = f"{header_cfg.get('prefix', '')}{base_title}{header_cfg.get('suffix', '')}"
                 story.append(Paragraph(escape_xml(display_title), pdf_styles['SceneTitle']))
 
             # 엔트리 처리
@@ -563,6 +655,10 @@ def create_pdf(entries: List[Dict], output_path: str, config: Dict,
                         story.append(Paragraph(f"<b>{name_escaped}</b>", pdf_styles['DialogueName']))
                     story.append(Paragraph(content_escaped, pdf_styles['Effect']))
 
+                elif entry_type == 'scene_end':
+                    # 직전 챕터 마지막 줄에 작은 폰트로 가운데 정렬
+                    story.append(Paragraph(content_escaped, pdf_styles['SceneEnd']))
+
                 else:
                     story.append(Paragraph(content_escaped, pdf_styles['Dialogue']))
 
@@ -577,7 +673,13 @@ def create_pdf(entries: List[Dict], output_path: str, config: Dict,
                 topMargin=top_margin, bottomMargin=bottom_margin,
                 title=title, author=author,
             )
-            tmp_doc.build(story, canvasmaker=NumberedCanvas)
+            # 본문 앞에 들어간 페이지 수만큼 페이지 번호 표시를 지연시킨다.
+            cover_included = bool(config.get('cover', {}).get('include', True))
+            toc_included = bool(
+                config.get('toc', {}).get('include', True) and len(scenes) > 1
+            )
+            skip = int(cover_included) + int(toc_included)
+            tmp_doc.build(story, canvasmaker=make_numbered_canvas(skip))
             if os.path.exists(output_path):
                 os.replace(tmp_path, output_path)
             else:

@@ -15,26 +15,30 @@ import os
 import tempfile
 
 from docx import Document
-from docx.shared import Pt, Inches
+from docx.shared import Pt, Inches, Mm
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
 
-from core.engine import (
-    get_font_files,
-    get_font_family_name,
-    hex_to_rgb,
-    find_image_file,
-    optimize_image,
-    split_into_scenes,
-)
+from core.parsers.fonts import get_font_files, get_font_family_name
+from core.parsers.helpers import hex_to_rgb
+from core.parsers.images import find_image_file, optimize_image
+from core.parsers.pipeline import split_into_scenes
 
 logger = logging.getLogger(__name__)
 
 
 def set_run_font(run, font_name, size_pt=None, bold=False, italic=False, color=None):
+    # Word 가 한글에 지정 폰트를 확실히 적용하도록 rFonts 의 네 속성 + hint 를 모두 지정.
+    # w:eastAsia 만 채우면 Word 는 w:hint 가 없을 때 한글을 Latin(w:ascii) 폰트로 그리는
+    # 경우가 있어 한글 폰트가 무시되고 기본 글꼴(맑은 고딕 등)로 fallback 됨.
     run.font.name = font_name
-    run._element.rPr.rFonts.set(qn('w:eastAsia'), font_name)
+    rFonts = run._element.rPr.rFonts
+    rFonts.set(qn('w:ascii'), font_name)
+    rFonts.set(qn('w:hAnsi'), font_name)
+    rFonts.set(qn('w:eastAsia'), font_name)
+    rFonts.set(qn('w:cs'), font_name)
+    rFonts.set(qn('w:hint'), 'eastAsia')
     if size_pt:
         run.font.size = Pt(size_pt)
     if bold:
@@ -59,6 +63,22 @@ def create_docx(entries, output_path, config, title="TRPG 리플레이", author=
     if progress_callback:
         progress_callback(0, 100, "DOCX 생성 준비 중...")
     doc = Document()
+
+    # 페이지 판형 / 여백 적용 — PDF 와 동일한 core.layout 헬퍼를 사용해
+    # DOCX 와 PDF 의 레이아웃이 일치하도록 보장한다.
+    try:
+        from core.layout import parse_page_format, get_page_format, get_page_margins_inch
+        page_w_mm, page_h_mm = parse_page_format(get_page_format(config))
+        margins = get_page_margins_inch(config)
+        section = doc.sections[0]
+        section.page_width = Mm(page_w_mm)
+        section.page_height = Mm(page_h_mm)
+        section.top_margin = Inches(margins['top'])
+        section.bottom_margin = Inches(margins['bottom'])
+        section.left_margin = Inches(margins['left'])
+        section.right_margin = Inches(margins['right'])
+    except Exception as e:
+        logger.warning("DOCX 페이지 설정 실패, 기본값 사용: %s", e)
 
     if author is None:
         author = config.get('metadata', {}).get('author', 'GM')
@@ -110,15 +130,30 @@ def create_docx(entries, output_path, config, title="TRPG 리플레이", author=
             if scene_idx > 0:
                 doc.add_page_break()
 
+            # 챕터 느낌의 큰 제목 — 사용자 설정(config['header'])을 따름
+            header_cfg = config.get('header', {}) or {}
             title_para = doc.add_paragraph()
-            title_para.alignment = WD_ALIGN_PARAGRAPH.LEFT
+            title_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
-            title_has_marker = scene_title.startswith('■')
-            display_title = scene_title if title_has_marker else f"■ {scene_title}"
+            # ■ ▶ 같은 시각적 군더더기 마커는 제거. prefix/suffix 가 설정돼 있으면 추가
+            base_title = scene_title.lstrip('■▶ ').strip() or scene_title
+            display_title = f"{header_cfg.get('prefix', '')}{base_title}{header_cfg.get('suffix', '')}"
 
             title_run = title_para.add_run(display_title)
-            set_run_font(title_run, name_font, size_pt=14, bold=True)
-            add_paragraph_spacing(title_para, before_pt=24, after_pt=16)
+            try:
+                header_size = float(header_cfg.get('size', 24))
+            except (TypeError, ValueError):
+                header_size = 24.0
+            set_run_font(
+                title_run,
+                name_font,
+                size_pt=header_size,
+                bold=bool(header_cfg.get('bold', True)),
+                color=header_cfg.get('color') or None,
+            )
+            if header_cfg.get('underline'):
+                title_run.font.underline = True
+            add_paragraph_spacing(title_para, before_pt=72, after_pt=36)
 
         for entry in scene_entries:
             t = entry['type']
@@ -173,6 +208,13 @@ def create_docx(entries, output_path, config, title="TRPG 리플레이", author=
                 set_run_font(content_run, name_font, size_pt=9, color='#444444')
                 para.paragraph_format.left_indent = Inches(0.3)
                 add_paragraph_spacing(para, before_pt=4, after_pt=4, line_spacing=1.2)
+
+            elif t == 'scene_end':
+                # 직전 챕터 마지막 줄에 작은 폰트로 가운데 정렬
+                para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                content_run = para.add_run(content)
+                set_run_font(content_run, name_font, size_pt=9, color='#999999')
+                add_paragraph_spacing(para, before_pt=18, after_pt=6, line_spacing=1.0)
 
             elif t == 'whisper':
                 content_run = para.add_run(content)
