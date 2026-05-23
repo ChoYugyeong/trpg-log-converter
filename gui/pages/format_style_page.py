@@ -530,10 +530,19 @@ class FormatStylePage(BasePage):
         # ---- EPUB 폰트 카드 ----
         epub_card = ContentCard("EPUB 폰트", "웹 폰트 또는 임베드 폰트 사용")
 
+        # 콤보에 없는 값(예: CSS 체인 "'본명조', 'Source Han Serif K', serif")을
+        # 그대로 표시하기 위해 없으면 항목을 임시 추가한 뒤 selectText 한다.
+        def _ensure_font(combo, value: str):
+            if not value:
+                return
+            if combo.findText(value) == -1:
+                combo.insertItem(0, value)
+            combo.setCurrentText(value)
+
         self.epub_body_combo = ComboBox()
         self.epub_body_combo.addItems(self._system_fonts)
         self.epub_body_combo.setMinimumWidth(220)
-        self.epub_body_combo.setCurrentText(self.settings.get('epub_body_font', '나눔명조'))
+        _ensure_font(self.epub_body_combo, self.settings.get('epub_body_font', '나눔명조'))
         self.epub_body_combo.currentTextChanged.connect(self._on_font_changed)
         epub_card.add_field("본문 폰트", self.epub_body_combo,
                            help_text="EPUB 본문에 사용할 폰트를 선택하세요.")
@@ -541,7 +550,7 @@ class FormatStylePage(BasePage):
         self.epub_name_combo = ComboBox()
         self.epub_name_combo.addItems(self._system_fonts)
         self.epub_name_combo.setMinimumWidth(220)
-        self.epub_name_combo.setCurrentText(self.settings.get('epub_name_font', 'Pretendard'))
+        _ensure_font(self.epub_name_combo, self.settings.get('epub_name_font', 'Pretendard'))
         self.epub_name_combo.currentTextChanged.connect(self._on_font_changed)
         epub_card.add_field("이름 폰트", self.epub_name_combo,
                            help_text="캐릭터 이름에 사용할 폰트. 산세리프 계열 권장.")
@@ -591,7 +600,7 @@ class FormatStylePage(BasePage):
         self.docx_body_combo = ComboBox()
         self.docx_body_combo.addItems(self._system_fonts)
         self.docx_body_combo.setMinimumWidth(220)
-        self.docx_body_combo.setCurrentText(self.settings.get('docx_body_font', '맑은 고딕'))
+        _ensure_font(self.docx_body_combo, self.settings.get('docx_body_font', '맑은 고딕'))
         self.docx_body_combo.currentTextChanged.connect(self._on_font_changed)
         docx_card.add_field("본문 폰트", self.docx_body_combo,
                            help_text="시스템에 설치된 폰트를 선택하세요.")
@@ -599,7 +608,7 @@ class FormatStylePage(BasePage):
         self.docx_name_combo = ComboBox()
         self.docx_name_combo.addItems(self._system_fonts)
         self.docx_name_combo.setMinimumWidth(220)
-        self.docx_name_combo.setCurrentText(self.settings.get('docx_name_font', '맑은 고딕'))
+        _ensure_font(self.docx_name_combo, self.settings.get('docx_name_font', '맑은 고딕'))
         self.docx_name_combo.currentTextChanged.connect(self._on_font_changed)
         docx_card.add_field("이름 폰트", self.docx_name_combo,
                            help_text="캐릭터 이름 표시용 폰트.")
@@ -1922,24 +1931,24 @@ class FormatStylePage(BasePage):
                 picker.set_color(colors.get(key, default_colors.get(key, '#000000')))
 
         # === Font ===
-        epub_body = _g('epub_body_font', '나눔명조')
-        if epub_body in self._system_fonts:
-            self.epub_body_combo.setCurrentText(epub_body)
+        # 콤보에 없는 값(예: CSS 체인 "'본명조', 'Source Han Serif K', serif")도
+        # 그대로 표시되도록 필요 시 항목을 임시 추가한 뒤 selectText 한다.
+        # 이 처리가 없으면 import 값이 UI 에 반영되지 않아 save 시 기본값으로 롤백된다.
+        def _set_font_combo(combo, value: str):
+            if not value:
+                return
+            if combo.findText(value) == -1:
+                combo.insertItem(0, value)
+            combo.setCurrentText(value)
 
-        epub_name = _g('epub_name_font', 'Pretendard')
-        if epub_name in self._system_fonts:
-            self.epub_name_combo.setCurrentText(epub_name)
+        _set_font_combo(self.epub_body_combo, _g('epub_body_font', '나눔명조'))
+        _set_font_combo(self.epub_name_combo, _g('epub_name_font', 'Pretendard'))
 
         self.embed_body_entry.setText(_g('embed_body_font', ''))
         self.embed_name_entry.setText(_g('embed_name_font', ''))
 
-        docx_body = _g('docx_body_font', '맑은 고딕')
-        if docx_body in self._system_fonts:
-            self.docx_body_combo.setCurrentText(docx_body)
-
-        docx_name = _g('docx_name_font', '맑은 고딕')
-        if docx_name in self._system_fonts:
-            self.docx_name_combo.setCurrentText(docx_name)
+        _set_font_combo(self.docx_body_combo, _g('docx_body_font', '맑은 고딕'))
+        _set_font_combo(self.docx_name_combo, _g('docx_name_font', '맑은 고딕'))
 
         self.docx_embed_body.setText(_g('docx_embed_body', ''))
         self.docx_embed_name.setText(_g('docx_embed_name', ''))

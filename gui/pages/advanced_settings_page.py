@@ -425,14 +425,54 @@ class AdvancedSettingsPage(BasePage):
 
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
-                settings = json.load(f)
+                imported = json.load(f)
+            imported.pop('_meta', None)  # 프리셋 메타는 앱 설정이 아님
 
-            self.config_manager.save_gui_settings(settings)
-            self.load_settings()
+            # 1) 현재 설정과 병합 후 저장
+            current = self.config_manager.get_gui_settings()
+            current.update(imported)
+            self.config_manager.save_gui_settings(current)
+
+            main_window = self.window()
+            # 2) AppState 를 import 된 값으로 리로드
+            if hasattr(main_window, 'app_state'):
+                main_window.app_state.load()
+
+            # 3) 페이지 리로드 중에는 save / set 을 모두 무효화한다.
+            # load_settings 가 UI 위젯을 순차 세팅하면서 textChanged 등 시그널이
+            # 발화해 save_settings() 가 호출되면, 아직 세팅되지 않은 다른 위젯의
+            # 기본값이 state.set() / save_gui_settings() 로 AppState · 디스크에
+            # 유입되어 import 값이 부분 롤백된다. 두 경로 모두 차단.
+            original_save = self.config_manager.save_gui_settings
+            self.config_manager.save_gui_settings = lambda _s: None
+            if hasattr(main_window, 'app_state'):
+                main_window.app_state._suspend_set = True
+            try:
+                if hasattr(main_window, 'pages'):
+                    for page in main_window.pages.values():
+                        if hasattr(page, 'load_settings'):
+                            try:
+                                page.load_settings()
+                            except Exception as page_err:  # noqa: BLE001
+                                logger.warning(
+                                    "페이지 설정 로드 중 오류(계속 진행): %s", page_err
+                                )
+                else:
+                    self.load_settings()
+            finally:
+                if hasattr(main_window, 'app_state'):
+                    main_window.app_state._suspend_set = False
+                self.config_manager.save_gui_settings = original_save
+
+            # 4) 페이지 리로드가 끝났으니 import 값을 최종 확정 저장하고
+            #    AppState 도 다시 동기화한다.
+            self.config_manager.save_gui_settings(current)
+            if hasattr(main_window, 'app_state'):
+                main_window.app_state.load()
 
             InfoBar.success(
                 title='가져오기 완료',
-                content='설정을 불러왔습니다. 다른 페이지의 설정도 업데이트하려면 앱을 재시작하세요.',
+                content='설정이 적용되었습니다. 일부 UI 요소는 앱 재시작 후 완전히 반영됩니다.',
                 parent=self,
                 position=InfoBarPosition.TOP,
                 duration=5000

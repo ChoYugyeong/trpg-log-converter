@@ -228,6 +228,19 @@ class AppState(QObject):
         self._model: AppSettings = AppSettings()
         self._flat: Dict[str, Any] = {}
 
+        # 저장 차단 플래그.
+        # 앱 시작 시 페이지 __init__ 에서 위젯을 채우는 도중 changed 시그널이
+        # save_settings → state.save() 로 이어져 아직 세팅 안 된 다른 위젯의
+        # 기본값이 디스크로 내려가면 import 값이 지워진다.
+        # MainWindow 가 모든 페이지 초기화 전에 True 로 잠그고, 끝난 뒤 해제한다.
+        self._suspend_save: bool = False
+        # set() 차단 플래그.
+        # load_settings 중 위젯.setText/setCurrentText 가 textChanged 시그널을
+        # 거쳐 save_settings() 를 트리거하면, 아직 세팅 안 된 다른 위젯의
+        # 기본값이 state.set() 으로 AppState 에 유입되어 내부 메모리까지 오염된다.
+        # load 작업 구간에서 _suspend_set=True 로 막아 단방향(AppState→UI)만 흐르게 한다.
+        self._suspend_set: bool = False
+
         # ConfigManager에서 초기 설정 로드
         self.load()
 
@@ -271,6 +284,11 @@ class AppState(QObject):
             key: 플랫 설정 키
             value: 새로운 값
         """
+        # load_settings 중에 위젯 시그널을 타고 들어오는 set 은 AppState 를
+        # 오염시키므로 차단한다 (AppState→UI 단방향 보장).
+        if self._suspend_set:
+            return
+
         # 동일 값이면 무시 (얕은 비교)
         old = self._flat.get(key)
         if old == value:
@@ -350,7 +368,15 @@ class AppState(QObject):
     # ──────────────────────────────────────────
 
     def save(self) -> None:
-        """현재 상태를 ConfigManager를 통해 gui_settings.json에 저장합니다."""
+        """현재 상태를 ConfigManager를 통해 gui_settings.json에 저장합니다.
+
+        ``_suspend_save`` 가 True 이면 저장을 건너뜁니다. 앱 시작 시 페이지
+        초기화 중 발생하는 side-effect save 로 디스크의 값이 기본값으로
+        덮여쓰이는 문제를 방지합니다.
+        """
+        if self._suspend_save:
+            logger.debug("AppState 저장 보류 (suspend)")
+            return
         self._sync_model_from_flat()
         self._config_manager.save_gui_settings(self._flat)
         logger.debug("AppState 저장 완료 (%d 키)", len(self._flat))

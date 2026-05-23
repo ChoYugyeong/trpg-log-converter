@@ -119,12 +119,53 @@ class HomePage(BasePage):
 
         file_card.add_spacing(8)
 
-        # 파일 목록 (드래그로 순서 변경 가능)
+        # Roll20 / 코코포리아에서 로그 가져오는 방법을 바로 띄우는 도움말 버튼.
+        # 드래그 영역 바로 밑에 두어 "어디서 파일을 받아오지?" 라는 질문이 생기는
+        # 순간 즉시 클릭 가능.
+        help_row = QHBoxLayout()
+        help_row.setContentsMargins(0, 0, 0, 0)
+        help_row.setSpacing(8)
+
+        roll20_help_btn = PushButton("Roll20 로그 받는 법")
+        roll20_help_btn.setIcon(FIF.HELP)
+        roll20_help_btn.setMinimumHeight(Sizes.BUTTON_SM_H)
+        roll20_help_btn.clicked.connect(lambda: self._show_log_help_dialog("roll20"))
+        help_row.addWidget(roll20_help_btn)
+
+        coco_help_btn = PushButton("코코포리아 로그 받는 법")
+        coco_help_btn.setIcon(FIF.HELP)
+        coco_help_btn.setMinimumHeight(Sizes.BUTTON_SM_H)
+        coco_help_btn.clicked.connect(lambda: self._show_log_help_dialog("cocofolia"))
+        help_row.addWidget(coco_help_btn)
+
+        help_row.addStretch()
+        file_card.add_layout(help_row)
+        file_card.add_spacing(4)
+
+        # 순서 안내 라벨 (병합 시 어느 쪽이 먼저인지 명시)
+        order_hint = BodyLabel("↑ 위쪽이 먼저 병합됩니다 (1번 = 첫 부분) · 드래그로 순서를 바꿀 수 있어요")
+        order_hint.setStyleSheet("color: palette(mid); font-size: 12px; padding: 2px 4px;")
+        file_card.add_widget(order_hint)
+
+        # 파일 목록 (드래그로 순서 변경 가능 · 상단이 먼저 병합됨)
         self.file_list = QListWidget()
         self.file_list.setMinimumHeight(80)
         self.file_list.setMaximumHeight(200)
         self.file_list.setDragDropMode(QListWidget.InternalMove)
         self.file_list.setSelectionMode(QListWidget.ExtendedSelection)
+        # InternalMove 만으로는 실제 재정렬이 안 되는 경우가 있어 아래 플래그까지 명시.
+        self.file_list.setDragEnabled(True)
+        self.file_list.setAcceptDrops(True)
+        self.file_list.setDropIndicatorShown(True)
+        self.file_list.setDefaultDropAction(Qt.MoveAction)
+        # Qt QListWidget 은 내부 이동을 remove+insert 로 처리하므로 rowsMoved 는 거의
+        # 발화되지 않는다. rowsInserted/rowsRemoved 에 물려야 드래그 재정렬이 잡힌다.
+        self.file_list.model().rowsMoved.connect(self._on_files_reordered)
+        self.file_list.model().rowsInserted.connect(self._on_files_reordered)
+        self.file_list.model().rowsRemoved.connect(self._on_files_reordered)
+        self.file_list.setToolTip(
+            "위에 있는 파일이 먼저 병합됩니다.\n드래그해서 순서를 바꾸세요."
+        )
         file_card.add_widget(self.file_list)
 
         # 버튼 행
@@ -163,29 +204,128 @@ class HomePage(BasePage):
     # 2-1. 로그 추출 가이드
     # ------------------------------------------------------------------
 
+    # ------------------------------------------------------------------
+    # 2-2. 로그 가져오기 도움말 다이얼로그
+    # ------------------------------------------------------------------
+
+    ROLL20_GUIDE_TEXT = (
+        "Roll20 채팅 로그 가져오기\n"
+        "─────────────────────\n"
+        "\n"
+        "[방법 1] Chat Archive 페이지 (가장 안정)\n"
+        "  1. 캠페인 ID 확인\n"
+        "     · 캠페인 URL: app.roll20.net/campaigns/details/<숫자>/...\n"
+        "     · 가운데 숫자가 캠페인 ID 입니다.\n"
+        "  2. 브라우저 주소창에 다음 URL 직접 입력:\n"
+        "     app.roll20.net/campaigns/chatarchive/<캠페인 ID>\n"
+        "  3. 페이지가 로드되면 Ctrl+S (Mac: ⌘+S)\n"
+        "     · 저장 형식: '웹페이지, HTML만' 또는 'Webpage, HTML only'\n"
+        "  4. 저장된 .html 파일을 이 앱 드래그 영역에 드롭\n"
+        "\n"
+        "[방법 2] 게임 화면 톱니 메뉴 (UI 우회)\n"
+        "  1. 캠페인 게임 화면 접속\n"
+        "  2. 우측 상단 톱니바퀴 ⚙ → 'Chat Archive' 클릭\n"
+        "  3. 새 탭에서 채팅 로그가 열림\n"
+        "  4. Ctrl+S 로 HTML 저장 → 앱에 드롭\n"
+        "\n"
+        "[방법 3] 화면 복사 (Chat Archive 권한이 없을 때)\n"
+        "  1. 게임 화면 채팅 창에서 우클릭 → 전체 선택\n"
+        "  2. 메모장 / 텍스트 편집기에 붙여넣기\n"
+        "  3. .txt 로 저장 → 앱에 드롭\n"
+        "     · 이 방식은 다이스 결과 일부가 누락될 수 있습니다.\n"
+        "\n"
+        "유의사항\n"
+        "  · Chat Archive 는 GM / Co-GM 권한이 있어야 접근 가능\n"
+        "  · 한 세션이 길면 한 달 단위로 따로 저장될 수 있음 → 모두 드롭해서 병합 변환\n"
+        "  · 캐릭터 이름은 PC/GM/캐릭터별로 자동 분류됨"
+    )
+
+    COCOFOLIA_GUIDE_TEXT = (
+        "코코포리아 (Cocofolia) 로그 가져오기\n"
+        "─────────────────────\n"
+        "\n"
+        "[방법 1] 룸 메뉴 → 로그 저장\n"
+        "  1. 코코포리아 룸 접속\n"
+        "  2. 우측 사이드바 '로그' 또는 '🗒 ログ' 아이콘 클릭\n"
+        "  3. '로그 다운로드' / '保存' 버튼 → HTML 형식 선택\n"
+        "  4. 저장된 .html 파일을 앱에 드롭\n"
+        "\n"
+        "[방법 2] 룸 종료 후 자동 백업\n"
+        "  · 룸을 닫으면 코코포리아가 종료 화면에 다운로드 링크를 표시\n"
+        "  · 거기서 받은 HTML 도 동일하게 동작\n"
+        "\n"
+        "채널별 처리\n"
+        "  · 코코포리아는 [메인] / [잡담] / [정보] 등 채널이 별도로 표시됩니다.\n"
+        "  · 기본 설정은 [잡담] / [ooc] / 雑談 / 情報 채널을 자동 제외.\n"
+        "  · 더 세밀히 거르려면 고급 설정 → '제외할 채널' 에서 추가/삭제.\n"
+        "\n"
+        "유의사항\n"
+        "  · 한 룸을 여러 세션으로 진행한 경우 각 세션마다 따로 저장된 HTML 을 모두\n"
+        "    드롭한 뒤 변환 모드 '병합' 으로 합치면 한 권의 전자책이 됩니다."
+    )
+
+    def _show_log_help_dialog(self, platform: str) -> None:
+        """플랫폼별 로그 가져오기 상세 가이드를 스크롤 가능한 모달로 표시.
+
+        qfluentwidgets ``MessageBox`` 는 짧은 한 줄 메시지 전용이라 본 가이드처럼
+        20+ 줄짜리 텍스트를 잘라서 표시한다. 그래서 ``QDialog`` + ``QTextBrowser``
+        조합으로 직접 다이얼로그를 띄우고 텍스트는 monospace 폰트로 정렬 유지.
+        """
+        from PySide6.QtWidgets import (
+            QDialog, QVBoxLayout, QTextBrowser, QPushButton, QHBoxLayout as _HB,
+        )
+
+        title, content = {
+            "roll20": ("Roll20 로그 가져오는 법", self.ROLL20_GUIDE_TEXT),
+            "cocofolia": ("코코포리아 로그 가져오는 법", self.COCOFOLIA_GUIDE_TEXT),
+        }.get(platform, ("로그 가져오는 법", self.ROLL20_GUIDE_TEXT))
+
+        dlg = QDialog(self.window())
+        dlg.setWindowTitle(title)
+        dlg.resize(560, 520)
+        dlg.setModal(True)
+
+        layout = QVBoxLayout(dlg)
+        layout.setContentsMargins(20, 16, 20, 16)
+        layout.setSpacing(12)
+
+        viewer = QTextBrowser(dlg)
+        viewer.setPlainText(content)
+        viewer.setOpenExternalLinks(True)
+        viewer.setStyleSheet(
+            "QTextBrowser { background: palette(base); border: 1px solid "
+            "rgba(128,128,128,0.2); border-radius: 6px; padding: 10px; "
+            "font-family: 'Consolas', 'D2Coding', monospace; "
+            "font-size: 13px; line-height: 1.6; }"
+        )
+        layout.addWidget(viewer, 1)
+
+        btn_row = _HB()
+        btn_row.addStretch()
+        ok_btn = QPushButton("확인", dlg)
+        ok_btn.clicked.connect(dlg.accept)
+        ok_btn.setMinimumWidth(80)
+        btn_row.addWidget(ok_btn)
+        layout.addLayout(btn_row)
+
+        dlg.exec()
+
+    # ------------------------------------------------------------------
+    # 2-3. (구) 접이식 로그 가이드 — 다이얼로그가 메인이라 기본 접힘
+    # ------------------------------------------------------------------
+
     def _build_log_guide(self):
-        """플랫폼별 로그 추출 방법 안내"""
-        guide_section = CollapsibleSection("로그 추출 방법 안내", expanded=False)
+        """플랫폼별 로그 추출 방법 안내 (접이식 보조 카드)."""
+        # 위쪽 '로그 받는 법' 버튼들이 모달 다이얼로그를 띄우므로 이 섹션은
+        # 보조 자료(텍스트 형식 안내 등)로만 사용. 기본 접힘.
+        guide_section = CollapsibleSection("그 외 로그 형식 안내", expanded=False)
 
         # Roll20 가이드
         roll20_card = ContentCard(
             "Roll20 채팅 로그 추출",
             help_text="Roll20에서 채팅 로그를 HTML 파일로 다운로드하는 방법입니다."
         )
-        roll20_guide = BodyLabel(
-            "1. Roll20 캠페인에 접속합니다\n"
-            "2. 우측 상단 톱니바퀴 > 'Chat Archive' (채팅 아카이브) 클릭\n"
-            "3. 날짜 범위를 선택하고 'View Monthly Chat Archive' 클릭\n"
-            "4. 브라우저에 채팅 로그가 표시되면\n"
-            "   Ctrl+S (또는 Cmd+S)로 '웹 페이지, HTML만' 저장\n"
-            "5. 저장된 .html 파일을 여기에 드래그하세요\n"
-            "\n"
-            "* GM/DM만 Chat Archive에 접근할 수 있습니다\n"
-            "* Pro 구독 시 API 스크립트로 더 상세한 로그 추출 가능\n"
-            "* Chat Archive가 없는 경우: 게임 화면에서\n"
-            "  채팅 창 우클릭 > '전체 선택' > 메모장에 붙여넣기 후\n"
-            "  .txt 파일로 저장하여 사용할 수 있습니다"
-        )
+        roll20_guide = BodyLabel(self.ROLL20_GUIDE_TEXT)
         roll20_guide.setWordWrap(True)
         roll20_guide.setObjectName("GuideLabel")
         roll20_card.add_widget(roll20_guide)
@@ -196,16 +336,7 @@ class HomePage(BasePage):
             "코코포리아 (Cocofolia) 로그 추출",
             help_text="코코포리아에서 채팅 로그를 다운로드하는 방법입니다."
         )
-        coco_guide = BodyLabel(
-            "1. 코코포리아 세션 종료 후 '로그' 탭 클릭\n"
-            "2. '로그 다운로드' 또는 '로그 저장' 버튼 클릭\n"
-            "3. HTML 형식으로 저장됩니다\n"
-            "4. 저장된 .html 파일을 여기에 드래그하세요\n"
-            "\n"
-            "* 채널별로 로그가 분리되어 저장됩니다\n"
-            "* [메인] 채널 로그를 사용하는 것을 권장합니다\n"
-            "* 잡담 채널 등은 '고급 설정 > 제외할 채널'에서 필터링 가능"
-        )
+        coco_guide = BodyLabel(self.COCOFOLIA_GUIDE_TEXT)
         coco_guide.setWordWrap(True)
         coco_guide.setObjectName("GuideLabel")
         coco_card.add_widget(coco_guide)
@@ -531,9 +662,9 @@ class HomePage(BasePage):
         for path in files:
             if path not in self.files:
                 self.files.append(path)
-                item = QListWidgetItem(f"  {Path(path).name}")
+                item = QListWidgetItem(f"  {len(self.files)}. {Path(path).name}")
                 item.setData(Qt.UserRole, path)
-                item.setToolTip(path)
+                item.setToolTip(f"{path}\n\n위로 드래그할수록 먼저 병합됩니다.")
                 self.file_list.addItem(item)
                 added = True
                 try:
@@ -595,7 +726,36 @@ class HomePage(BasePage):
             if path in self.files:
                 self.files.remove(path)
             self.file_list.takeItem(self.file_list.row(item))
+        self._renumber_items()
         self._update_file_count()
+        self.files_updated.emit(self.files)
+        self._update_document_preview(self.files)
+
+    def _on_files_reordered(self, *_):
+        """드래그로 파일 순서가 바뀌면 내부 리스트·번호·미리보기를 동기화한다.
+
+        QListWidget 은 InternalMove 설정만으로는 내부 self.files 리스트를
+        갱신해주지 않으므로, rowsMoved 시그널로 UI 순서를 원본 소스로 삼아
+        self.files 를 다시 구성한다.
+        """
+        new_files: list[str] = []
+        for i in range(self.file_list.count()):
+            item = self.file_list.item(i)
+            path = item.data(Qt.UserRole)
+            if path:
+                new_files.append(path)
+        self.files = new_files
+        self._renumber_items()
+        self.files_updated.emit(self.files)
+        self._update_document_preview(self.files)
+
+    def _renumber_items(self):
+        """파일 목록 아이템에 현재 순서(1, 2, 3...) 를 다시 매긴다."""
+        for i in range(self.file_list.count()):
+            item = self.file_list.item(i)
+            path = item.data(Qt.UserRole)
+            if path:
+                item.setText(f"  {i + 1}. {Path(path).name}")
 
     def _clear_files(self):
         """모든 파일 제거"""

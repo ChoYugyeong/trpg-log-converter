@@ -31,8 +31,10 @@ class HomeSettings(BaseModel):
     author: str = Field("GM", description="저자")
     output_dir: str = Field("./export", description="출력 폴더 경로")
     narrators: str = Field(
-        "GM, KP, DM, Keeper, 나레이터, 진행자",
-        description="나레이터 이름 목록 (쉼표 구분)",
+        # '-' 는 cocofolia 에서 GM 메시지의 기본 표기. 넣어둬야 GM 내래이션이
+        # 대사로 잘못 분류되지 않는다.
+        "-, GM, KP, DM, Keeper, 나레이터, 진행자",
+        description="나레이터 이름 목록 (쉼표 구분). '-' 는 cocofolia GM 기본 표기.",
     )
     language: str = Field("ko", description="EPUB 메타데이터 언어 코드")
     convert_mode: str = Field("single", description="변환 모드: single, batch")
@@ -216,8 +218,11 @@ class SceneSplitSettings(BaseModel):
 
     split_mode: str = Field("scene", description="분할 모드: scene, count, none")
     scene_patterns: str = Field(
-        "■, 씬, Scene, 장면, Act",
-        description="장면 분할 패턴 (쉼표 구분)",
+        # '▶Scene' / '▶씬' 은 cocofolia DX3/Insane 세션에서 자주 쓰는 장면 마커.
+        # '^─+' 는 '─── Act 3 ───' 같은 구분선 마커.
+        # '^제\\s*\\d+\\s*장' 는 '제 2 장' 형태의 한국 출판 스타일.
+        "■, ▶Scene, ▶씬, Scene, 씬, 장면, Act, ^─+, ^제\\s*\\d+\\s*장",
+        description="장면 분할 패턴 (쉼표 구분, '^' 또는 정규식 사용 가능)",
     )
     entries_per_chapter: str = Field("300", description="챕터당 항목 수 (count 모드)")
     min_scene_entries: str = Field("10", description="최소 장면 항목 수")
@@ -299,7 +304,11 @@ class AdvancedOptions(BaseModel):
 
     # 파싱
     name_max_length: str = Field("50", description="이름 최대 문자 수")
-    skip_channels: str = Field("[main], [잡담], [ooc]", description="제외 채널 (쉼표 구분)")
+    skip_channels: str = Field(
+        # 한국어 + 일본어(coccfolia 원본) + 영어 변형까지 함께 처리.
+        "[잡담], [ooc], 雑談, 情報, info, other",
+        description="제외 채널 (쉼표 구분). [main] 은 기본 채널이라 스킵 대상이 아님",
+    )
     normalize_punct: bool = Field(True, description="구두점 정규화")
     # Roll20
     session_gap: str = Field("60", description="세션 구분 간격 (분)")
