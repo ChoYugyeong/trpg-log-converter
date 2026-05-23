@@ -1942,6 +1942,10 @@ QToolTip {
     padding-right: 26px;
     font-size: __FS_SM__px;
     min-height: 0px;
+    /* 가장 긴 항목("Letter (216x279mm)" / "46배판 (128x188mm)" / "신국판 (152x225mm)")
+       이 잘리지 않도록 충분한 최소폭. 한글 폭이 라틴 글자보다 크기 때문에 여유 있게 잡는다.
+       Python setMinimumWidth(폰트 메트릭 기반) 과 함께 적용. */
+    min-width: 260px;
 }
 
 #PreviewFormatCombo::drop-down {

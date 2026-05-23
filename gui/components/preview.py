@@ -243,20 +243,27 @@ class DocumentPreview(QFrame):
         toolbar_layout.addLayout(row1)
 
         # 2행: 판형 콤보 (자체 행 full-width → 어떤 폭에서도 잘림 없음)
+        # ``판형`` 라벨은 콤보 placeholder/툴팁이 이미 같은 정보를 전달하므로 제거.
+        # 라벨이 차지하던 ~40px 를 콤보가 회수해 한글 라벨이 잘리지 않는다.
         row_format = QHBoxLayout()
         row_format.setSpacing(6)
         row_format.setContentsMargins(0, 0, 0, 0)
-
-        format_label = QLabel("판형")
-        format_label.setObjectName("PreviewFormatLabel")
-        row_format.addWidget(format_label)
 
         self.format_combo = QComboBox()
         self.format_combo.setObjectName("PreviewFormatCombo")
         self.format_combo.addItems(list(self.DOCUMENT_FORMATS.keys()))
         self.format_combo.setCurrentText(self._current_format)
-        # full-width 확장 → 부모 폭 전부 차지
+        # full-width 확장 → 행 전체 차지.
+        # sizeAdjustPolicy 는 의도적으로 기본값으로 둔다 — AdjustToMinimumContentsLength
+        # 계열은 sizeHint 를 contents 길이로 고정해 Expanding sizePolicy 와 충돌(좁아짐).
         self.format_combo.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        # 안전한 고정 최소 폭. ``_setup_ui`` 시점의 fontMetrics 는 아직 앱 폰트가
+        # 적용되기 전(시스템 디폴트 ~9pt) 이라 한글이 들어간 가장 긴 항목
+        # ("신국판 (152x225mm)") 를 과소 추정함 → 콤보가 ~90px 로 좁아지는 버그가 있었음.
+        # 고정값 + showEvent 에서 재계산하는 2단계 보호.
+        self.format_combo.setMinimumWidth(260)
+        # 툴팁은 호버 시 전체 라벨을 노출.
+        self.format_combo.setToolTip(f"판형: {self._current_format}")
         self.format_combo.currentTextChanged.connect(self._on_format_changed)
         row_format.addWidget(self.format_combo, 1)
 
@@ -528,6 +535,7 @@ class DocumentPreview(QFrame):
     def _on_format_changed(self, format_name: str):
         """문서 형식 변경"""
         self._current_format = format_name
+        self.format_combo.setToolTip(f"판형: {format_name}")
         self._update_page_size()
 
     def _zoom_in(self):
@@ -728,6 +736,27 @@ class DocumentPreview(QFrame):
         """창 크기 변경 시 페이지 크기 업데이트"""
         super().resizeEvent(event)
         self._update_page_size()
+
+    def showEvent(self, event):
+        """첫 노출 시 콤보 최소폭을 실제 폰트 메트릭으로 재계산.
+
+        ``_setup_ui`` 호출 시점에는 아직 앱 폰트(Pretendard 등) 가 적용되기 전이라
+        fontMetrics 가 시스템 디폴트 폰트 기준으로 측정된다. 그 결과 한글이 포함된
+        긴 라벨이 실제로는 콤보보다 넓어져 텍스트가 잘리는 문제가 있었음.
+        화면에 보이는 시점에 한 번 더 측정해 부족하면 폭을 키운다.
+        """
+        super().showEvent(event)
+        try:
+            fm = self.format_combo.fontMetrics()
+            longest = max(self.DOCUMENT_FORMATS.keys(), key=len)
+            needed = max(
+                fm.horizontalAdvance(longest),
+                fm.boundingRect(longest).width(),
+            ) + 60  # 화살표 + padding 여유
+            if needed > self.format_combo.minimumWidth():
+                self.format_combo.setMinimumWidth(needed)
+        except Exception:
+            pass
 
     def set_custom_size(self, width_mm: int, height_mm: int):
         """사용자 정의 문서 크기 설정"""

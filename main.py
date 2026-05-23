@@ -116,10 +116,15 @@ def main():
     app.setApplicationVersion("2.1")
     app.setOrganizationName("TRPG Tools")
 
-    # QSS 스타일시트 로드
+    # QSS 스타일시트 로드 (Typography 토큰 __FS_*__ 를 실제 px 값으로 치환)
+    # 치환을 건너뛰면 Qt가 "__FS_SM__px" 같은 잘못된 값을 무시해 폰트/높이 규칙이
+    # 전부 깨지고, 미리보기 패널 판형 콤보 등의 글자가 잘려 보임.
+    from gui.styles.theme import Theme as StyleTheme
     qss_path = RESOURCE_DIR / "gui" / "styles" / "stylesheet.qss"
     if qss_path.exists():
-        qss_text = qss_path.read_text(encoding='utf-8')
+        qss_text = StyleTheme.get_stylesheet()
+        if not qss_text:
+            qss_text = qss_path.read_text(encoding='utf-8')
         app.setStyleSheet(qss_text)
         logging.info("스타일시트 로드 완료: %s", qss_path)
     else:
@@ -132,6 +137,19 @@ def main():
     config_manager = ConfigManager(APP_DIR)
     window = MainWindow(config_manager)
     window.show()
+
+    # FluentWindow(frameless)는 show() 전 resize()가 무시되어 첫 프레임이
+    # 작게 뜨는 경우가 있음 → show() 직후 의도한 크기로 다시 잡고 화면 중앙 배치
+    screen = window.screen() or app.primaryScreen()
+    if screen is not None:
+        avail = screen.availableGeometry()
+        target_w = min(1300, avail.width() - 80)
+        target_h = min(800, avail.height() - 80)
+        window.resize(target_w, target_h)
+        window.move(
+            avail.x() + (avail.width() - target_w) // 2,
+            avail.y() + (avail.height() - target_h) // 2,
+        )
 
     # macOS에서 창을 앞으로 가져오기
     window.raise_()

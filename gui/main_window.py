@@ -175,7 +175,7 @@ class ConversionWorker(QThread):
             elif self.mode == 'batch':
                 total_files = len(self.files)
 
-                # 파싱 단계 병렬화 (I/O 바운드)
+                # 파싱 단계 병렬화 (I/O 바운드). config.performance.parse_max_workers 사용.
                 from concurrent.futures import ThreadPoolExecutor
                 parsed_files = {}
                 self.progress.emit(10, "파일 파싱 중 (병렬)...")
@@ -183,11 +183,14 @@ class ConversionWorker(QThread):
                 def _parse_one(fp):
                     return fp, parse_with_cache(fp)
 
-                with ThreadPoolExecutor(max_workers=min(4, total_files)) as pool:
-                    # 스레드 풀에 작업을 제출하기 전에 중단 신호를 확인합니다.
+                worker_cap = int(
+                    config.get('performance', {}).get('parse_max_workers', 4)
+                )
+                worker_count = max(1, min(worker_cap, total_files))
+                with ThreadPoolExecutor(max_workers=worker_count) as pool:
                     if self._stop_event.is_set():
                         raise InterruptedError("작업이 중단되었습니다.")
-                    for fp, entries in pool.map(lambda fp: _parse_one(fp), self.files):
+                    for fp, entries in pool.map(_parse_one, self.files):
                         parsed_files[fp] = entries
 
                 # 변환 단계 (순차 - 파일 쓰기)
@@ -242,10 +245,19 @@ class ConversionWorker(QThread):
             self.finished.emit(False, "작업이 중단되었습니다.")
         except UnicodeDecodeError as e:
             logger.error("인코딩 오류: %s", e)
-            self.finished.emit(False, f"파일 인코딩 오류: 지원되지 않는 인코딩입니다. UTF-8, EUC-KR, CP949 형식의 파일을 사용해주세요.")
+            self.finished.emit(
+                False,
+                "파일 인코딩 오류: 지원되지 않는 인코딩입니다. "
+                "UTF-8, EUC-KR, CP949 형식의 파일을 사용해주세요.",
+            )
         except Exception as e:
+            from core.exceptions import ConverterError
+
             logger.error("변환 실패: %s", e, exc_info=True)
-            self.finished.emit(False, f"변환 실패: {str(e)}")
+            if isinstance(e, ConverterError):
+                self.finished.emit(False, e.user_message)
+            else:
+                self.finished.emit(False, f"변환 실패: {e}")
     
     def stop(self):
         """스레드에 중지 신호를 보냅니다 (스레드 안전)."""
@@ -286,11 +298,21 @@ class MainWindow(FluentWindow):
         setTheme(Theme.AUTO)
         setThemeColor('#0A84FF')
 
-        self._setup_navigation()
-        self._setup_main_layout()
-        self._connect_signals()
-        self._setup_shortcuts()
-        self._load_recent_files()
+        # 페이지 생성 중 side-effect save 로 gui_settings.json 이 기본값으로
+        # 덮여쓰이는 버그를 막기 위해 초기화 구간 동안 AppState 저장/set 을 잠근다.
+        # (widget.setText → textChanged → save_settings → state.set(..) 경로로
+        #  아직 초기화 안 된 다른 위젯의 기본값이 AppState 에 유입되는 것을 차단)
+        self.app_state._suspend_save = True
+        self.app_state._suspend_set = True
+        try:
+            self._setup_navigation()
+            self._setup_main_layout()
+            self._connect_signals()
+            self._setup_shortcuts()
+            self._load_recent_files()
+        finally:
+            self.app_state._suspend_set = False
+            self.app_state._suspend_save = False
 
         # 타이틀바를 최상위로 올려서 드래그 이동 보장
         if hasattr(self, 'titleBar') and self.titleBar:
@@ -340,10 +362,13 @@ class MainWindow(FluentWindow):
         """전역 문서 미리보기 패널을 포함한 메인 레이아웃 설정"""
         self._preview_visible = True
 
-        # 미리보기 컨테이너 생성
+        # 미리보기 컨테이너 생성.
+        # 최소폭은 "판형" 라벨 + 콤보(가장 긴 항목 픽셀 폭) + 줌/페이지 위젯이 한 줄에
+        # 모두 들어가도록 ~340px 로 잡는다. 이보다 좁아지면 콤보가 잘려서 사용자가
+        # 무슨 판형을 골랐는지 확인하기 어려워진다.
         self.preview_container = QFrame()
         self.preview_container.setObjectName("GlobalPreviewContainer")
-        self.preview_container.setMinimumWidth(300)
+        self.preview_container.setMinimumWidth(340)
         self.preview_container.setMaximumWidth(600)
 
         preview_layout = QVBoxLayout(self.preview_container)
@@ -566,6 +591,7 @@ class MainWindow(FluentWindow):
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
                 imported = json.load(f)
+            imported.pop('_meta', None)
 
             # 현재 설정과 병합
             current = self.config_manager.get_gui_settings()
@@ -575,9 +601,21 @@ class MainWindow(FluentWindow):
             # AppState 다시 로드
             self.app_state.load()
 
-            # 각 페이지 다시 로드
-            for page in self.pages.values():
-                page.load_settings()
+            # 페이지 리로드 중 widget signal 이 save_settings 를 거쳐 기본값으로
+            # AppState/디스크를 오염시키는 것을 막기 위해 set/save 를 잠근다.
+            original_save = self.config_manager.save_gui_settings
+            self.config_manager.save_gui_settings = lambda _s: None
+            self.app_state._suspend_set = True
+            try:
+                for page in self.pages.values():
+                    page.load_settings()
+            finally:
+                self.app_state._suspend_set = False
+                self.config_manager.save_gui_settings = original_save
+
+            # 리로드 완료 후 import 값을 최종 확정
+            self.config_manager.save_gui_settings(current)
+            self.app_state.load()
 
             InfoBar.success(
                 title='가져오기 완료',
@@ -633,6 +671,16 @@ class MainWindow(FluentWindow):
 
     def _start_conversion(self):
         """변환 시작"""
+        if self._worker is not None and self._worker.isRunning():
+            InfoBar.warning(
+                title='변환 진행 중',
+                content='이전 변환이 끝난 뒤 다시 시도해주세요.',
+                parent=self,
+                position=InfoBarPosition.TOP,
+                duration=3000,
+            )
+            return
+
         files = self.home_page.get_files()
         if not files:
             InfoBar.warning(
@@ -656,7 +704,8 @@ class MainWindow(FluentWindow):
             page.on_page_enter()
             page.save_settings()
 
-        # 변환 워커 시작
+        self._cleanup_worker()
+
         self._worker = ConversionWorker(
             self.config_manager, files, title, mode, output_format,
             preset_config=preset_config,
@@ -666,6 +715,23 @@ class MainWindow(FluentWindow):
         self._worker.progress.connect(self._on_conversion_progress)
         self._worker.finished.connect(self._on_conversion_finished)
         self._worker.start()
+
+    def _cleanup_worker(self) -> None:
+        """이전 워커의 시그널을 명시적으로 해제하고 참조를 비웁니다."""
+        worker = self._worker
+        if worker is None:
+            return
+        try:
+            worker.progress.disconnect(self._on_conversion_progress)
+        except (TypeError, RuntimeError):
+            pass
+        try:
+            worker.finished.disconnect(self._on_conversion_finished)
+        except (TypeError, RuntimeError):
+            pass
+        if not worker.isRunning():
+            worker.deleteLater()
+            self._worker = None
 
     def _on_conversion_progress(self, value: int, message: str):
         """변환 진행 상태 업데이트"""
@@ -693,27 +759,59 @@ class MainWindow(FluentWindow):
                 duration=5000
             )
 
+    _SHUTDOWN_WORKER_TIMEOUT_MS = 5_000
+
     def closeEvent(self, event):
-        """윈도우 닫기 이벤트"""
+        """윈도우 닫기 이벤트.
+
+        - 현재 페이지 leave 콜백 호출
+        - 설정 영속화
+        - 진행 중 워커가 있으면 사용자 확인 후 정리
+        - AppState/cache 시그널 정리
+        """
+        if self._current_page is not None:
+            try:
+                self._current_page.on_page_leave()
+            except Exception:
+                logger.exception("on_page_leave 호출 실패")
+
         for page in self.pages.values():
-            page.save_settings()
+            try:
+                page.save_settings()
+            except Exception:
+                logger.exception("페이지 설정 저장 실패: %s", type(page).__name__)
 
-        # AppState를 통해 설정 영속화
-        self.app_state.save()
+        try:
+            self.app_state.save()
+        except Exception:
+            logger.exception("AppState 영속화 실패")
 
-        if self._worker and self._worker.isRunning():
+        if self._worker is not None and self._worker.isRunning():
             reply = QMessageBox.question(
                 self,
                 "변환 중",
                 "변환이 진행 중입니다. 정말 종료하시겠습니까?",
                 QMessageBox.Yes | QMessageBox.No,
-                QMessageBox.No
+                QMessageBox.No,
             )
             if reply == QMessageBox.No:
                 event.ignore()
                 return
 
-            self._worker.stop()  # 스레드에 종료 요청
-            self._worker.wait()
+            self._worker.stop()
+            if not self._worker.wait(self._SHUTDOWN_WORKER_TIMEOUT_MS):
+                logger.warning(
+                    "변환 워커가 %d ms 내에 종료되지 않아 강제 종료합니다.",
+                    self._SHUTDOWN_WORKER_TIMEOUT_MS,
+                )
+                self._worker.terminate()
+                self._worker.wait(1_000)
+
+        self._cleanup_worker()
+
+        try:
+            self.app_state.group_changed.disconnect(self._on_state_group_changed)
+        except (TypeError, RuntimeError):
+            pass
 
         event.accept()
