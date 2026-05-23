@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head><meta charset="UTF-8" /><title>edge cases</title></head>
+  <body>
+
+<!-- case 1: 다양한 씬 마커 -->
+<p style="color:#888888;"><span> [main]</span><span>-</span> :
+  <span>■ 프롤로그</span></p>
+<p style="color:#888888;"><span> [main]</span><span>-</span> :
+  <span>Scene 1: 사건의 시작</span></p>
+<p style="color:#888888;"><span> [main]</span><span>-</span> :
+  <span>제 2 장</span></p>
+<p style="color:#888888;"><span> [main]</span><span>-</span> :
+  <span>─── Act 3 ───</span></p>
+
+<!-- case 2: 특수문자 / HTML 엔티티 -->
+<p style="color:#5a3296;"><span> [main]</span><span>시이나 사야</span> :
+  <span>&quot;A &amp; B&quot;는 &lt;진리&gt;다.</span></p>
+
+<!-- case 3: 연속 대사 (merge 후보) -->
+<p style="color:#5a3296;"><span> [main]</span><span>시이나 사야</span> :
+  <span>첫 번째 줄.</span></p>
+<p style="color:#5a3296;"><span> [main]</span><span>시이나 사야</span> :
+  <span>두 번째 줄.</span></p>
+<p style="color:#5a3296;"><span> [main]</span><span>시이나 사야</span> :
+  <span>세 번째 줄.</span></p>
+
+<!-- case 4: 여러 콜론 포함 -->
+<p style="color:#5a3296;"><span> [main]</span><span>시이나 사야</span> :
+  <span>시간은 10:30이었다: 매우 늦은 시각.</span></p>
+
+<!-- case 5: 빈 대사 -->
+<p style="color:#5a3296;"><span> [main]</span><span>시이나 사야</span> :
+  <span></span></p>
+
+<!-- case 6: 아주 긴 메시지 -->
+<p style="color:#5a3296;"><span> [main]</span><span>시이나 사야</span> :
+  <span>이것은 매우 긴 대사입니다. 여러 줄에 걸쳐 있을 수도 있고, 책 한 페이지를 꽉 채울 만큼 길 수도 있습니다. 파서가 이런 긴 텍스트를 안전하게 처리하는지 확인하기 위한 테스트용 메시지입니다. 중간에 특수 기호 ☆ ● ◆ 와 이모지 🎲 ✨ 🔥 도 포함되어 있으며, 영어 단어 와 숫자 12345 도 섞여 있습니다. 마지막으로 큰따옴표 "인용" 과 작은따옴표 '인용' 도 포함됩니다.</span></p>
+
+<!-- case 7: 이미지 마커 3종류 -->
+<p style="color:#46c6c6;"><span> [main]</span><span>야타</span> :
+  <span>[IMG: cover.png]</span></p>
+<p style="color:#46c6c6;"><span> [main]</span><span>야타</span> :
+  <span>[삽화: scene1.jpg]</span></p>
+<p style="color:#46c6c6;"><span> [main]</span><span>야타</span> :
+  <span>[이미지: ending.webp]</span></p>
+
+<!-- case 8: 다이스 여러 형태 -->
+<p style="color:#3c1478;"><span> [main]</span><span>사에</span> :
+  <span>CCB&lt;=50　　(1D100&lt;=50) ＞ 23 성공</span></p>
+<p style="color:#3c1478;"><span> [main]</span><span>사에</span> :
+  <span>2D6+3　　공포 판정 (2D6+3) ＞ 11 성공</span></p>
+
+<!-- case 9: 시스템 메시지 여러 포맷 -->
+<p style="color:#888888;"><span> [main]</span><span>system</span> :
+  <span>[ 사에 ] 침식률: 42 → 51</span></p>
+<p style="color:#888888;"><span> [main]</span><span>System</span> :
+  <span>session saved at 23:45</span></p>
+
+<!-- case 10: OOC 스킵 -->
+<p style="color:#888888;"><span> [잡담]</span><span>야타</span> :
+  <span>(잠깐 쉬었다 와요)</span></p>
+<p style="color:#888888;"><span> [ooc]</span><span>사에</span> :
+  <span>오늘은 여기까지</span></p>
+
+<!-- case 11: 이펙트 / 스킬명 -->
+<p style="color:#46c6c6;"><span> [main]</span><span>야타</span> :
+  <span>《오버 도즈》《기간틱 모드》《인스턴트 봄》</span></p>
+
+<!-- case 12: 스테이터스 바 (| 여러개) -->
+<p style="color:#5a3296;"><span> [main]</span><span>시이나 사야</span> :
+  <span>HP ―――|――――― 28/34</span></p>
+
+<!-- case 13: 채널 없는 p (드문 케이스) -->
+<p>이름없음: 주인 없는 대사</p>
+
+  </body>
+</html>
