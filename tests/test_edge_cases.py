@@ -164,16 +164,17 @@ class TestConfigEdgeCases:
         assert result['a']['d'] == 4
 
     def test_config_schema_migration(self):
-        from core.config_manager import _migrate_settings
+        from core.config.migrations import migrate_gui_settings
         old_settings = {'margins': 'invalid_string', '_schema_version': 1}
-        migrated = _migrate_settings(old_settings)
-        assert migrated['_schema_version'] == 2
+        migrated = migrate_gui_settings(old_settings)
+        assert migrated['_schema_version'] >= 2
         assert isinstance(migrated['margins'], dict)
 
     def test_config_schema_already_current(self):
-        from core.config_manager import _migrate_settings, CONFIG_SCHEMA_VERSION
+        from core.config.migrations import migrate_gui_settings
+        from core.config_manager import CONFIG_SCHEMA_VERSION
         settings = {'_schema_version': CONFIG_SCHEMA_VERSION}
-        result = _migrate_settings(settings)
+        result = migrate_gui_settings(settings)
         assert result['_schema_version'] == CONFIG_SCHEMA_VERSION
 
 

@@ -1,15 +1,19 @@
 import yaml
 import json
 import logging
+import sys
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Optional
 
 from core.utils import deep_merge, safe_int, safe_float
+from core.config.defaults import (
+    CONFIG_SCHEMA_VERSION,
+    DEFAULT_ENGINE_CONFIG,
+    default_engine_config,
+)
+from core.config.migrations import migrate_gui_settings
 
 logger = logging.getLogger(__name__)
-
-
-CONFIG_SCHEMA_VERSION = 2
 
 
 def _default_gui_settings() -> dict:
@@ -23,55 +27,56 @@ def _default_gui_settings() -> dict:
     return flatten_settings(AppSettings())
 
 
-def _migrate_settings(settings: dict) -> dict:
-    """설정 스키마 마이그레이션"""
-    version = settings.get('_schema_version', 1)
+def _load_bundled_default(app_dir: Path) -> Optional[dict]:
+    """배포에 동봉된 default_settings.json 을 읽는다.
 
-    if version < 2:
-        # v1 → v2: margins를 dict로 통일
-        if 'margins' in settings and isinstance(settings['margins'], str):
-            settings['margins'] = {'top': '1.0', 'bottom': '1.0', 'left': '1.0', 'right': '1.0'}
-        settings['_schema_version'] = 2
-        logger.info("설정 스키마 v%d → v2 마이그레이션 완료", version)
+    배포자가 미리 정한 디폴트(폰트, 판형, scene_patterns, custom_css 등)를
+    첫 실행 시 자동 적용하기 위한 용도. 사용자가 한 번이라도 설정을 저장하면
+    gui_settings.json 이 우선이고 이 파일은 무시된다.
 
-    return settings
+    탐색 위치:
+      1. app_dir / "default_settings.json"  (배포 폴더 또는 dev 디렉토리)
+      2. PyInstaller _MEIPASS / "default_settings.json"  (frozen 번들 내)
+    """
+    candidates = [app_dir / "default_settings.json"]
+    if getattr(sys, "frozen", False):
+        meipass = getattr(sys, "_MEIPASS", None)
+        if meipass:
+            candidates.append(Path(meipass) / "default_settings.json")
+    for p in candidates:
+        if p.exists():
+            try:
+                with open(p, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                data.pop("_meta", None)
+                logger.info("배포 기본 설정 로드: %s (%d 키)", p.name, len(data))
+                return data
+            except Exception as e:
+                logger.warning("default_settings.json 로드 실패: %s", e)
+    return None
 
 
 class ConfigManager:
-    """GUI 설정과 엔진 설정을 관리하는 클래스"""
+    """GUI 설정과 엔진 설정을 관리하는 클래스.
 
-    DEFAULT_CONFIG = {
-        'paths': {'input_dir': './input', 'output_dir': './export', 'fonts_dir': './fonts', 'images_dir': './images'},
-        'output_format': 'both', 'log_source': 'auto',
-        'cover': {'image': '', 'include': True, 'title_on_cover': True, 'author_on_cover': True,
-                  'background_color': '#1a1a1a', 'title_color': '#ffffff', 'subtitle': ''},
-        'toc': {'include': True, 'title': '목차', 'mode': 'auto', 'entries': [], 'style': 'simple'},
-        'fonts': {'name_font': "'Pretendard', sans-serif", 'body_font': "'Nanum Myeongjo', serif",
-                  'pretendard_cdn': "https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css",
-                  'embed': {}, 'docx_fallback': {'body': '맑은 고딕', 'name': '맑은 고딕'}},
-        'style': {'narration_prefix': '＿', 'scene_marker': '■', 'dialogue_margin': 0.12,
-                  'narration_margin': 0.8, 'narration_indent': 1.5, 'dice_color': '#888'},
-        'narration': {'users': ['GM', 'KP', 'DM', 'Keeper', 'Narrator'], 'style': 'indent'},
-        'content': {'include_dice': True, 'include_system': True, 'include_effects': True},
-        'dialogue': {'merge_consecutive': False, 'merge_separator': '\n', 'merge_max': 5},
-        'images': {'enable': True, 'markers': [r'\[IMG:\s*(.+?)\]', r'\[삽화:\s*(.+?)\]'], 'show_caption': True},
-        'custom_styles': {},
-        'chapter': {'split_mode': 'scene', 'entries_per_chapter': 300, 'extract_scene_title': True,
-                    'title_format': '장면 {n}', 'min_scene_entries': 10, 'scene_patterns': ['^■', '^씬\\s*\\d+', '^장면\\s*\\d+']},
-        'parsing': {'name_max_length': 50, 'skip_channels': [], 'normalize_punctuation': True},
-    }
+    엔진용 기본값은 ``core.config.defaults.DEFAULT_ENGINE_CONFIG`` 단일 소스에서 가져옵니다.
+    ``ConfigManager.DEFAULT_CONFIG`` 는 외부 코드 호환용 alias 입니다.
+    """
 
-    def __init__(self, app_dir=None):
+    # Backwards-compatible alias — 새 코드는 core.config.default_engine_config() 사용
+    DEFAULT_CONFIG = DEFAULT_ENGINE_CONFIG
+
+    def __init__(self, app_dir: Optional[Path] = None) -> None:
         if app_dir is None:
             self.app_dir = Path(__file__).parent.parent
         else:
             self.app_dir = Path(app_dir)
 
-        self.config_path = self.app_dir / "config.yaml"
-        self.settings_path = self.app_dir / "gui_settings.json"
+        self.config_path: Path = self.app_dir / "config.yaml"
+        self.settings_path: Path = self.app_dir / "gui_settings.json"
 
-        self.yaml_config = self._load_yaml_config()
-        self.gui_settings = self._load_gui_settings()
+        self.yaml_config: Dict = self._load_yaml_config()
+        self.gui_settings: Dict = self._load_gui_settings()
 
         # 서비스 초기화 (지연 로딩)
         self._history_manager = None
@@ -99,7 +104,7 @@ class ConfigManager:
                 logger.warning("ProfileManager를 로드할 수 없습니다")
         return self._profile_manager
 
-    def _load_yaml_config(self):
+    def _load_yaml_config(self) -> Dict:
         """config.yaml 로드"""
         if self.config_path.exists():
             try:
@@ -109,40 +114,50 @@ class ConfigManager:
                 logger.warning("config.yaml 로드 실패: %s", e)
         return {}
 
-    def _load_gui_settings(self):
+    def _load_gui_settings(self) -> Dict:
         """GUI 설정 로드 — 파일을 읽고 스키마 마이그레이션만 수행한다.
 
-        Pydantic 검증은 AppState가 수행하므로 여기서는 raw dict만 반환한다.
-        파일이 없거나 손상되면 Pydantic 기본값(플랫 dict)을 반환한다.
+        우선순위:
+          1) 사용자 ``gui_settings.json`` (있으면 항상 우선)
+          2) 배포 동봉 ``default_settings.json`` (없으면 단계 3)
+          3) Pydantic ``AppSettings`` 기본값
         """
         if self.settings_path.exists():
             try:
                 with open(self.settings_path, 'r', encoding='utf-8') as f:
                     loaded = json.load(f)
-                loaded = _migrate_settings(loaded)
+                loaded = migrate_gui_settings(loaded)
                 # 기본값과 병합: 사용자 파일에 없는 신규 키에 기본값을 채워준다
                 merged = _default_gui_settings()
                 merged.update(loaded)
                 return merged
             except Exception as e:
                 logger.warning("GUI 설정 파일 로드 실패, 기본값 사용: %s", e)
+
+        # 사용자 설정 없음 — 배포에 동봉된 default_settings.json 으로 fallback
+        bundled = _load_bundled_default(self.app_dir)
+        if bundled is not None:
+            merged = _default_gui_settings()
+            merged.update(migrate_gui_settings(bundled))
+            return merged
+
         return _default_gui_settings()
 
-    def save_gui_settings(self, settings):
+    def save_gui_settings(self, settings: Dict) -> None:
         """GUI 설정 저장"""
         self.gui_settings = settings
         with open(self.settings_path, 'w', encoding='utf-8') as f:
             json.dump(settings, f, ensure_ascii=False, indent=2)
 
-    def get_gui_settings(self):
+    def get_gui_settings(self) -> Dict:
         """GUI 설정 반환"""
         return self.gui_settings
 
-    def get_default_gui_settings(self):
+    def get_default_gui_settings(self) -> Dict:
         """기본 GUI 설정 반환 (Pydantic AppSettings 기반)"""
         return _default_gui_settings()
 
-    def build_engine_config(self, gui_settings=None):
+    def build_engine_config(self, gui_settings: Optional[Dict] = None) -> Dict:
         """GUI 설정을 엔진이 이해하는 config 형식으로 변환"""
         if gui_settings is None:
             gui_settings = self.gui_settings
@@ -150,7 +165,7 @@ class ConfigManager:
         sep_map = {'newline': '\n', 'space': ' ', 'dash': ' — '}
 
         # 기본 설정과 병합
-        config = deep_merge(self.DEFAULT_CONFIG.copy(), self.yaml_config)
+        config = deep_merge(default_engine_config(), self.yaml_config)
 
         # GUI 설정 적용
         gui_config = {
@@ -231,20 +246,45 @@ class ConfigManager:
             },
             'chapter': {
                 'split_mode': gui_settings.get('split_mode', 'scene'),
+                # GUI 에서는 쉼표로 구분된 키워드 문자열("■, ▶Scene, 씬, ...")을 받는다.
+                # 그대로 re.search 에 넣으면 본문 중간 'Scene' 같은 단어도 매칭되어 오탐이
+                # 된다. 이미 '^' 로 시작하지 않는 항목은 자동으로 선두 앵커를 붙인다.
                 'scene_patterns': (
                     gui_settings.get('scene_patterns')
                     if isinstance(gui_settings.get('scene_patterns'), list)
-                    else [p.strip() for p in str(gui_settings.get('scene_patterns', '■')).split(',')]
+                    else [
+                        (p if p.startswith('^') else '^' + p)
+                        for p in (
+                            s.strip()
+                            for s in str(gui_settings.get('scene_patterns', '■')).split(',')
+                        )
+                        if p
+                    ]
                 ),
                 'entries_per_chapter': safe_int(gui_settings.get('entries_per_chapter', '300'), 300),
                 'min_scene_entries': safe_int(gui_settings.get('min_scene_entries', '10'), 10),
                 'title_format': gui_settings.get('title_format', '장면 {n}'),
             },
             'layout': {
-                'docx_margin': {
-                    k: safe_float(gui_settings.get('margins', {}).get(k, '1.0'), 1.0)
+                'docx_margin': (lambda m: {
+                    k: safe_float(m.get(k, '1.0'), 1.0)
                     for k in ('top', 'bottom', 'left', 'right')
-                },
+                })(gui_settings.get('margins') if isinstance(gui_settings.get('margins'), dict) else {}),
+            },
+            # DOCX 와 PDF 가 공유하는 판형 정보 (core.layout 헬퍼로 파싱)
+            'page_format': gui_settings.get('page_format', 'A5 (148x210mm)'),
+            'epub_page_format': gui_settings.get('epub_page_format', 'EPUB (6x9)'),
+            # 챕터(씬) 제목 헤더 설정 — DOCX/EPUB/PDF 가 공유
+            'header': {
+                'size': safe_int(gui_settings.get('header_size', 24), 24),
+                'color': gui_settings.get('header_color', '#1a1a1a'),
+                'bold': gui_settings.get('header_bold', True),
+                'underline': gui_settings.get('header_underline', False),
+                'prefix': gui_settings.get('header_prefix', ''),
+                'suffix': gui_settings.get('header_suffix', ''),
+                'box': gui_settings.get('header_box', False),
+                'box_color': gui_settings.get('header_box_color', '#f5f5f5'),
+                'style': gui_settings.get('header_style', '기본'),
             },
             'parsing': {
                 'name_max_length': safe_int(gui_settings.get('name_max_length', '50'), 50),
