@@ -141,6 +141,23 @@ class ParsingConfig(BaseModel):
         return max(5, min(v, 200))
 
 
+class PerformanceConfig(BaseModel):
+    """런타임 성능 옵션."""
+    parse_max_workers: int = 4
+    max_html_bytes: int = 50 * 1024 * 1024  # 50 MiB
+
+    @field_validator('parse_max_workers')
+    @classmethod
+    def validate_workers(cls, v):
+        return max(1, min(int(v), 32))
+
+    @field_validator('max_html_bytes')
+    @classmethod
+    def validate_max_bytes(cls, v):
+        # 1 MiB ~ 1 GiB
+        return max(1 * 1024 * 1024, min(int(v), 1024 * 1024 * 1024))
+
+
 class EngineConfig(BaseModel):
     """엔진 설정 전체 스키마"""
     paths: PathsConfig = Field(default_factory=PathsConfig)
@@ -157,6 +174,7 @@ class EngineConfig(BaseModel):
     custom_styles: Dict = Field(default_factory=dict)
     chapter: ChapterConfig = Field(default_factory=ChapterConfig)
     parsing: ParsingConfig = Field(default_factory=ParsingConfig)
+    performance: PerformanceConfig = Field(default_factory=PerformanceConfig)
 
     @field_validator('output_format')
     @classmethod

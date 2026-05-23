@@ -1,22 +1,79 @@
-#!/usr/bin/env python3
-"""
-로깅 시스템
-애플리케이션 전체 로깅 관리
-"""
+"""Application-wide logging.
 
+Production-grade behaviour:
+
+* **Rotating files** — ``logs/app.log`` rotates at 5 MiB, keeps 5 backups.
+* **Optional JSON output** — set ``LOG_JSON=1`` for structured logs (one event per line).
+* **Third-party noise dampened** — PIL/urllib3/Pillow drop to WARNING by default.
+* **Idempotent setup** — calling ``setup_logging`` more than once does not duplicate
+  handlers; existing handlers are torn down first.
+* **UTF-8 everywhere** — required for the Korean log messages this app emits.
+
+Style:
+  * Korean strings = user-facing messages (e.g. "변환 실패").
+  * English strings = internal/debug log lines.
+  * Pass structured fields via ``extra={...}`` when emitting events worth grepping
+    in production (e.g. ``extra={"event": "conversion.start", "file_count": 3}``).
+"""
+from __future__ import annotations
+
+import json
 import logging
+import logging.handlers
+import os
 import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
-import os
+
+# Third-party loggers that flood DEBUG/INFO with noise we don't own.
+_NOISY_LOGGERS = (
+    "PIL",
+    "PIL.Image",
+    "PIL.PngImagePlugin",
+    "urllib3",
+    "asyncio",
+    "matplotlib",
+    "fontTools",
+)
+
+
+class _JsonFormatter(logging.Formatter):
+    """One JSON object per line. Suitable for ingest into Loki / Datadog / CloudWatch."""
+
+    _RESERVED = {
+        "name", "msg", "args", "levelname", "levelno", "pathname", "filename",
+        "module", "exc_info", "exc_text", "stack_info", "lineno", "funcName",
+        "created", "msecs", "relativeCreated", "thread", "threadName",
+        "processName", "process",
+    }
+
+    def format(self, record: logging.LogRecord) -> str:
+        payload: dict = {
+            "ts": datetime.utcfromtimestamp(record.created).isoformat(timespec="milliseconds") + "Z",
+            "level": record.levelname,
+            "logger": record.name,
+            "message": record.getMessage(),
+        }
+        if record.exc_info:
+            payload["exc"] = self.formatException(record.exc_info)
+        # Extra fields attached via logger.info(..., extra={"event": "..."}).
+        for key, value in record.__dict__.items():
+            if key in self._RESERVED or key.startswith("_"):
+                continue
+            payload[key] = value
+        return json.dumps(payload, ensure_ascii=False, default=str)
 
 
 class AppLogger:
-    """애플리케이션 로거 관리"""
+    """Singleton wrapper around the root logger.
 
-    _instance = None
-    _initialized = False
+    Existing call-sites use ``setup_logging`` / ``get_logger`` free functions
+    defined at module bottom; this class is kept for backwards compat.
+    """
+
+    _instance: Optional["AppLogger"] = None
+    _initialized: bool = False
 
     def __new__(cls):
         if cls._instance is None:
@@ -27,115 +84,124 @@ class AppLogger:
         if AppLogger._initialized:
             return
         AppLogger._initialized = True
+        self._log_dir: Optional[Path] = None
+        self._file_handler: Optional[logging.Handler] = None
+        self._console_handler: Optional[logging.Handler] = None
+        self._log_level: int = logging.INFO
 
-        self._log_dir = None
-        self._file_handler = None
-        self._console_handler = None
-        self._log_level = logging.INFO
-
-    def setup(self, app_dir: Path, log_level: int = logging.INFO,
-              console_output: bool = True, file_output: bool = True):
-        """로깅 시스템 초기화"""
+    def setup(
+        self,
+        app_dir: Path,
+        log_level: int = logging.INFO,
+        console_output: bool = True,
+        file_output: bool = True,
+        max_bytes: int = 5 * 1024 * 1024,
+        backup_count: int = 5,
+        json_output: Optional[bool] = None,
+    ) -> None:
         self._log_level = log_level
-        self._log_dir = app_dir / 'logs'
-
-        # 로그 디렉토리 생성
+        self._log_dir = app_dir / "logs"
         if file_output:
             self._log_dir.mkdir(parents=True, exist_ok=True)
 
-        # 루트 로거 설정
+        if json_output is None:
+            json_output = os.environ.get("LOG_JSON", "").lower() in {"1", "true", "yes"}
+
         root_logger = logging.getLogger()
         root_logger.setLevel(log_level)
 
-        # 기존 핸들러 제거
-        for handler in root_logger.handlers[:]:
+        # Tear down any prior handlers to keep setup idempotent.
+        for handler in list(root_logger.handlers):
             root_logger.removeHandler(handler)
+            try:
+                handler.close()
+            except Exception:  # noqa: BLE001
+                pass
 
-        # 포맷터
-        formatter = logging.Formatter(
-            '%(asctime)s [%(levelname)s] %(name)s: %(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S'
+        text_formatter = logging.Formatter(
+            "%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
         )
+        json_formatter = _JsonFormatter()
 
-        # 콘솔 핸들러
         if console_output:
             self._console_handler = logging.StreamHandler(sys.stdout)
             self._console_handler.setLevel(log_level)
-            self._console_handler.setFormatter(formatter)
+            # Console stays human-readable even when LOG_JSON is set, unless
+            # the operator forces JSON via LOG_JSON_CONSOLE=1.
+            console_is_json = (
+                json_output
+                and os.environ.get("LOG_JSON_CONSOLE", "").lower() in {"1", "true", "yes"}
+            )
+            self._console_handler.setFormatter(json_formatter if console_is_json else text_formatter)
             root_logger.addHandler(self._console_handler)
 
-        # 파일 핸들러
-        if file_output:
-            log_file = self._log_dir / f"app_{datetime.now().strftime('%Y%m%d')}.log"
-            self._file_handler = logging.FileHandler(log_file, encoding='utf-8')
+        if file_output and self._log_dir is not None:
+            log_file = self._log_dir / "app.log"
+            self._file_handler = logging.handlers.RotatingFileHandler(
+                log_file,
+                maxBytes=max_bytes,
+                backupCount=backup_count,
+                encoding="utf-8",
+            )
             self._file_handler.setLevel(log_level)
-            self._file_handler.setFormatter(formatter)
+            self._file_handler.setFormatter(json_formatter if json_output else text_formatter)
             root_logger.addHandler(self._file_handler)
 
-        # 오래된 로그 파일 정리
-        self._cleanup_old_logs(max_days=30)
+        # Dampen noisy third-party loggers.
+        for noisy in _NOISY_LOGGERS:
+            logging.getLogger(noisy).setLevel(logging.WARNING)
 
-        logging.info("로깅 시스템 초기화 완료")
+        # Drop ancient day-stamped logs from the previous implementation.
+        self._purge_legacy_dated_logs()
 
-    def _cleanup_old_logs(self, max_days: int = 30):
-        """오래된 로그 파일 정리"""
-        if not self._log_dir or not self._log_dir.exists():
+        logging.getLogger(__name__).info(
+            "Logging initialised (level=%s, json=%s, file=%s)",
+            logging.getLevelName(log_level),
+            json_output,
+            file_output,
+        )
+
+    def _purge_legacy_dated_logs(self) -> None:
+        """The old setup wrote ``app_YYYYMMDD.log``. Remove them to avoid clutter."""
+        if not self._log_dir:
             return
-
-        cutoff = datetime.now().timestamp() - (max_days * 24 * 60 * 60)
-
-        for log_file in self._log_dir.glob('*.log'):
+        for legacy in self._log_dir.glob("app_*.log"):
             try:
-                if log_file.stat().st_mtime < cutoff:
-                    log_file.unlink()
-                    logging.debug(f"오래된 로그 삭제: {log_file.name}")
-            except Exception as e:
-                logging.warning(f"로그 파일 삭제 실패: {log_file} - {e}")
+                legacy.unlink()
+            except OSError:
+                pass
 
-    def get_logger(self, name: str) -> logging.Logger:
-        """이름으로 로거 가져오기"""
-        return logging.getLogger(name)
-
-    def set_level(self, level: int):
-        """로그 레벨 변경"""
+    def set_level(self, level: int) -> None:
         self._log_level = level
         logging.getLogger().setLevel(level)
-        if self._console_handler:
-            self._console_handler.setLevel(level)
-        if self._file_handler:
-            self._file_handler.setLevel(level)
+        for handler in (self._console_handler, self._file_handler):
+            if handler is not None:
+                handler.setLevel(level)
 
     def get_log_dir(self) -> Optional[Path]:
-        """로그 디렉토리 경로"""
         return self._log_dir
 
-    def get_recent_logs(self, lines: int = 100) -> list:
-        """최근 로그 내용 가져오기"""
+    def get_recent_logs(self, lines: int = 100) -> list[str]:
         if not self._log_dir:
             return []
-
-        log_files = sorted(self._log_dir.glob('*.log'), reverse=True)
-        if not log_files:
+        candidates = sorted(self._log_dir.glob("app.log*"), reverse=True)
+        if not candidates:
             return []
-
         try:
-            with open(log_files[0], 'r', encoding='utf-8') as f:
-                all_lines = f.readlines()
-                return all_lines[-lines:]
-        except Exception:
+            with open(candidates[0], "r", encoding="utf-8") as fh:
+                return fh.readlines()[-lines:]
+        except OSError:
             return []
 
 
-# 전역 로거 인스턴스
 app_logger = AppLogger()
 
 
-def setup_logging(app_dir: Path, debug: bool = False):
-    """간편 로깅 설정 함수"""
+def setup_logging(app_dir: Path, debug: bool = False) -> None:
     level = logging.DEBUG if debug else logging.INFO
     app_logger.setup(app_dir, log_level=level)
 
 
 def get_logger(name: str) -> logging.Logger:
-    """로거 가져오기 헬퍼"""
     return logging.getLogger(name)
