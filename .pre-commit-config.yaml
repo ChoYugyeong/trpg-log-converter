@@ -1,0 +1,54 @@
+# Pre-commit hooks — run automatically on `git commit`.
+#
+# Install once after cloning:
+#     pip install pre-commit
+#     pre-commit install
+#
+# Manual run across the whole repo:
+#     pre-commit run --all-files
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: ^(병동/|tests/fixtures/|resources/)
+      - id: end-of-file-fixer
+        exclude: ^(병동/|tests/fixtures/|resources/)
+      - id: check-yaml
+      - id: check-toml
+      - id: check-json
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: ["--maxkb=2048"]
+      - id: mixed-line-ending
+        args: ["--fix=lf"]
+        exclude: \.(bat|ps1)$
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.7.4
+    hooks:
+      - id: ruff
+        args: ["--fix"]
+      - id: ruff-format
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.13.0
+    hooks:
+      - id: mypy
+        additional_dependencies:
+          - "pydantic>=2.0.0"
+          - "types-PyYAML"
+        # mypy runs on tracked Python under core/ and gui/ only.
+        files: ^(core|gui)/.*\.py$
+        # Heavy imports (PySide6, qfluentwidgets) are stubbed via pyproject.toml.
+
+  - repo: local
+    hooks:
+      - id: pytest-fast
+        name: pytest (unit tests only)
+        entry: pytest tests -q -x --no-header -m "not slow"
+        language: system
+        types: [python]
+        pass_filenames: false
+        stages: [pre-push]

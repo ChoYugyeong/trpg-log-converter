@@ -24,6 +24,7 @@ classifiers = [
 
 dependencies = [
     "PySide6>=6.6.0",
+    "PySide6-Fluent-Widgets>=1.5.0",
     "ebooklib>=0.18",
     "beautifulsoup4>=4.12.0",
     "lxml>=5.0.0",
@@ -32,6 +33,7 @@ dependencies = [
     "Pillow>=10.0.0",
     "reportlab>=4.0.0",
     "pydantic>=2.0.0",
+    "charset-normalizer>=3.0.0",
 ]
 
 [project.optional-dependencies]
@@ -64,35 +66,135 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
-addopts = "-v --tb=short"
+addopts = "-v --tb=short --strict-markers"
+filterwarnings = [
+    "ignore::DeprecationWarning:ebooklib.*",
+]
+
+[tool.coverage.run]
+source = ["core"]
+branch = true
+omit = [
+    "*/tests/*",
+    "*/__main__.py",
+    "core/types.py",  # TypedDict-only module — no runtime code to cover
+]
+
+[tool.coverage.report]
+# Fail the suite if coverage regresses. Bump this up over time as we add tests.
+fail_under = 70
+show_missing = true
+skip_covered = false
+exclude_lines = [
+    "pragma: no cover",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "@(abc\\.)?abstractmethod",
+]
 
 [tool.mypy]
 python_version = "3.10"
 warn_return_any = true
 warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+no_implicit_optional = true
+check_untyped_defs = true
 ignore_missing_imports = true
 exclude = [
     "venv",
     "build",
     "dist",
+    "scripts",
+    "병동",
 ]
 
+# Legacy service modules still rely on implicit Optional. They predate the
+# refactor and rewriting their signatures is out of scope for now — relax the
+# strict rule there only.
 [[tool.mypy.overrides]]
-module = "PySide6.*"
+module = "core.services.*"
+no_implicit_optional = false
+disable_error_code = ["no-any-return", "assignment", "var-annotated", "arg-type", "index", "attr-defined", "misc", "unreachable"]
+
+# Legacy modules that are scheduled for further refactor — same compromise.
+[[tool.mypy.overrides]]
+module = ["core.config_manager", "core.pdf_generator", "core.docx_builder"]
+no_implicit_optional = false
+disable_error_code = ["no-any-return", "assignment", "var-annotated", "union-attr", "index", "attr-defined", "unreachable"]
+
+[[tool.mypy.overrides]]
+module = ["PySide6.*", "qfluentwidgets.*"]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module = "ebooklib.*"
+module = ["ebooklib.*", "docx.*", "reportlab.*", "bs4.*", "yaml.*", "PIL.*", "charset_normalizer.*"]
 ignore_missing_imports = true
 
+# Pillow stubs flag pretty much every Image operation; trust the lib here.
 [[tool.mypy.overrides]]
-module = "docx.*"
-ignore_missing_imports = true
+module = "core.parsers.images"
+disable_error_code = ["assignment", "attr-defined"]
+
+# GUI layer: PySide6's type stubs are notoriously incomplete (every Qt enum is
+# flagged as ``attr-defined``). Loosen there so the signal is meaningful.
+[[tool.mypy.overrides]]
+module = "gui.*"
+disable_error_code = [
+    "attr-defined", "arg-type", "union-attr", "func-returns-value",
+    "assignment", "call-arg", "var-annotated", "no-any-return", "has-type",
+]
+warn_unused_ignores = false
+
+# Tests are exempt from the stricter checks until they're typed.
+[[tool.mypy.overrides]]
+module = "tests.*"
+check_untyped_defs = false
+warn_unused_ignores = false
 
 [tool.ruff]
 line-length = 100
 target-version = "py310"
+extend-exclude = [
+    "build",
+    "dist",
+    "scripts",
+    "병동",
+    "resources",
+]
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I"]
-ignore = ["E501"]  # line too long
+# Curated rule set — favour signal over noise.
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear (likely bugs)
+    "UP",  # pyupgrade
+    "SIM", # flake8-simplify
+    "C4",  # flake8-comprehensions
+    "PIE", # flake8-pie
+    "RUF", # ruff-specific
+]
+ignore = [
+    "E501",   # line too long (formatter handles it)
+    "B008",   # function calls in defaults (Qt signals, pydantic Field)
+    "SIM108", # ternary vs if/else — readability preference
+    "RUF001", # Korean characters trip ambiguous-char rule
+    "RUF002",
+    "RUF003",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["B011", "F401", "F811"]
+"gui/**/*.py" = ["B008"]  # Qt and pydantic default factories
+"__init__.py" = ["F401"]  # re-exports
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+docstring-code-format = true

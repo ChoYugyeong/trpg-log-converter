@@ -1,3 +1,8 @@
+# Runtime dependencies (must match pyproject.toml [project.dependencies])
+#
+# Pinned to lower bounds. CI tests with the resolved versions; production builds
+# should use a lockfile (pip-tools / uv) for reproducibility.
+
 # GUI Framework
 PySide6>=6.6.0
 PySide6-Fluent-Widgets>=1.5.0
@@ -10,21 +15,22 @@ ebooklib>=0.18
 
 # HTML Parsing
 beautifulsoup4>=4.12.0
-lxml>=4.9.0
+lxml>=5.0.0
 
 # Configuration
 pyyaml>=6.0
 pydantic>=2.0
 
-# DOCX Generation
-python-docx>=0.8.11
+# Encoding detection (input safety)
+charset-normalizer>=3.0.0
 
-# Network
-requests>=2.28.0
+# DOCX Generation
+python-docx>=1.1.0
 
 # PDF Generation
 reportlab>=4.0.0
 
 # Optional: Roll20 browser login support
-# pip install playwright && playwright install chromium
-playwright>=1.40.0
+# Install only if Roll20 direct login/scraping is needed:
+#   pip install "playwright>=1.40.0"
+#   playwright install chromium
