@@ -63,6 +63,11 @@ def main():
     # 로깅 설정 (가장 먼저)
     setup_app_logging()
 
+    # 전역 크래시 핸들러 — Qt 이벤트 루프나 스레드를 빠져나가는 예외를
+    # crashes/ 디렉터리에 진단 덤프로 남긴다.
+    from core.services.crash_handler import install as install_crash_handler
+    install_crash_handler(APP_DIR)
+
     # PySide6 임포트
     from PySide6.QtWidgets import QApplication
     from PySide6.QtCore import Qt
@@ -111,10 +116,12 @@ def main():
         font.setStyleStrategy(QFont.StyleStrategy.PreferAntialias)
         app.setFont(font)
 
-    # 앱 메타데이터
-    app.setApplicationName("TRPG Log Converter Pro")
-    app.setApplicationVersion("2.1")
-    app.setOrganizationName("TRPG Tools")
+    # 앱 메타데이터 (단일 소스: core.version)
+    from core.version import __app_name__, __author__, __homepage__, __version__
+    app.setApplicationName(__app_name__)
+    app.setApplicationVersion(__version__)
+    app.setOrganizationName(__author__)
+    app.setOrganizationDomain(__homepage__.replace("https://", "").split("/")[0])
 
     # QSS 스타일시트 로드 (Typography 토큰 __FS_*__ 를 실제 px 값으로 치환)
     # 치환을 건너뛰면 Qt가 "__FS_SM__px" 같은 잘못된 값을 무시해 폰트/높이 규칙이
