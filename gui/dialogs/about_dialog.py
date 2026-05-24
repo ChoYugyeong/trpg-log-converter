@@ -1,0 +1,139 @@
+"""About dialog — shows version, license, open-source credits, system info.
+
+UI/UX Pro Max §5 visual-hierarchy: app name + version 헤더, 그 아래
+설명, 크레딧, 시스템 정보 순서로 정보 위계 명확히.
+"""
+from __future__ import annotations
+
+import platform
+import sys
+
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QDesktopServices
+from PySide6.QtWidgets import (
+    QDialog,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QTextBrowser,
+    QVBoxLayout,
+)
+
+from core.version import (
+    __app_name__,
+    __author__,
+    __copyright__,
+    __homepage__,
+    __license__,
+    __version__,
+)
+
+
+_CREDITS = """\
+오픈소스 라이브러리
+
+  • PySide6 / Qt for Python — Qt Company (LGPL)
+  • PySide6-Fluent-Widgets — zhiyiYo (GPLv3 / Commercial)
+  • ebooklib — Aleksandar Erkalović (AGPL)
+  • python-docx — python-openxml (MIT)
+  • beautifulsoup4 — Leonard Richardson (MIT)
+  • lxml — lxml team (BSD)
+  • Pillow — Jeffrey Clark, contributors (HPND)
+  • reportlab — ReportLab (BSD)
+  • pydantic — Samuel Colvin (MIT)
+  • charset-normalizer — TAHRI Ahmed (MIT)
+  • PyYAML — Kirill Simonov (MIT)
+
+폰트
+  • Pretendard — Kil Hyung-jin (OFL 1.1)
+
+각 라이브러리의 라이선스 전문은 dist/_internal/ 하위의 *-dist-info/
+디렉터리 또는 위 깃 저장소에서 확인할 수 있습니다.
+"""
+
+
+class AboutDialog(QDialog):
+    """앱 정보 다이얼로그.
+
+    크기 480×520, 모달. 헤더 / 본문 / 크레딧 탭 / 닫기 버튼 구조.
+    """
+
+    def __init__(self, parent=None) -> None:
+        super().__init__(parent)
+        self.setWindowTitle(f"{__app_name__} 정보")
+        self.setMinimumSize(520, 560)
+        self.setModal(True)
+
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(24, 20, 24, 20)
+        layout.setSpacing(12)
+
+        # ── 헤더: 앱 이름 + 버전 ─────────────────────────────────
+        name = QLabel(__app_name__)
+        name.setStyleSheet(
+            "font-size: 22px; font-weight: 700; color: palette(text); "
+            "letter-spacing: -0.5px; margin: 0; padding: 0;"
+        )
+        layout.addWidget(name)
+
+        version = QLabel(f"버전 {__version__}")
+        version.setStyleSheet(
+            "font-size: 13px; font-weight: 500; color: palette(highlight); "
+            "margin: 0; padding: 0;"
+        )
+        layout.addWidget(version)
+
+        # ── 본문: 설명 ─────────────────────────────────────────
+        desc = QLabel(
+            "코코포리아 / Roll20 채팅 로그를 EPUB · DOCX · PDF 전자책으로\n"
+            "변환하는 TRPG 리플레이 전용 출판 도구입니다."
+        )
+        desc.setWordWrap(True)
+        desc.setStyleSheet("font-size: 13px; color: palette(text); margin-top: 8px;")
+        layout.addWidget(desc)
+
+        # ── 시스템 정보 ────────────────────────────────────────
+        sysinfo = QLabel(
+            f"OS · {platform.system()} {platform.release()}\n"
+            f"Python · {sys.version.split()[0]}\n"
+            f"라이선스 · {__license__}\n"
+            f"{__copyright__}"
+        )
+        sysinfo.setStyleSheet(
+            "font-size: 11px; color: palette(mid); line-height: 1.6; "
+            "padding: 10px 12px; background: rgba(128,128,128,0.06); "
+            "border-radius: 6px; margin-top: 6px;"
+        )
+        layout.addWidget(sysinfo)
+
+        # ── 크레딧 (스크롤 가능) ──────────────────────────────
+        credits = QTextBrowser()
+        credits.setPlainText(_CREDITS)
+        credits.setStyleSheet(
+            "QTextBrowser { background: palette(base); "
+            "border: 1px solid rgba(128,128,128,0.18); border-radius: 6px; "
+            "padding: 10px; font-size: 12px; line-height: 1.7; }"
+        )
+        layout.addWidget(credits, 1)
+
+        # ── 액션: 홈페이지 / 닫기 ─────────────────────────────
+        actions = QHBoxLayout()
+        actions.setSpacing(8)
+
+        homepage_btn = QPushButton("GitHub 저장소 열기")
+        homepage_btn.clicked.connect(self._open_homepage)
+        actions.addWidget(homepage_btn)
+
+        actions.addStretch()
+
+        close_btn = QPushButton("닫기")
+        close_btn.setDefault(True)
+        close_btn.setMinimumWidth(80)
+        close_btn.clicked.connect(self.accept)
+        actions.addWidget(close_btn)
+
+        layout.addLayout(actions)
+
+    def _open_homepage(self) -> None:
+        from PySide6.QtCore import QUrl
+        QDesktopServices.openUrl(QUrl(__homepage__))
