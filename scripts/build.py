@@ -9,6 +9,16 @@ import sys
 import os
 from pathlib import Path
 
+# Korean Windows console defaults to cp949 which rejects ASCII em-dash and many
+# other Unicode glyphs we print. Force UTF-8 so build output never crashes on
+# encode errors, regardless of locale.
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, OSError):
+        pass
+
 APP_NAME = "TRPG_Converter_Pro"
 MAIN_SCRIPT = "main.py"
 
@@ -324,32 +334,65 @@ def build_app():
 
 
 def _smoke_test_bundle() -> bool:
-    """Launch the built exe briefly to catch import errors.
+    """Verify the built bundle is import-able.
 
-    Returns True if the process is still running after a short delay (= GUI
-    event loop reached). Returns False if it crashed before then, which
-    typically means a ``ModuleNotFoundError`` from a missing hidden import.
+    Two-stage gate:
+      1. **Static check** — every required runtime package must physically
+         exist in ``_internal/``. Catches missing-package bugs (e.g. the
+         pydantic-via-collect-all + pydantic.v1-exclude PyInstaller bug)
+         deterministically, without depending on the GUI event loop.
+      2. **Launch check** — actually start the exe for 4s. If it crashes
+         (likely ModuleNotFoundError or DLL load failure), surface stderr.
     """
     import time
     app_dir = Path(__file__).resolve().parent.parent
     if sys.platform == "win32":
         exe = app_dir / "dist" / APP_NAME / f"{APP_NAME}.exe"
+        internal = app_dir / "dist" / APP_NAME / "_internal"
     elif sys.platform == "darwin":
         exe = app_dir / "dist" / f"{APP_NAME}.app" / "Contents" / "MacOS" / APP_NAME
+        internal = app_dir / "dist" / f"{APP_NAME}.app" / "Contents" / "Resources"
     else:
         exe = app_dir / "dist" / APP_NAME / APP_NAME
+        internal = app_dir / "dist" / APP_NAME / "_internal"
+
     if not exe.exists():
         print(f"[smoke] executable not found: {exe}")
         return False
 
-    print(f"\n[smoke] launching {exe.name}...")
+    # 1. Static check — packages that we explicitly ``--collect-all`` MUST be
+    #    present as on-disk directories in ``_internal/``. Small pure-Python
+    #    packages (ebooklib, bs4, reportlab) that PyInstaller packs into the
+    #    PYZ archive embedded in the .exe are NOT checked here — for those we
+    #    rely on the launch test to catch missing imports at runtime.
+    #
+    #    This narrower list specifically guards against the regression where
+    #    ``--collect-all X`` was silently neutralised (e.g. by an interacting
+    #    ``--exclude-module X.Y``), which produced builds missing pydantic.
+    required_collected = [
+        "pydantic",
+        "pydantic_core",
+        "PySide6",
+        "qfluentwidgets",
+        "shiboken6",
+        "charset_normalizer",
+    ]
+    missing = [pkg for pkg in required_collected if not (internal / pkg).exists()]
+    if missing:
+        print("[smoke] STATIC CHECK FAILED - collect-all packages missing from bundle:")
+        for pkg in missing:
+            print(f"  - {pkg}  (expected at {internal / pkg})")
+        return False
+    print(f"[smoke] static check OK ({len(required_collected)} collect-all packages present)")
+
+    # 2. Launch check — must reach the Qt event loop.
+    print(f"[smoke] launching {exe.name}...")
     proc = subprocess.Popen(
         [str(exe)],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         cwd=str(exe.parent),
     )
-    # 4s is enough for QApplication to construct + a window to appear.
     time.sleep(4)
     if proc.poll() is None:
         print("[smoke] process still running - OK")
