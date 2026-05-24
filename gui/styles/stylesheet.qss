@@ -2067,3 +2067,61 @@ QToolTip {
     padding: 4px 8px;
     font-family: "Pretendard", "Consolas", "Malgun Gothic", monospace;
 }
+
+/* ==================== UI/UX Pro Max polish ==================== */
+/* §4 primary-action: help link 톤은 액션 버튼보다 약하게 (ghost 스타일).
+   - 테두리 없음, 배경 없음, 호버 시에만 미세한 배경
+   - PushButton.setFlat(True) + class="help-link" 조합 */
+QPushButton[class~="help-link"] {
+    background: transparent;
+    border: none;
+    color: palette(link);
+    padding: 4px 10px;
+    font-size: __FS_SM__px;
+    font-weight: 500;
+    text-align: left;
+}
+QPushButton[class~="help-link"]:hover {
+    background: rgba(10, 132, 255, 0.08);
+    border-radius: 6px;
+    color: palette(highlight);
+}
+QPushButton[class~="help-link"]:pressed {
+    background: rgba(10, 132, 255, 0.14);
+}
+
+/* §8 destructive-emphasis: 파괴적 보조 액션 (선택 제거 / 전체 삭제) 은
+   톤다운된 danger 컬러로 표시. primary 와 시각 거리 유지. */
+QPushButton[class~="destructive-secondary"] {
+    border: 1px solid rgba(220, 38, 38, 0.25);
+    color: rgb(180, 30, 30);
+    background: transparent;
+    border-radius: 6px;
+}
+QPushButton[class~="destructive-secondary"]:hover {
+    background: rgba(220, 38, 38, 0.08);
+    border-color: rgba(220, 38, 38, 0.45);
+}
+QPushButton[class~="destructive-secondary"]:pressed {
+    background: rgba(220, 38, 38, 0.14);
+}
+
+/* §5 visual-hierarchy: 파일 리스트 자체에 약한 경계 + inner padding 으로
+   안쪽 콘텐츠와 카드 사이의 layering 을 명확히. */
+#FileList {
+    background: palette(base);
+    border: 1px solid rgba(128, 128, 128, 0.18);
+    border-radius: 8px;
+    padding: 4px;
+}
+#FileList::item {
+    padding: 6px 8px;
+    border-radius: 4px;
+}
+#FileList::item:hover {
+    background: rgba(10, 132, 255, 0.06);
+}
+#FileList::item:selected {
+    background: rgba(10, 132, 255, 0.14);
+    color: palette(text);
+}

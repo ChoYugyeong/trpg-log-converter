@@ -11,7 +11,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
 
-from ..theme import Sizes, Colors
+from ..theme import Sizes, Colors, Spacing
 
 
 class InspectorBar(QFrame):
@@ -231,23 +231,17 @@ class DocumentPreview(QFrame):
         toolbar_layout.setContentsMargins(8, 6, 8, 6)
         toolbar_layout.setSpacing(6)
 
-        # 1행: 제목만 (공간 절약)
-        row1 = QHBoxLayout()
-        row1.setSpacing(6)
+        # 1행: 제목 + 판형 콤보를 같은 줄에 배치 (수직 공간 절약 + 정돈된 헤더).
+        # UI/UX Pro Max §5 visual-hierarchy: 동일 레벨 컨트롤은 한 행으로 묶고,
+        # 다음 행에 보조 컨트롤(줌, 페이지)을 배치해 위계를 명확히 한다.
+        row_format = QHBoxLayout()
+        row_format.setSpacing(Spacing.SM)
+        row_format.setContentsMargins(0, 0, 0, 0)
 
         title = QLabel("미리보기")
         title.setObjectName("PreviewPanelTitle")
-        row1.addWidget(title)
-        row1.addStretch()
-
-        toolbar_layout.addLayout(row1)
-
-        # 2행: 판형 콤보 (자체 행 full-width → 어떤 폭에서도 잘림 없음)
-        # ``판형`` 라벨은 콤보 placeholder/툴팁이 이미 같은 정보를 전달하므로 제거.
-        # 라벨이 차지하던 ~40px 를 콤보가 회수해 한글 라벨이 잘리지 않는다.
-        row_format = QHBoxLayout()
-        row_format.setSpacing(6)
-        row_format.setContentsMargins(0, 0, 0, 0)
+        row_format.addWidget(title)
+        row_format.addStretch()
 
         self.format_combo = QComboBox()
         self.format_combo.setObjectName("PreviewFormatCombo")

@@ -16,6 +16,7 @@ import logging
 from qfluentwidgets import (
     BodyLabel, PushButton, PrimaryPushButton, LineEdit, ComboBox,
     RadioButton, ProgressBar, InfoBar, InfoBarPosition,
+    TransparentPushButton,
     FluentIcon as FIF,
 )
 
@@ -109,51 +110,76 @@ class HomePage(BasePage):
     # ------------------------------------------------------------------
 
     def _build_file_card(self):
-        """소스 파일 드래그 앤 드롭 + 파일 목록 + 관리 버튼"""
+        """소스 파일 드래그 앤 드롭 + 파일 목록 + 관리 버튼.
+
+        시각 구조 (UI/UX Pro Max §5 visual-hierarchy + spacing-scale):
+          [드롭존]   ← 1차 primary path (눈에 띄게 큰 영역)
+          ── 16px gap ──
+          [도움말 링크 행]   ← ghost 톤, 보조 액션 (드롭존보다 약하게)
+          ── 24px gap ──
+          [파일 목록 헤더 + 리스트]   ← 추가된 파일을 보는 2차 영역
+          ── 16px gap ──
+          [추가/제거 액션 행]   ← 리스트 직접 조작 액션
+        """
         file_card = ContentCard("파일 선택", "변환할 로그 파일을 추가하세요")
 
-        # 드래그 앤 드롭 영역
+        # ── 1) 드롭존 (primary path) ─────────────────────────────────
         self.drop_area = FileDropArea()
         self.drop_area.files_dropped.connect(self._on_files_dropped)
         file_card.add_widget(self.drop_area)
 
-        file_card.add_spacing(8)
+        # ── 2) 도움말 링크 (ghost 톤, drop zone 보다 약하게) ─────────
+        file_card.add_spacing(Spacing.MD)
 
-        # Roll20 / 코코포리아에서 로그 가져오는 방법을 바로 띄우는 도움말 버튼.
-        # 드래그 영역 바로 밑에 두어 "어디서 파일을 받아오지?" 라는 질문이 생기는
-        # 순간 즉시 클릭 가능.
         help_row = QHBoxLayout()
         help_row.setContentsMargins(0, 0, 0, 0)
-        help_row.setSpacing(8)
+        help_row.setSpacing(Spacing.SM)
 
-        roll20_help_btn = PushButton("Roll20 로그 받는 법")
-        roll20_help_btn.setIcon(FIF.HELP)
+        help_prefix = BodyLabel("로그 받는 법:")
+        help_prefix.setStyleSheet("color: palette(mid); font-size: 12px;")
+        help_row.addWidget(help_prefix)
+
+        # TransparentPushButton: qfluentwidgets 의 ghost 톤 버튼 — 액션 버튼보다 약한 시각 무게.
+        # PushButton + setFlat 은 qfluentwidgets 의 자체 스타일 때문에 효과가 없어
+        # 전용 위젯으로 교체.
+        roll20_help_btn = TransparentPushButton(FIF.HELP, "Roll20")
         roll20_help_btn.setMinimumHeight(Sizes.BUTTON_SM_H)
         roll20_help_btn.clicked.connect(lambda: self._show_log_help_dialog("roll20"))
         help_row.addWidget(roll20_help_btn)
 
-        coco_help_btn = PushButton("코코포리아 로그 받는 법")
-        coco_help_btn.setIcon(FIF.HELP)
+        coco_help_btn = TransparentPushButton(FIF.HELP, "코코포리아")
         coco_help_btn.setMinimumHeight(Sizes.BUTTON_SM_H)
         coco_help_btn.clicked.connect(lambda: self._show_log_help_dialog("cocofolia"))
         help_row.addWidget(coco_help_btn)
 
         help_row.addStretch()
         file_card.add_layout(help_row)
+
+        # ── 3) 파일 목록 섹션 (헤더 + 리스트) ─────────────────────────
+        file_card.add_spacing(Spacing.LG)
+
+        list_header = BodyLabel("추가된 파일")
+        list_header.setStyleSheet(
+            "color: palette(text); font-size: 13px; font-weight: 600; "
+            "padding: 0; margin: 0;"
+        )
+        file_card.add_widget(list_header)
+
         file_card.add_spacing(4)
 
-        # 순서 안내 라벨 (병합 시 어느 쪽이 먼저인지 명시)
-        order_hint = BodyLabel("↑ 위쪽이 먼저 병합됩니다 (1번 = 첫 부분) · 드래그로 순서를 바꿀 수 있어요")
-        order_hint.setStyleSheet("color: palette(mid); font-size: 12px; padding: 2px 4px;")
+        order_hint = BodyLabel("위에서부터 순서대로 병합됩니다. 드래그로 순서 변경.")
+        order_hint.setStyleSheet("color: palette(mid); font-size: 11px;")
         file_card.add_widget(order_hint)
+
+        file_card.add_spacing(Spacing.SM)
 
         # 파일 목록 (드래그로 순서 변경 가능 · 상단이 먼저 병합됨)
         self.file_list = QListWidget()
-        self.file_list.setMinimumHeight(80)
-        self.file_list.setMaximumHeight(200)
+        self.file_list.setObjectName("FileList")
+        self.file_list.setMinimumHeight(96)
+        self.file_list.setMaximumHeight(220)
         self.file_list.setDragDropMode(QListWidget.InternalMove)
         self.file_list.setSelectionMode(QListWidget.ExtendedSelection)
-        # InternalMove 만으로는 실제 재정렬이 안 되는 경우가 있어 아래 플래그까지 명시.
         self.file_list.setDragEnabled(True)
         self.file_list.setAcceptDrops(True)
         self.file_list.setDropIndicatorShown(True)
@@ -168,7 +194,25 @@ class HomePage(BasePage):
         )
         file_card.add_widget(self.file_list)
 
-        # 버튼 행
+        # 빈 상태 플레이스홀더 — 파일이 없을 때만 보이는 안내 (UX §8 empty-states).
+        # QListWidget 위에 오버레이로 띄워 자리잡음.
+        self._empty_state = BodyLabel(
+            "아직 추가된 파일이 없어요\n"
+            "위 영역에 드래그하거나 [파일 추가] 버튼을 눌러보세요"
+        )
+        self._empty_state.setAlignment(Qt.AlignCenter)
+        self._empty_state.setStyleSheet(
+            "color: palette(mid); font-size: 12px; line-height: 1.6; "
+            "background: transparent; padding: 16px;"
+        )
+        self._empty_state.setParent(self.file_list.viewport())
+        self._empty_state.setAttribute(Qt.WA_TransparentForMouseEvents, True)
+        # 리스트가 리사이즈될 때마다 placeholder 위치를 갱신.
+        self.file_list.viewport().installEventFilter(self)
+
+        # ── 4) 액션 행 (리스트 조작) ─────────────────────────────────
+        file_card.add_spacing(Spacing.MD)
+
         btn_row = QHBoxLayout()
         btn_row.setSpacing(Spacing.SM)
 
@@ -184,12 +228,16 @@ class HomePage(BasePage):
 
         btn_row.addStretch()
 
+        # 파괴적 액션 (선택 제거 / 전체 삭제) 은 시각적으로 분리.
+        # destructive-emphasis: danger 톤 + 우측 정렬로 primary 와 거리 유지.
         remove_btn = PushButton("선택 제거")
+        remove_btn.setProperty("class", "destructive-secondary")
         remove_btn.setMinimumHeight(Sizes.BUTTON_SM_H)
         remove_btn.clicked.connect(self._remove_selected)
         btn_row.addWidget(remove_btn)
 
         clear_btn = PushButton("전체 삭제")
+        clear_btn.setProperty("class", "destructive-secondary")
         clear_btn.setMinimumHeight(Sizes.BUTTON_SM_H)
         clear_btn.clicked.connect(self._clear_files)
         btn_row.addWidget(clear_btn)
@@ -689,6 +737,7 @@ class HomePage(BasePage):
             self._update_file_count()
             self.files_updated.emit(self.files)
             self._update_document_preview(self.files)
+        self._refresh_empty_state()
 
     def _add_files(self):
         """파일 추가 대화상자"""
@@ -728,6 +777,7 @@ class HomePage(BasePage):
             self.file_list.takeItem(self.file_list.row(item))
         self._renumber_items()
         self._update_file_count()
+        self._refresh_empty_state()
         self.files_updated.emit(self.files)
         self._update_document_preview(self.files)
 
@@ -746,8 +796,33 @@ class HomePage(BasePage):
                 new_files.append(path)
         self.files = new_files
         self._renumber_items()
+        self._refresh_empty_state()
         self.files_updated.emit(self.files)
         self._update_document_preview(self.files)
+
+    def _refresh_empty_state(self):
+        """파일 리스트가 비어 있을 때만 안내 placeholder 를 표시 (UX §8 empty-states).
+
+        QListWidget 에는 직접적인 placeholder API 가 없어서 자식 BodyLabel 을
+        리스트 viewport 위에 오버레이로 띄우고 비어있을 때만 보이게 한다.
+        """
+        if not hasattr(self, "_empty_state") or self._empty_state is None:
+            return
+        is_empty = self.file_list.count() == 0
+        self._empty_state.setVisible(is_empty)
+        if is_empty:
+            self._empty_state.setGeometry(self.file_list.viewport().rect())
+
+    def eventFilter(self, obj, event):
+        """리스트 viewport 리사이즈 시 placeholder 위치를 따라가게 한다."""
+        from PySide6.QtCore import QEvent
+        if (
+            hasattr(self, "file_list")
+            and obj is self.file_list.viewport()
+            and event.type() == QEvent.Resize
+        ):
+            self._refresh_empty_state()
+        return super().eventFilter(obj, event)
 
     def _renumber_items(self):
         """파일 목록 아이템에 현재 순서(1, 2, 3...) 를 다시 매긴다."""
@@ -764,6 +839,7 @@ class HomePage(BasePage):
         self.drop_area.clear_files()
         self._parsed_entries = []
         self._update_file_count()
+        self._refresh_empty_state()
         self.files_updated.emit([])
         if hasattr(self, "document_preview"):
             self.document_preview.clear_preview()
