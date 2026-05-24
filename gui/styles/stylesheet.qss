@@ -2007,15 +2007,17 @@ QToolTip {
     min-height: 0px;
 }
 
-/* ==================== Collapsible Section (Accordion) ==================== */
+/* ==================== Collapsible Section (Accordion) ====================
+   UI/UX Pro Max §4 elevation-consistent + Flat Design: 그라데이션 제거,
+   borderless minimal 헤더로 본문이 시각적 hero 가 되도록. */
 #CollapsibleHeader {
-    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-        stop:0 rgba(128, 128, 128, 0.06), stop:1 rgba(128, 128, 128, 0.02));
-    border: 1px solid rgba(128, 128, 128, 0.12);
-    border-radius: 12px;
-    padding: 14px 20px;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(128, 128, 128, 0.12);
+    border-radius: 0;
+    padding: 12px 4px;
     font-size: __FS_LG_PLUS__px;
-    font-weight: 600;
+    font-weight: 700;
     color: palette(text);
     text-align: left;
     min-height: 24px;
@@ -2023,33 +2025,25 @@ QToolTip {
 }
 
 #CollapsibleHeader:hover {
-    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-        stop:0 rgba(10, 132, 255, 0.06), stop:1 rgba(10, 132, 255, 0.02));
-    border-color: rgba(10, 132, 255, 0.25);
     color: #0A84FF;
+    border-bottom-color: rgba(10, 132, 255, 0.35);
 }
 
 #CollapsibleHeader:pressed {
-    background: rgba(10, 132, 255, 0.08);
-    border-color: rgba(10, 132, 255, 0.35);
+    color: #0070D8;
 }
 
-/* 펼쳐진 상태 */
+/* 펼쳐진 상태 — 액센트 컬러로 활성 상태 표시 */
 #CollapsibleHeader[expanded="true"] {
-    background: rgba(10, 132, 255, 0.04);
-    border-color: rgba(10, 132, 255, 0.2);
-    border-bottom-left-radius: 0;
-    border-bottom-right-radius: 0;
+    color: #0A84FF;
+    border-bottom-color: rgba(10, 132, 255, 0.4);
 }
 
-/* 아코디언 본문 영역 */
+/* 아코디언 본문 영역 — 박스 없이 padding 만으로 정돈 */
 #CollapsibleBody {
-    border: 1px solid rgba(128, 128, 128, 0.1);
-    border-top: none;
-    border-bottom-left-radius: 12px;
-    border-bottom-right-radius: 12px;
-    background: palette(base);
-    padding: 12px 8px;
+    border: none;
+    background: transparent;
+    padding: 8px 0 4px 0;
 }
 
 /* 아코디언 내부 카드 - 테두리 제거 */

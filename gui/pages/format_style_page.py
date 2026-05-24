@@ -324,6 +324,7 @@ class FormatStylePage(BasePage):
         preset_btn_row.addWidget(save_preset_btn)
 
         delete_preset_btn = PushButton("프리셋 삭제")
+        delete_preset_btn.setProperty("class", "destructive-secondary")
         delete_preset_btn.setMinimumHeight(36)
         delete_preset_btn.setCursor(Qt.PointingHandCursor)
         delete_preset_btn.clicked.connect(self._delete_preset)
