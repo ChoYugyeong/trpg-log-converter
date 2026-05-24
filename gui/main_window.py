@@ -7,7 +7,7 @@ from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QStackedWidget, QMessageBox,
     QSplitter, QFileDialog, QFrame
 )
-from PySide6.QtCore import Qt, QThread, Signal
+from PySide6.QtCore import QObject, Qt, QThread, QTimer, Signal
 import threading
 from PySide6.QtGui import QIcon, QShortcut, QKeySequence
 from pathlib import Path
@@ -77,6 +77,26 @@ class RecentFilesManager:
         """목록 초기화"""
         self._recent_files = []
         self._save()
+
+
+class _UpdateCheckWorker(QObject):
+    """GitHub Releases API 호출을 백그라운드 스레드에서 수행.
+
+    QThread 직접 상속 대신 QObject + moveToThread 패턴 — Qt 권장 방식.
+    """
+    finished = Signal(object)  # UpdateInfo | None
+
+    def __init__(self, service) -> None:
+        super().__init__()
+        self._service = service
+
+    def run(self) -> None:
+        try:
+            info = self._service.check()
+        except Exception:
+            logger.exception("Update check raised")
+            info = None
+        self.finished.emit(info)
 
 
 class ConversionWorker(QThread):
@@ -318,6 +338,16 @@ class MainWindow(FluentWindow):
         if hasattr(self, 'titleBar') and self.titleBar:
             self.titleBar.raise_()
 
+        # 백그라운드 silent 업데이트 체크 — 첫 paint 가 끝난 뒤 5초 지연.
+        # dev (frozen=False) 에서는 적용 스크립트가 의미 없으므로 frozen 빌드에서만 실행.
+        # 설정에서 끄려면 gui_settings['updates_check_on_startup'] = False.
+        import sys
+        if (
+            getattr(sys, 'frozen', False)
+            and gui_settings.get('updates_check_on_startup', True)
+        ):
+            QTimer.singleShot(5000, lambda: self._check_for_updates(silent=True))
+
     def _setup_navigation(self):
         """네비게이션 설정 - 4탭 구조 (홈, 서식, 파싱, 고급)"""
         # 4개 메인 페이지 생성
@@ -343,6 +373,26 @@ class MainWindow(FluentWindow):
 
         self.addSubInterface(self.advanced_settings_page, FIF.DEVELOPER_TOOLS, '고급 설정',
                             position=NavigationItemPosition.BOTTOM)
+
+        # 업데이트 확인
+        self.navigationInterface.addItem(
+            routeKey='check_update',
+            icon=FIF.UPDATE,
+            text='업데이트 확인',
+            onClick=self._check_for_updates,
+            selectable=False,
+            position=NavigationItemPosition.BOTTOM,
+        )
+
+        # 정보
+        self.navigationInterface.addItem(
+            routeKey='about',
+            icon=FIF.INFO,
+            text='정보',
+            onClick=self._show_about_dialog,
+            selectable=False,
+            position=NavigationItemPosition.BOTTOM,
+        )
 
         # 종료 버튼
         self.navigationInterface.addItem(
@@ -760,6 +810,53 @@ class MainWindow(FluentWindow):
             )
 
     _SHUTDOWN_WORKER_TIMEOUT_MS = 5_000
+
+    # ------------------------------------------------------------------
+    # About / Update
+    # ------------------------------------------------------------------
+
+    def _show_about_dialog(self) -> None:
+        """앱 정보 다이얼로그 표시."""
+        from gui.dialogs import AboutDialog
+        AboutDialog(self).exec()
+
+    def _check_for_updates(self, *, silent: bool = False) -> None:
+        """GitHub Releases 에서 최신 버전 확인.
+
+        silent=True : 새 버전이 없을 때 토스트 안 띄움 (앱 시작 시 자동 체크).
+        silent=False: 항상 결과 알림 (메뉴에서 사용자가 직접 누른 경우).
+
+        네트워크 요청은 별도 스레드에서 — UI 가 멈추지 않도록.
+        """
+        from core.services.updater import UpdateService
+
+        worker = _UpdateCheckWorker(UpdateService())
+        thread = QThread(self)
+        worker.moveToThread(thread)
+        thread.started.connect(worker.run)
+        worker.finished.connect(lambda info: self._on_update_check_result(info, silent))
+        worker.finished.connect(thread.quit)
+        worker.finished.connect(worker.deleteLater)
+        thread.finished.connect(thread.deleteLater)
+        thread.start()
+        # 참조 유지 (GC 방지)
+        self._update_check_thread = thread
+        self._update_check_worker = worker
+
+    def _on_update_check_result(self, info, silent: bool) -> None:
+        if info is None:
+            if not silent:
+                InfoBar.info(
+                    title="최신 버전입니다",
+                    content="현재 사용 중인 버전이 최신입니다.",
+                    parent=self,
+                    position=InfoBarPosition.TOP,
+                    duration=3500,
+                )
+            return
+        from gui.dialogs import UpdateDialog
+        from core.services.updater import UpdateService
+        UpdateDialog(info, UpdateService(), self).exec()
 
     def closeEvent(self, event):
         """윈도우 닫기 이벤트.
