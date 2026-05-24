@@ -136,16 +136,34 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e .[dev]
 
+      # Inno Setup for the Windows installer. innosetup is pre-installed on
+      # most windows-latest runners but we add it via Chocolatey for safety.
+      - name: Install Inno Setup (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          if (-not (Get-Command ISCC.exe -ErrorAction SilentlyContinue)) {
+            choco install innosetup --no-progress -y
+          } else { Write-Host "ISCC already present" }
+
+      # create-dmg for a polished macOS DMG with layout. Falls back to hdiutil
+      # if Homebrew lookup fails (which is fine — DMG still works).
+      - name: Install create-dmg (macOS)
+        if: matrix.os == 'macos-latest'
+        run: brew install create-dmg || true
+
       - name: Run build script
         run: python scripts/build.py
 
-      - name: Package macOS bundle
+      # Both installers and zip are produced. The zip is for users who prefer
+      # the portable mode; the installer is the recommended path.
+      - name: Package macOS bundle (zip + dmg)
         if: matrix.os == 'macos-latest'
         run: |
           cd dist
           zip -r TRPG_Converter_Pro_macOS.zip TRPG_Converter_Pro.app
 
-      - name: Package Windows folder
+      - name: Package Windows folder (zip)
         if: matrix.os == 'windows-latest'
         shell: pwsh
         run: |
@@ -153,11 +171,15 @@ jobs:
             -Path dist\TRPG_Converter_Pro `
             -DestinationPath dist\TRPG_Converter_Pro_Windows.zip
 
-      - name: Upload artifact
+      - name: Upload artifact (zip + installer)
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact }}
-          path: dist/*.zip
+          path: |
+            dist/*.zip
+            dist/installer/*.exe
+            dist/installer/*.dmg
+          if-no-files-found: warn
 
   # ─── Release on tag push ─────────────────────────────────────────────
   release:
@@ -176,4 +198,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
-          files: artifacts/**/*.zip
+          files: |
+            artifacts/**/*.zip
+            artifacts/**/*.exe
+            artifacts/**/*.dmg

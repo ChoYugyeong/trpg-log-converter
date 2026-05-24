@@ -4,9 +4,10 @@ TRPG 로그 변환기 Pro - 빌드 스크립트
 macOS / Windows용 실행 파일 생성 (PySide6)
 """
 
+import os
+import shutil
 import subprocess
 import sys
-import os
 from pathlib import Path
 
 # Korean Windows console defaults to cp949 which rejects ASCII em-dash and many
@@ -171,6 +172,52 @@ def _dir_size(path: Path) -> int:
     return total
 
 
+def _render_version_info(app_dir: Path) -> Path | None:
+    """Materialise VS_VERSION_INFO file for PyInstaller --version-file.
+
+    Embeds CompanyName / ProductName / FileVersion / LegalCopyright into the
+    .exe so Windows Explorer's "Properties → Details" tab shows them. Required
+    for proper installer / antivirus reputation.
+
+    Only runs on Windows (the format is Windows-specific). Returns the
+    rendered file path, or None to skip.
+    """
+    if sys.platform != "win32":
+        return None
+    template = app_dir / "resources" / "version_info_template.txt"
+    if not template.exists():
+        return None
+    # Read version from single source.
+    sys.path.insert(0, str(app_dir))
+    try:
+        from core.version import (
+            __app_name__, __author__, __copyright__, __version__, version_tuple,
+        )
+    finally:
+        sys.path.pop(0)
+
+    major, minor, patch = version_tuple()
+    tup = f"{major}, {minor}, {patch}, 0"
+    rendered = template.read_text(encoding="utf-8")
+    replacements = {
+        "{{FILE_VERSION_TUPLE}}": tup,
+        "{{PROD_VERSION_TUPLE}}": tup,
+        "{{COMPANY}}": __author__,
+        "{{DESCRIPTION}}": "Convert Ccfolia/Roll20 chat logs to EPUB, DOCX, PDF",
+        "{{VERSION}}": __version__,
+        "{{APP_NAME}}": "TRPG_Converter_Pro",
+        "{{PRODUCT_NAME}}": __app_name__,
+        "{{COPYRIGHT}}": __copyright__,
+    }
+    for k, v in replacements.items():
+        rendered = rendered.replace(k, v)
+    out = app_dir / "build" / "version_info.txt"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(rendered, encoding="utf-8")
+    print(f"rendered version_info -> {out}")
+    return out
+
+
 def build_app():
     """앱 빌드"""
     print(f"\n{APP_NAME} 빌드 시작...\n")
@@ -182,6 +229,10 @@ def build_app():
     app_dir = Path(__file__).resolve().parent.parent
     os.chdir(app_dir)
 
+    # Resolve icon + version info paths.
+    icon_path = app_dir / "resources" / ("icon.icns" if sys.platform == "darwin" else "icon.ico")
+    version_info_file = _render_version_info(app_dir)
+
     # PyInstaller 옵션
     cmd = [
         sys.executable, "-m", "PyInstaller",
@@ -191,6 +242,15 @@ def build_app():
         "--clean",     # 캐시 정리
         "--noconfirm", # 기존 빌드 덮어쓰기
     ]
+
+    # 앱 아이콘
+    if icon_path.exists():
+        cmd.extend(["--icon", str(icon_path)])
+        print(f"icon: {icon_path}")
+
+    # Windows: VS_VERSION_INFO 임베드
+    if version_info_file is not None:
+        cmd.extend(["--version-file", str(version_info_file)])
 
     # 데이터 파일 포함 (존재하는 디렉토리만)
     for data_dir in ["core", "gui", "resources"]:
@@ -315,8 +375,12 @@ def build_app():
         # PyInstaller 가 모든 hidden import 를 잡지 못해 ModuleNotFoundError 가
         # 사용자에게 도달하는 사고를 막기 위한 production-grade smoke gate.
         if not _smoke_test_bundle():
-            print(f"\n[FAIL] Smoke test failed — built exe crashes on launch")
+            print(f"\n[FAIL] Smoke test failed - built exe crashes on launch")
             sys.exit(2)
+
+        # 인스톨러 빌드 (옵트인: BUILD_INSTALLER=0 으로 끌 수 있음).
+        if os.environ.get("BUILD_INSTALLER", "1") != "0":
+            _build_installer(app_dir)
 
         print(f"\n[OK] Build Success!")
         print(f"\n[OUTPUT]")
@@ -331,6 +395,81 @@ def build_app():
     else:
         print(f"\n[FAIL] Build failed")
         sys.exit(1)
+
+
+def _build_installer(app_dir: Path) -> None:
+    """Build the platform-specific installer if its tooling is available.
+
+    Windows: invokes ``ISCC.exe`` on installer/windows/TRPG_Converter_Pro.iss
+             with the version baked in from core.version. Inno Setup must be
+             on PATH (or installed in its default location).
+
+    macOS:   invokes installer/macos/build_dmg.sh which uses ``create-dmg``
+             when available and falls back to ``hdiutil``.
+
+    Linux:   skipped (no installer convention; users grab the zip).
+
+    Failures are non-fatal — the unsigned zip in dist/ is still a valid
+    distributable. The installer is a "nice-to-have" on top.
+    """
+    sys.path.insert(0, str(app_dir))
+    try:
+        from core.version import __version__
+    finally:
+        sys.path.pop(0)
+
+    if sys.platform == "win32":
+        iss = app_dir / "installer" / "windows" / "TRPG_Converter_Pro.iss"
+        if not iss.exists():
+            print(f"[installer] skip - {iss} not found")
+            return
+
+        # Locate ISCC.exe. Try PATH first, then standard / per-user install
+        # locations. winget installs to %LOCALAPPDATA%, choco to Program Files.
+        iscc = shutil.which("ISCC.exe") or shutil.which("iscc.exe")
+        if iscc is None:
+            local_app_data = os.environ.get("LOCALAPPDATA", str(Path.home() / "AppData" / "Local"))
+            for default in [
+                Path(r"C:\Program Files (x86)\Inno Setup 6\ISCC.exe"),
+                Path(r"C:\Program Files\Inno Setup 6\ISCC.exe"),
+                Path(local_app_data) / "Programs" / "Inno Setup 6" / "ISCC.exe",
+            ]:
+                if default.exists():
+                    iscc = str(default)
+                    break
+        if iscc is None:
+            print("[installer] skip - ISCC.exe not found "
+                  "(install Inno Setup 6 from https://jrsoftware.org/isdl.php)")
+            return
+
+        print(f"\n[installer] Inno Setup: {iscc}")
+        out_dir = app_dir / "dist" / "installer"
+        out_dir.mkdir(parents=True, exist_ok=True)
+        result = subprocess.run(
+            [iscc, f"/DAppVersion={__version__}", str(iss)],
+            cwd=str(app_dir),
+        )
+        if result.returncode != 0:
+            print(f"[installer] FAIL (rc={result.returncode}) - non-fatal, zip in dist/ is still distributable")
+            return
+        produced = out_dir / f"TRPG_Converter_Pro_Setup_{__version__}.exe"
+        if produced.exists():
+            size_mb = produced.stat().st_size / (1024 * 1024)
+            print(f"[installer] OK -> {produced} ({size_mb:.1f} MB)")
+
+    elif sys.platform == "darwin":
+        script = app_dir / "installer" / "macos" / "build_dmg.sh"
+        if not script.exists():
+            print(f"[installer] skip - {script} not found")
+            return
+        print(f"\n[installer] macOS DMG: {script}")
+        result = subprocess.run(["/bin/bash", str(script)], cwd=str(app_dir))
+        if result.returncode != 0:
+            print(f"[installer] FAIL (rc={result.returncode}) - non-fatal")
+            return
+
+    else:
+        print(f"[installer] skip - platform {sys.platform} not supported")
 
 
 def _smoke_test_bundle() -> bool:
