@@ -348,6 +348,12 @@ class MainWindow(FluentWindow):
         ):
             QTimer.singleShot(5000, lambda: self._check_for_updates(silent=True))
 
+        # 첫 실행 환영 다이얼로그 — gui_settings 에 _welcome_seen 플래그가
+        # 없는 사용자에게만 노출. 첫 paint 후 800ms 지연으로 메인 윈도우
+        # 렌더가 끝난 다음 자연스럽게 뜨도록.
+        if not gui_settings.get('_welcome_seen'):
+            QTimer.singleShot(800, self._show_welcome_dialog)
+
     def _setup_navigation(self):
         """네비게이션 설정 - 4탭 구조 (홈, 서식, 파싱, 고급)"""
         # 4개 메인 페이지 생성
@@ -819,6 +825,22 @@ class MainWindow(FluentWindow):
         """앱 정보 다이얼로그 표시."""
         from gui.dialogs import AboutDialog
         AboutDialog(self).exec()
+
+    def _show_welcome_dialog(self) -> None:
+        """첫 실행 환영 다이얼로그.
+
+        결과 처리:
+          - 사용자가 [시작하기] 누름                   → _welcome_seen=True 영구화
+          - "다음부터 보지 않기" 체크 + 시작하기         → _welcome_seen=True 영구화
+          - 창을 X 로 닫음 (dismiss)                  → 다음 실행에 다시 노출
+        """
+        from gui.dialogs import WelcomeDialog
+        dlg = WelcomeDialog(self)
+        result = dlg.exec()
+        if result == WelcomeDialog.Accepted:
+            settings = self.config_manager.get_gui_settings()
+            settings['_welcome_seen'] = True
+            self.config_manager.save_gui_settings(settings)
 
     def _check_for_updates(self, *, silent: bool = False) -> None:
         """GitHub Releases 에서 최신 버전 확인.
