@@ -72,8 +72,26 @@ class ConfigManager:
         else:
             self.app_dir = Path(app_dir)
 
+        # config.yaml 은 배포에 포함된 읽기 전용 기본값이라 install dir 에 둔다.
         self.config_path: Path = self.app_dir / "config.yaml"
-        self.settings_path: Path = self.app_dir / "gui_settings.json"
+
+        # gui_settings.json 의 위치 정책:
+        #  - frozen 빌드 (PyInstaller) → OS 표준 user data dir (%APPDATA% 등).
+        #    Program Files 같은 read-only install 디렉터리 권한 문제 회피.
+        #    첫 실행 시 (구) install_dir/gui_settings.json 자동 이주.
+        #  - 개발 / 테스트 모드 → app_dir 옆에 둔다.
+        #    테스트가 tmp_path 를 넘기면 그 디렉터리에서 격리되어야 하므로.
+        if getattr(sys, "frozen", False):
+            from core.paths import (
+                ensure_dirs,
+                gui_settings_path,
+                migrate_from_install_dir,
+            )
+            ensure_dirs()
+            migrate_from_install_dir(self.app_dir)
+            self.settings_path: Path = gui_settings_path()
+        else:
+            self.settings_path: Path = self.app_dir / "gui_settings.json"
 
         self.yaml_config: Dict = self._load_yaml_config()
         self.gui_settings: Dict = self._load_gui_settings()

@@ -100,9 +100,21 @@ class AppLogger:
         json_output: Optional[bool] = None,
     ) -> None:
         self._log_level = log_level
-        self._log_dir = app_dir / "logs"
+        # In production: logs go to the OS-standard per-user dir so frozen
+        # installs to Program Files don't need admin to write. In dev/tests
+        # the caller passes an explicit app_dir (typically a tmp dir) and we
+        # keep ``<app_dir>/logs`` so test isolation works.
+        from core.paths import user_logs_dir
+        if getattr(sys, "frozen", False):
+            self._log_dir = user_logs_dir()
+        else:
+            self._log_dir = Path(app_dir) / "logs"
         if file_output:
-            self._log_dir.mkdir(parents=True, exist_ok=True)
+            try:
+                self._log_dir.mkdir(parents=True, exist_ok=True)
+            except OSError:
+                self._log_dir = Path(app_dir) / "logs"
+                self._log_dir.mkdir(parents=True, exist_ok=True)
 
         if json_output is None:
             json_output = os.environ.get("LOG_JSON", "").lower() in {"1", "true", "yes"}

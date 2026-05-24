@@ -33,13 +33,24 @@ _CRASH_DIR: Optional[Path] = None
 def install(app_dir: Path) -> None:
     """Install global excepthook + threading.excepthook.
 
-    ``app_dir`` is where ``crashes/`` will live.
+    Crash dumps go to ``<user_data_dir>/crashes/`` (writable by non-admin
+    users even when installed to Program Files). ``app_dir`` is ignored but
+    kept for backwards compatible callers.
     """
     global _INSTALLED, _CRASH_DIR
     if _INSTALLED:
         return
-    _CRASH_DIR = Path(app_dir) / "crashes"
-    _CRASH_DIR.mkdir(parents=True, exist_ok=True)
+    try:
+        from core.paths import user_data_dir
+        _CRASH_DIR = user_data_dir() / "crashes"
+    except ImportError:
+        _CRASH_DIR = Path(app_dir) / "crashes"
+    try:
+        _CRASH_DIR.mkdir(parents=True, exist_ok=True)
+    except OSError:
+        # Last-resort fallback.
+        _CRASH_DIR = Path(app_dir) / "crashes"
+        _CRASH_DIR.mkdir(parents=True, exist_ok=True)
 
     sys.excepthook = _excepthook
     # Threads spawned by Qt and concurrent.futures need their own hook.
