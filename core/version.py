@@ -11,7 +11,7 @@ tags are prefixed with 'v' and stripped during comparison.
 """
 from __future__ import annotations
 
-__version__ = "2.2.0"
+__version__ = "2.2.1"
 __app_name__ = "TRPG Log Converter Pro"
 __author__ = "TRPG Tools"
 __copyright__ = "© 2026 TRPG Tools"

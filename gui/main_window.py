@@ -868,14 +868,17 @@ class MainWindow(FluentWindow):
             return
 
         # 2) 사용자 액션이면 즉시 시각 피드백.
+        #    duration 은 urlopen timeout(3초) 보다 살짝 길게 → 사용자가
+        #    "응답이 없네?" 라고 느끼기 전에 결과 InfoBar 가 나옴.
         if not silent:
             InfoBar.info(
                 title="업데이트 확인 중",
-                content="GitHub 에서 최신 버전을 조회하고 있어요.",
+                content="GitHub 에서 최신 버전을 조회하고 있어요. 잠시만요...",
                 parent=self,
                 position=InfoBarPosition.TOP,
-                duration=2000,
+                duration=4000,
             )
+        logger.info("Update check requested (silent=%s)", silent)
 
         worker = _UpdateCheckWorker(UpdateService())
         thread = QThread(self)

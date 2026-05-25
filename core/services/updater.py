@@ -62,10 +62,11 @@ ProgressCallback = Callable[[int, int], None]  # (downloaded_bytes, total_bytes)
 _API_LATEST = "https://api.github.com/repos/{repo}/releases/latest"
 _USER_AGENT = f"TRPG-Log-Converter-Pro/{__version__} (+https://github.com/{__update_repo__})"
 
-# Tighter timeout than the original 15s — GitHub usually responds in < 1s, and
-# a long blocking timeout means the worker thread can't exit when the user
-# closes the app, causing "QThread destroyed while running" aborts.
-_TIMEOUT_SECONDS = 4
+# Aggressive timeout — GitHub normally responds in < 1s. We need:
+#   1) urlopen 전체 작업 timeout (이 상수)
+#   2) 그 전에 일어나는 DNS getaddrinfo 도 ``socket.setdefaulttimeout`` 으로 동일 제한
+#   3) closeEvent 의 thread wait timeout (5s) 보다 짧을 것
+_TIMEOUT_SECONDS = 3
 
 
 @dataclass(frozen=True)
@@ -96,9 +97,22 @@ class UpdateService:
     # ── 1. Check ─────────────────────────────────────────────────────
 
     def check(self) -> Optional[UpdateInfo]:
-        """Query GitHub for the latest release. Returns None if no newer version."""
+        """Query GitHub for the latest release. Returns None if no newer version.
+
+        Network safety:
+          - urlopen ``timeout`` argument bounds the entire HTTP operation.
+          - ``socket.setdefaulttimeout`` bounds DNS getaddrinfo / TCP connect
+            which urlopen's timeout doesn't always cover on slow networks.
+          - HTTPError (404 등) 는 URLError 의 서브클래스라 같은 except 로 잡힘.
+        """
+        import socket
+        import time
+
         url = _API_LATEST.format(repo=self.repo)
         logger.info("Checking for updates: %s", url)
+        prev_default_timeout = socket.getdefaulttimeout()
+        socket.setdefaulttimeout(_TIMEOUT_SECONDS)
+        start = time.monotonic()
         try:
             req = urllib.request.Request(
                 url,
@@ -110,9 +124,14 @@ class UpdateService:
             with urllib.request.urlopen(req, timeout=_TIMEOUT_SECONDS,
                                          context=ssl.create_default_context()) as resp:
                 payload = json.loads(resp.read().decode("utf-8"))
-        except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
-            logger.warning("Update check failed: %s", exc)
+        except (urllib.error.URLError, TimeoutError, OSError, json.JSONDecodeError) as exc:
+            elapsed = time.monotonic() - start
+            logger.warning("Update check failed after %.2fs: %s", elapsed, exc)
             return None
+        finally:
+            socket.setdefaulttimeout(prev_default_timeout)
+        elapsed = time.monotonic() - start
+        logger.info("Update check succeeded in %.2fs", elapsed)
 
         tag = payload.get("tag_name", "")
         version = tag.lstrip("v").strip()
