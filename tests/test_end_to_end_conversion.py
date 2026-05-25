@@ -191,8 +191,14 @@ class TestFullPipeline:
 # ---------------------------------------------------------------------------
 
 def test_all_catalog_entries_parse(tmp_path: Path, engine: ConversionEngine):
+    """Every fixture must parse without raising; only the genuinely-content
+    ones must yield entries. ``empty`` is intentionally empty."""
+    EXPECTED_EMPTY = {"empty"}
     for log in all_dummy_logs():
         path = tmp_path / f"{log.name}{log.suffix}"
         path.write_text(log.content, encoding="utf-8")
         entries = engine.parse_file(str(path))
-        assert entries, f"{log.name} produced no entries"
+        if log.name in EXPECTED_EMPTY:
+            assert isinstance(entries, list), f"{log.name} should return a list"
+        else:
+            assert entries, f"{log.name} produced no entries"
