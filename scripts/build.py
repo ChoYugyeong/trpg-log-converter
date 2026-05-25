@@ -524,6 +524,38 @@ def _smoke_test_bundle() -> bool:
         return False
     print(f"[smoke] static check OK ({len(required_collected)} collect-all packages present)")
 
+    # ── Source/build sync sanity: critical files in dist must match source.
+    #    Past bug: ``_TIMEOUT_SECONDS = 15`` was shipped in the v2.2.0 build
+    #    because dist was assembled before the hang-fix commit. Catching this
+    #    automatically by hashing a few sentinel files.
+    import hashlib
+
+    def _sha256(path: Path) -> str | None:
+        try:
+            return hashlib.sha256(path.read_bytes()).hexdigest()
+        except OSError:
+            return None
+
+    sentinel_pairs = [
+        ("core/services/updater.py", internal / "core" / "services" / "updater.py"),
+        ("core/version.py",          internal / "core" / "version.py"),
+        ("gui/main_window.py",       internal / "gui" / "main_window.py"),
+    ]
+    mismatches = []
+    for rel, in_bundle in sentinel_pairs:
+        src = app_dir / rel
+        if not src.exists() or not in_bundle.exists():
+            continue
+        if _sha256(src) != _sha256(in_bundle):
+            mismatches.append(rel)
+    if mismatches:
+        print("[smoke] SOURCE/BUNDLE MISMATCH - dist is stale:")
+        for rel in mismatches:
+            print(f"  - {rel}  (source SHA != bundled SHA)")
+        print("        Try: rm -rf dist build && python scripts/build.py")
+        return False
+    print(f"[smoke] source/bundle sync OK ({len(sentinel_pairs)} sentinel files match)")
+
     # 2. Launch check — must reach the Qt event loop.
     print(f"[smoke] launching {exe.name}...")
     proc = subprocess.Popen(
