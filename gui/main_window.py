@@ -852,6 +852,31 @@ class MainWindow(FluentWindow):
         """
         from core.services.updater import UpdateService
 
+        # 1) 중복 실행 가드 — 사용자가 메뉴를 연타하거나 silent 체크가 이미
+        #    돌고 있을 때 동일 worker 가 여러개 떠서 thread 정리가 꼬이는 것을
+        #    막는다.
+        existing = getattr(self, "_update_check_thread", None)
+        if existing is not None and existing.isRunning():
+            if not silent:
+                InfoBar.info(
+                    title="이미 확인 중",
+                    content="업데이트 확인이 진행 중입니다. 잠시만 기다려주세요.",
+                    parent=self,
+                    position=InfoBarPosition.TOP,
+                    duration=2500,
+                )
+            return
+
+        # 2) 사용자 액션이면 즉시 시각 피드백.
+        if not silent:
+            InfoBar.info(
+                title="업데이트 확인 중",
+                content="GitHub 에서 최신 버전을 조회하고 있어요.",
+                parent=self,
+                position=InfoBarPosition.TOP,
+                duration=2000,
+            )
+
         worker = _UpdateCheckWorker(UpdateService())
         thread = QThread(self)
         worker.moveToThread(thread)
@@ -860,10 +885,17 @@ class MainWindow(FluentWindow):
         worker.finished.connect(thread.quit)
         worker.finished.connect(worker.deleteLater)
         thread.finished.connect(thread.deleteLater)
+        # 사라진 thread 참조를 정리하는 콜백 — closeEvent 에서 cleanup 로직과 연계.
+        thread.finished.connect(self._on_update_check_thread_finished)
         thread.start()
         # 참조 유지 (GC 방지)
         self._update_check_thread = thread
         self._update_check_worker = worker
+
+    def _on_update_check_thread_finished(self) -> None:
+        """Thread 정상 종료 시 우리 쪽 참조도 해제 — 그래야 다음 클릭이 동작."""
+        self._update_check_thread = None
+        self._update_check_worker = None
 
     def _on_update_check_result(self, info, silent: bool) -> None:
         if info is None:
@@ -927,6 +959,22 @@ class MainWindow(FluentWindow):
                 self._worker.wait(1_000)
 
         self._cleanup_worker()
+
+        # 업데이트 체크 thread 정리 — 진행 중일 수 있음 (urlopen 블로킹).
+        # 정리 안 하면 Qt 가 "QThread destroyed while running" abort 를 띄움.
+        update_thread = getattr(self, "_update_check_thread", None)
+        if update_thread is not None and update_thread.isRunning():
+            logger.info("Waiting for update check thread to finish...")
+            update_thread.quit()
+            # urlopen 의 timeout 은 4초 → 약간 더 줘서 5초 대기.
+            if not update_thread.wait(5_000):
+                logger.warning(
+                    "Update check thread did not finish in time; forcing terminate"
+                )
+                update_thread.terminate()
+                update_thread.wait(1_000)
+        self._update_check_thread = None
+        self._update_check_worker = None
 
         try:
             self.app_state.group_changed.disconnect(self._on_state_group_changed)

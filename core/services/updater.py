@@ -61,7 +61,11 @@ ProgressCallback = Callable[[int, int], None]  # (downloaded_bytes, total_bytes)
 
 _API_LATEST = "https://api.github.com/repos/{repo}/releases/latest"
 _USER_AGENT = f"TRPG-Log-Converter-Pro/{__version__} (+https://github.com/{__update_repo__})"
-_TIMEOUT_SECONDS = 15
+
+# Tighter timeout than the original 15s — GitHub usually responds in < 1s, and
+# a long blocking timeout means the worker thread can't exit when the user
+# closes the app, causing "QThread destroyed while running" aborts.
+_TIMEOUT_SECONDS = 4
 
 
 @dataclass(frozen=True)
