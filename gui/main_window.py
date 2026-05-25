@@ -826,6 +826,17 @@ class MainWindow(FluentWindow):
         from gui.dialogs import AboutDialog
         AboutDialog(self).exec()
 
+    def _open_releases_page(self) -> None:
+        """시스템 브라우저로 GitHub Releases 페이지 열기.
+
+        Private 저장소 운영 시 자동 업데이트가 동작하지 않으므로 사용자가
+        브라우저 (GitHub 로그인) 에서 직접 새 버전 다운받게 하는 fallback.
+        """
+        from PySide6.QtCore import QUrl
+        from PySide6.QtGui import QDesktopServices
+        from core.version import __homepage__
+        QDesktopServices.openUrl(QUrl(f"{__homepage__}/releases/latest"))
+
     def _show_welcome_dialog(self) -> None:
         """첫 실행 환영 다이얼로그.
 
@@ -919,18 +930,40 @@ class MainWindow(FluentWindow):
 
         if info is None:
             if silent:
+                # silent 모드 (앱 시작 시 자동 체크) 에서 private 감지되면
+                # 다음 부팅부터 자동 체크 비활성화 — 사용자 동작 없이 묵묵히.
+                if outcome == CheckOutcome.PRIVATE_OR_MISSING:
+                    settings = self.config_manager.get_gui_settings()
+                    if settings.get("updates_check_on_startup", True):
+                        settings["updates_check_on_startup"] = False
+                        self.config_manager.save_gui_settings(settings)
+                        logger.info(
+                            "Auto-disabled startup update check after detecting "
+                            "private/missing release endpoint."
+                        )
                 return
             if outcome == CheckOutcome.PRIVATE_OR_MISSING:
-                InfoBar.warning(
-                    title="업데이트 확인 불가",
+                # 명시적 [업데이트 확인] 클릭 — 사용자에게 명확한 다음 액션 제시.
+                bar = InfoBar.warning(
+                    title="저장소가 비공개입니다",
                     content=(
-                        "GitHub 저장소가 비공개이거나 아직 릴리스가 없습니다. "
-                        "고급 설정에서 자동 업데이트를 끄거나 저장소를 공개로 전환하세요."
+                        "자동 업데이트가 동작하지 않아요. "
+                        "[정보 → 새 버전 받기] 로 GitHub Releases 페이지를 직접 열거나, "
+                        "고급 설정에서 자동 체크를 꺼두실 수 있어요."
                     ),
                     parent=self,
                     position=InfoBarPosition.TOP,
-                    duration=6000,
+                    duration=8000,
                 )
+                # InfoBar action 버튼 추가 — qfluentwidgets InfoBar 는
+                # addWidget 으로 임의 위젯을 받음.
+                try:
+                    from qfluentwidgets import PushButton as FluentButton
+                    btn = FluentButton("Releases 페이지 열기")
+                    btn.clicked.connect(self._open_releases_page)
+                    bar.addWidget(btn)
+                except Exception:
+                    pass
             elif outcome == CheckOutcome.NETWORK_ERROR:
                 InfoBar.warning(
                     title="네트워크 오류",

@@ -116,11 +116,22 @@ class AboutDialog(QDialog):
         )
         layout.addWidget(credits, 1)
 
-        # ── 액션: 홈페이지 / 닫기 ─────────────────────────────
+        # ── 액션 : 새 버전 받기 + 저장소 + 닫기 ─────────────────
+        # private 저장소 운영 시 자동 업데이트가 동작 안 함 → 수동 다운로드
+        # 경로를 항상 제공. 사용자가 브라우저에서 GitHub 로그인 되어 있으면
+        # private 저장소도 접근 가능.
         actions = QHBoxLayout()
         actions.setSpacing(8)
 
-        homepage_btn = QPushButton("GitHub 저장소 열기")
+        releases_btn = QPushButton("새 버전 받기 (Releases)")
+        releases_btn.clicked.connect(self._open_releases)
+        releases_btn.setToolTip(
+            "GitHub Releases 페이지를 브라우저로 엽니다.\n"
+            "private 저장소도 GitHub 로그인 후 접근 가능."
+        )
+        actions.addWidget(releases_btn)
+
+        homepage_btn = QPushButton("저장소")
         homepage_btn.clicked.connect(self._open_homepage)
         actions.addWidget(homepage_btn)
 
@@ -137,3 +148,8 @@ class AboutDialog(QDialog):
     def _open_homepage(self) -> None:
         from PySide6.QtCore import QUrl
         QDesktopServices.openUrl(QUrl(__homepage__))
+
+    def _open_releases(self) -> None:
+        """Releases 페이지를 시스템 기본 브라우저로. private 저장소도 OK."""
+        from PySide6.QtCore import QUrl
+        QDesktopServices.openUrl(QUrl(f"{__homepage__}/releases/latest"))
