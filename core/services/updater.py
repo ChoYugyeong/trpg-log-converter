@@ -62,11 +62,11 @@ ProgressCallback = Callable[[int, int], None]  # (downloaded_bytes, total_bytes)
 _API_LATEST = "https://api.github.com/repos/{repo}/releases/latest"
 _USER_AGENT = f"TRPG-Log-Converter-Pro/{__version__} (+https://github.com/{__update_repo__})"
 
-# Aggressive timeout — GitHub normally responds in < 1s. We need:
-#   1) urlopen 전체 작업 timeout (이 상수)
-#   2) 그 전에 일어나는 DNS getaddrinfo 도 ``socket.setdefaulttimeout`` 으로 동일 제한
-#   3) closeEvent 의 thread wait timeout (5s) 보다 짧을 것
-_TIMEOUT_SECONDS = 3
+# 1.5초 타이트한 timeout — GitHub 정상 응답은 < 0.5s. 사용자가 [업데이트 확인]
+# 눌렀을 때 1.5초 이상 "멈춤"으로 느끼지 않게.
+# DNS getaddrinfo 도 ``socket.setdefaulttimeout`` 으로 같은 제한.
+# closeEvent thread wait (5s) 안에 확실히 종료.
+_TIMEOUT_SECONDS = 1.5
 
 
 @dataclass(frozen=True)
@@ -124,6 +124,18 @@ class UpdateService:
             with urllib.request.urlopen(req, timeout=_TIMEOUT_SECONDS,
                                          context=ssl.create_default_context()) as resp:
                 payload = json.loads(resp.read().decode("utf-8"))
+        except urllib.error.HTTPError as exc:
+            # 404 == 저장소가 private 거나 아직 release 가 없음. 둘 다 "조용히
+            # 최신 버전" 으로 처리하는 게 사용자에게 가장 덜 거슬림.
+            elapsed = time.monotonic() - start
+            if exc.code == 404:
+                logger.info(
+                    "Update endpoint 404 after %.2fs (private repo or no releases yet)",
+                    elapsed,
+                )
+            else:
+                logger.warning("Update check HTTP %d after %.2fs", exc.code, elapsed)
+            return None
         except (urllib.error.URLError, TimeoutError, OSError, json.JSONDecodeError) as exc:
             elapsed = time.monotonic() - start
             logger.warning("Update check failed after %.2fs: %s", elapsed, exc)
