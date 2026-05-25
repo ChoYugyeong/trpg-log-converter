@@ -136,7 +136,14 @@ class UpdateService:
             else:
                 logger.warning("Update check HTTP %d after %.2fs", exc.code, elapsed)
             return None
-        except (urllib.error.URLError, TimeoutError, OSError, json.JSONDecodeError) as exc:
+        except (
+            urllib.error.URLError,
+            TimeoutError,
+            OSError,
+            json.JSONDecodeError,
+            UnicodeDecodeError,  # binary 응답 / 잘못된 BOM
+            ValueError,           # ssl context build 실패 등 광범위 안전망
+        ) as exc:
             elapsed = time.monotonic() - start
             logger.warning("Update check failed after %.2fs: %s", elapsed, exc)
             return None
