@@ -33,6 +33,13 @@ import pytest
 from core.services.updater import _TIMEOUT_SECONDS, UpdateService
 
 
+@pytest.fixture(autouse=True)
+def _clear_updater_cache():
+    UpdateService.clear_cache()
+    yield
+    UpdateService.clear_cache()
+
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

@@ -901,8 +901,53 @@ class MainWindow(FluentWindow):
         self._update_check_worker = None
 
     def _on_update_check_result(self, info, silent: bool) -> None:
+        """결과 InfoBar 분기 — outcome 별로 정확한 메시지.
+
+        worker 가 끝나면서 self._update_check_worker._service.last_outcome 에
+        결과 코드가 들어 있음 (이미 deleteLater 됐으면 attribute 가 사라져
+        있을 수 있어 안전 fallback).
+        """
+        from core.services.updater import CheckOutcome, UpdateService
+
+        # last_outcome 추출 (worker 가 이미 GC 된 경우 LATEST 로 fallback).
+        outcome = CheckOutcome.LATEST
+        worker = getattr(self, "_update_check_worker", None)
+        if worker is not None:
+            service = getattr(worker, "_service", None)
+            if service is not None:
+                outcome = getattr(service, "last_outcome", CheckOutcome.LATEST)
+
         if info is None:
-            if not silent:
+            if silent:
+                return
+            if outcome == CheckOutcome.PRIVATE_OR_MISSING:
+                InfoBar.warning(
+                    title="업데이트 확인 불가",
+                    content=(
+                        "GitHub 저장소가 비공개이거나 아직 릴리스가 없습니다. "
+                        "고급 설정에서 자동 업데이트를 끄거나 저장소를 공개로 전환하세요."
+                    ),
+                    parent=self,
+                    position=InfoBarPosition.TOP,
+                    duration=6000,
+                )
+            elif outcome == CheckOutcome.NETWORK_ERROR:
+                InfoBar.warning(
+                    title="네트워크 오류",
+                    content="GitHub 에 연결하지 못했어요. 인터넷 연결을 확인해주세요.",
+                    parent=self,
+                    position=InfoBarPosition.TOP,
+                    duration=4500,
+                )
+            elif outcome == CheckOutcome.PARSE_ERROR:
+                InfoBar.warning(
+                    title="응답 해석 실패",
+                    content="GitHub 응답을 처리하지 못했어요. 잠시 후 다시 시도해주세요.",
+                    parent=self,
+                    position=InfoBarPosition.TOP,
+                    duration=4500,
+                )
+            else:  # LATEST
                 InfoBar.info(
                     title="최신 버전입니다",
                     content="현재 사용 중인 버전이 최신입니다.",
@@ -911,8 +956,8 @@ class MainWindow(FluentWindow):
                     duration=3500,
                 )
             return
+
         from gui.dialogs import UpdateDialog
-        from core.services.updater import UpdateService
         UpdateDialog(info, UpdateService(), self).exec()
 
     def closeEvent(self, event):

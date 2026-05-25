@@ -11,6 +11,14 @@ import pytest
 from core.services.updater import UpdateInfo, UpdateService, _extract_sha256
 
 
+@pytest.fixture(autouse=True)
+def _clear_updater_cache():
+    """Class-level cache isolation between tests."""
+    UpdateService.clear_cache()
+    yield
+    UpdateService.clear_cache()
+
+
 def _mock_release_payload(tag: str, asset_name: str, size: int = 1024) -> dict:
     return {
         "tag_name": tag,

@@ -68,6 +68,19 @@ _USER_AGENT = f"TRPG-Log-Converter-Pro/{__version__} (+https://github.com/{__upd
 # closeEvent thread wait (5s) 안에 확실히 종료.
 _TIMEOUT_SECONDS = 1.5
 
+# 한 번 결과 받으면 N초간 캐싱. 사용자가 [업데이트 확인] 연타해도 두 번째부터는
+# 네트워크 호출 없이 즉시 같은 결과 반환 → "멈춤" 체감 0.
+_CACHE_TTL_SECONDS = 300  # 5분
+
+# 결과 코드 — 404 인지 (private repo / no releases) 사용자에게 정확한 메시지를
+# 줄 수 있도록 구분된 마커.
+class CheckOutcome:
+    """check() 의 두 번째 반환값. ``None`` 만으로는 '최신' 인지 '실패' 인지 구분 불가."""
+    LATEST = "latest"          # 정상 응답, 새 버전 없음
+    PRIVATE_OR_MISSING = "private"  # 404 — repo 가 private 이거나 release 없음
+    NETWORK_ERROR = "network"  # DNS / timeout / SSL / connection
+    PARSE_ERROR = "parse"      # 200 인데 응답 형식 이상
+
 
 @dataclass(frozen=True)
 class UpdateInfo:
@@ -88,11 +101,22 @@ class UpdateInfo:
 # ---------------------------------------------------------------------------
 
 class UpdateService:
-    """Stateless service object; safe to instantiate per-call."""
+    """Stateless service object; safe to instantiate per-call.
+
+    Caches the last ``check()`` outcome in a class-level dict keyed by repo
+    name. Rapid re-checks within ``_CACHE_TTL_SECONDS`` reuse the cached
+    result without touching the network, giving instant UI feedback.
+    """
+
+    # Class-level cache: { repo: (timestamp, info, outcome_code) }
+    _cache: dict[str, tuple[float, Optional["UpdateInfo"], str]] = {}
 
     def __init__(self, repo: str = __update_repo__, app_dir: Optional[Path] = None) -> None:
         self.repo = repo
         self.app_dir = Path(app_dir) if app_dir else self._guess_app_dir()
+        # Set by ``check()`` so the caller can distinguish "latest" vs
+        # "private/missing" vs "network error" without parsing logs.
+        self.last_outcome: str = CheckOutcome.LATEST
 
     # ── 1. Check ─────────────────────────────────────────────────────
 
@@ -107,6 +131,18 @@ class UpdateService:
         """
         import socket
         import time
+
+        # 1. Cache hit fast path — 두 번째 클릭부터 네트워크 호출 X.
+        cached = self._cache.get(self.repo)
+        if cached is not None:
+            ts, info, outcome = cached
+            if time.monotonic() - ts < _CACHE_TTL_SECONDS:
+                self.last_outcome = outcome
+                logger.info(
+                    "Update check cache hit (%.0fs old, outcome=%s)",
+                    time.monotonic() - ts, outcome,
+                )
+                return info
 
         url = _API_LATEST.format(repo=self.repo)
         logger.info("Checking for updates: %s", url)
@@ -125,27 +161,31 @@ class UpdateService:
                                          context=ssl.create_default_context()) as resp:
                 payload = json.loads(resp.read().decode("utf-8"))
         except urllib.error.HTTPError as exc:
-            # 404 == 저장소가 private 거나 아직 release 가 없음. 둘 다 "조용히
-            # 최신 버전" 으로 처리하는 게 사용자에게 가장 덜 거슬림.
+            # 404 == 저장소가 private 거나 아직 release 가 없음.
             elapsed = time.monotonic() - start
             if exc.code == 404:
                 logger.info(
                     "Update endpoint 404 after %.2fs (private repo or no releases yet)",
                     elapsed,
                 )
+                self.last_outcome = CheckOutcome.PRIVATE_OR_MISSING
             else:
                 logger.warning("Update check HTTP %d after %.2fs", exc.code, elapsed)
+                self.last_outcome = CheckOutcome.NETWORK_ERROR
+            self._cache[self.repo] = (time.monotonic(), None, self.last_outcome)
             return None
         except (
             urllib.error.URLError,
             TimeoutError,
             OSError,
             json.JSONDecodeError,
-            UnicodeDecodeError,  # binary 응답 / 잘못된 BOM
-            ValueError,           # ssl context build 실패 등 광범위 안전망
+            UnicodeDecodeError,
+            ValueError,
         ) as exc:
             elapsed = time.monotonic() - start
             logger.warning("Update check failed after %.2fs: %s", elapsed, exc)
+            self.last_outcome = CheckOutcome.NETWORK_ERROR
+            self._cache[self.repo] = (time.monotonic(), None, self.last_outcome)
             return None
         finally:
             socket.setdefaulttimeout(prev_default_timeout)
@@ -156,18 +196,22 @@ class UpdateService:
         version = tag.lstrip("v").strip()
         if not version or not is_newer_than(tag):
             logger.info("No update available (latest=%s, current=%s)", tag, __version__)
+            self.last_outcome = CheckOutcome.LATEST
+            self._cache[self.repo] = (time.monotonic(), None, self.last_outcome)
             return None
 
         # Pick the asset matching the current platform.
         asset = self._select_platform_asset(payload.get("assets", []))
         if asset is None:
             logger.warning("Update %s has no matching asset for this platform", tag)
+            self.last_outcome = CheckOutcome.PARSE_ERROR
+            self._cache[self.repo] = (time.monotonic(), None, self.last_outcome)
             return None
 
         body = payload.get("body", "") or ""
         sha256 = _extract_sha256(body)
 
-        return UpdateInfo(
+        info = UpdateInfo(
             version=version,
             tag=tag,
             title=payload.get("name", tag),
@@ -178,6 +222,14 @@ class UpdateService:
             sha256=sha256,
             published_at=payload.get("published_at", ""),
         )
+        self.last_outcome = CheckOutcome.LATEST  # 새 버전 발견됨, but 카테고리는 정상응답
+        self._cache[self.repo] = (time.monotonic(), info, self.last_outcome)
+        return info
+
+    @classmethod
+    def clear_cache(cls) -> None:
+        """Invalidate the cache — used by tests and by 'force refresh' actions."""
+        cls._cache.clear()
 
     # ── 2. Download ─────────────────────────────────────────────────
 
@@ -448,4 +500,4 @@ def _verify_sha256(path: Path, expected: str) -> bool:
     return True
 
 
-__all__ = ["UpdateService", "UpdateInfo", "ProgressCallback"]
+__all__ = ["UpdateService", "UpdateInfo", "ProgressCallback", "CheckOutcome"]

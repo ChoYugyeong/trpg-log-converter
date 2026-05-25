@@ -18,6 +18,13 @@ import pytest
 from core.services.updater import _TIMEOUT_SECONDS, UpdateService
 
 
+@pytest.fixture(autouse=True)
+def _clear_updater_cache():
+    UpdateService.clear_cache()
+    yield
+    UpdateService.clear_cache()
+
+
 def test_timeout_is_short_enough_for_clean_shutdown():
     """4s is the cap — anything longer makes closeEvent thread wait flaky."""
     assert _TIMEOUT_SECONDS <= 5, (
