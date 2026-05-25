@@ -161,11 +161,76 @@ class ConfigManager:
 
         return _default_gui_settings()
 
+    # 자동 백업 정책 — 사용자가 실수로 import 한 잘못된 preset 으로 설정을
+    # 덮어쓴 경우 직전 N개로 복구 가능하도록.
+    _BACKUP_SLOTS = 5
+
     def save_gui_settings(self, settings: Dict) -> None:
-        """GUI 설정 저장"""
+        """GUI 설정 저장 + 직전 버전을 ``backups/`` 폴더로 회전 보관."""
+        # 1) 직전 settings 가 있으면 rotating backup 으로 보존.
+        if self.settings_path.exists():
+            try:
+                self._rotate_backup()
+            except OSError as exc:
+                logger.warning("Settings backup rotation failed: %s", exc)
+
+        # 2) 새 settings 를 atomic 으로 저장 (임시 파일 → rename).
         self.gui_settings = settings
-        with open(self.settings_path, 'w', encoding='utf-8') as f:
+        tmp = self.settings_path.with_suffix(".json.tmp")
+        with open(tmp, 'w', encoding='utf-8') as f:
             json.dump(settings, f, ensure_ascii=False, indent=2)
+        # Path.replace 는 같은 디스크 내 atomic.
+        tmp.replace(self.settings_path)
+
+    def _rotate_backup(self) -> None:
+        """Move current settings_path → backups/gui_settings.<ts>.json,
+        keeping only the most recent ``_BACKUP_SLOTS`` backups.
+        """
+        from datetime import datetime
+        backup_dir = self.settings_path.parent / "backups"
+        backup_dir.mkdir(parents=True, exist_ok=True)
+        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        target = backup_dir / f"gui_settings.{ts}.json"
+        # 같은 초에 여러 번 저장될 수 있어 충돌 방지.
+        n = 1
+        while target.exists():
+            target = backup_dir / f"gui_settings.{ts}_{n}.json"
+            n += 1
+        try:
+            import shutil
+            shutil.copy2(self.settings_path, target)
+        except OSError:
+            return
+
+        # 슬롯 초과분 삭제 (가장 오래된 것부터).
+        backups = sorted(
+            backup_dir.glob("gui_settings.*.json"),
+            key=lambda p: p.stat().st_mtime,
+            reverse=True,
+        )
+        for old in backups[self._BACKUP_SLOTS:]:
+            try:
+                old.unlink()
+            except OSError:
+                pass
+
+    def list_backups(self) -> list[Path]:
+        """현재 보관 중인 백업 파일 목록 (최신순)."""
+        backup_dir = self.settings_path.parent / "backups"
+        if not backup_dir.exists():
+            return []
+        return sorted(
+            backup_dir.glob("gui_settings.*.json"),
+            key=lambda p: p.stat().st_mtime,
+            reverse=True,
+        )
+
+    def restore_backup(self, backup_path: Path) -> Dict:
+        """백업 파일을 현재 설정으로 복원하고 새 dict 반환."""
+        with open(backup_path, "r", encoding="utf-8") as f:
+            restored = json.load(f)
+        self.save_gui_settings(restored)
+        return restored
 
     def get_gui_settings(self) -> Dict:
         """GUI 설정 반환"""
