@@ -131,6 +131,14 @@ class AboutDialog(QDialog):
         )
         actions.addWidget(releases_btn)
 
+        diag_btn = QPushButton("진단 정보 내보내기")
+        diag_btn.clicked.connect(self._export_diagnostics)
+        diag_btn.setToolTip(
+            "로그·시스템 정보·설정을 ZIP 한 개로 묶어 바탕화면에 저장합니다.\n"
+            "버그 신고 시 첨부해 주세요. (이미지 등 큰 데이터는 자동 마스킹)"
+        )
+        actions.addWidget(diag_btn)
+
         homepage_btn = QPushButton("저장소")
         homepage_btn.clicked.connect(self._open_homepage)
         actions.addWidget(homepage_btn)
@@ -153,3 +161,33 @@ class AboutDialog(QDialog):
         """Releases 페이지를 시스템 기본 브라우저로. private 저장소도 OK."""
         from PySide6.QtCore import QUrl
         QDesktopServices.openUrl(QUrl(f"{__homepage__}/releases/latest"))
+
+    def _export_diagnostics(self) -> None:
+        """버그 신고용 진단 ZIP 을 생성하고 결과를 메시지로 보고."""
+        from PySide6.QtWidgets import QMessageBox
+
+        try:
+            from core.services.diagnostics import build_diagnostic_zip
+            path = build_diagnostic_zip()
+        except Exception as exc:  # noqa: BLE001
+            QMessageBox.warning(
+                self, "진단 정보 내보내기 실패",
+                f"진단 ZIP 을 만들지 못했어요:\n{exc}",
+            )
+            return
+
+        size_kb = path.stat().st_size / 1024
+        msg = QMessageBox(self)
+        msg.setIcon(QMessageBox.Information)
+        msg.setWindowTitle("진단 정보 저장 완료")
+        msg.setText(
+            f"진단 ZIP 이 만들어졌어요 ({size_kb:.0f} KB).\n\n{path}"
+        )
+        msg.setStandardButtons(QMessageBox.Ok)
+        msg.exec()
+        # 파일 위치를 시스템 파일 탐색기에서 열어주면 사용자가 바로 찾을 수 있음.
+        try:
+            from PySide6.QtCore import QUrl
+            QDesktopServices.openUrl(QUrl.fromLocalFile(str(path.parent)))
+        except Exception:  # noqa: BLE001
+            pass
