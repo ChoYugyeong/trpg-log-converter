@@ -45,7 +45,15 @@ class HistoryManager:
 
     def __init__(self, app_dir: Path, max_records: int = 100):
         self._app_dir = app_dir
-        self._history_file = app_dir / 'data' / 'conversion_history.json'
+        # 변환 이력은 사용자 데이터 — install dir 이 read-only (Program Files)
+        # 인 경우에도 저장 가능하도록 user_data_dir 로. 개발/테스트 모드에서는
+        # app_dir 옆에 두어 격리.
+        import sys
+        if getattr(sys, "frozen", False):
+            from core.paths import history_path
+            self._history_file = history_path()
+        else:
+            self._history_file = app_dir / 'data' / 'conversion_history.json'
         self._max_records = max_records
         self._records: List[ConversionRecord] = []
         self._load()

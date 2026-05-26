@@ -116,9 +116,15 @@ class ConversionWorker(QThread):
         self.character_colors = character_colors or {}
         self.cache_service = cache_service
         self._stop_event = threading.Event()
+        # 변환 끝났을 때 main_window 가 HistoryManager 에 기록하기 위해 보관.
+        # finished signal 직후 self._worker.last_records 로 접근 가능.
+        # 한 번의 변환이 여러 파일을 만들 수 있으니 dict 리스트.
+        self.last_records: list[dict] = []
 
     def run(self):
         """변환 실행"""
+        import time as _time
+        start_ts = _time.monotonic()
         try:
             from core.engine import ConversionEngine, deep_merge
 
@@ -182,15 +188,34 @@ class ConversionWorker(QThread):
                 if all_entries:
                     self.progress.emit(60, "변환 중...")
                     base = Path(self.files[0]).stem + "_merged"
+                    merged_outputs: list[str] = []
 
                     if self.output_format in ['both', 'all', 'epub']:
-                        results.append(engine.create_epub(all_entries, os.path.join(output_dir, f"{base}.epub"), self.title, author, progress_callback=engine_progress))
+                        out = engine.create_epub(all_entries, os.path.join(output_dir, f"{base}.epub"), self.title, author, progress_callback=engine_progress)
+                        results.append(out)
+                        if out: merged_outputs.append(str(out))
                     if self.output_format in ['both', 'all', 'docx']:
-                        results.append(engine.create_docx(all_entries, os.path.join(output_dir, f"{base}.docx"), self.title, author, progress_callback=engine_progress))
+                        out = engine.create_docx(all_entries, os.path.join(output_dir, f"{base}.docx"), self.title, author, progress_callback=engine_progress)
+                        results.append(out)
+                        if out: merged_outputs.append(str(out))
                     if self.output_format in ['all', 'pdf']:
                         pdf_result = engine.create_pdf(all_entries, os.path.join(output_dir, f"{base}.pdf"), self.title, author)
                         if pdf_result:
                             results.append(pdf_result)
+                            merged_outputs.append(str(pdf_result))
+
+                    # 병합 변환은 입력 파일 N개를 한 record 로 기록.
+                    scene_count = sum(1 for e in all_entries if e.get('type') == 'scene')
+                    self.last_records.append({
+                        "input_file": self.files[0],  # 첫 파일을 대표로
+                        "output_files": merged_outputs,
+                        "output_format": self.output_format,
+                        "title": self.title or base,
+                        "author": author,
+                        "entry_count": len(all_entries),
+                        "scene_count": scene_count,
+                        "success": bool(merged_outputs),
+                    })
 
             elif self.mode == 'batch':
                 total_files = len(self.files)
@@ -226,15 +251,34 @@ class ConversionWorker(QThread):
                     if entries:
                         base = Path(file_path).stem
                         file_title = self.title or base
+                        file_outputs: list[str] = []
 
                         if self.output_format in ['both', 'all', 'epub']:
-                            results.append(engine.create_epub(entries, os.path.join(output_dir, f"{base}.epub"), file_title, author, progress_callback=engine_progress))
+                            out = engine.create_epub(entries, os.path.join(output_dir, f"{base}.epub"), file_title, author, progress_callback=engine_progress)
+                            results.append(out)
+                            if out: file_outputs.append(str(out))
                         if self.output_format in ['both', 'all', 'docx']:
-                            results.append(engine.create_docx(entries, os.path.join(output_dir, f"{base}.docx"), file_title, author, progress_callback=engine_progress))
+                            out = engine.create_docx(entries, os.path.join(output_dir, f"{base}.docx"), file_title, author, progress_callback=engine_progress)
+                            results.append(out)
+                            if out: file_outputs.append(str(out))
                         if self.output_format in ['all', 'pdf']:
                             pdf_result = engine.create_pdf(entries, os.path.join(output_dir, f"{base}.pdf"), file_title, author)
                             if pdf_result:
                                 results.append(pdf_result)
+                                file_outputs.append(str(pdf_result))
+
+                        # batch 모드: 파일마다 별도 record.
+                        scene_count = sum(1 for e in entries if e.get('type') == 'scene')
+                        self.last_records.append({
+                            "input_file": file_path,
+                            "output_files": file_outputs,
+                            "output_format": self.output_format,
+                            "title": file_title,
+                            "author": author,
+                            "entry_count": len(entries),
+                            "scene_count": scene_count,
+                            "success": bool(file_outputs),
+                        })
 
             else:
                 if self.files:
@@ -245,19 +289,42 @@ class ConversionWorker(QThread):
                     if entries:
                         self.progress.emit(60, "변환 중...")
                         base = Path(file_path).stem
+                        single_outputs: list[str] = []
 
                         if self.output_format in ['both', 'all', 'epub']:
-                            results.append(engine.create_epub(entries, os.path.join(output_dir, f"{base}.epub"), self.title, author, progress_callback=engine_progress))
+                            out = engine.create_epub(entries, os.path.join(output_dir, f"{base}.epub"), self.title, author, progress_callback=engine_progress)
+                            results.append(out)
+                            if out: single_outputs.append(str(out))
                         if self.output_format in ['both', 'all', 'docx']:
-                            results.append(engine.create_docx(entries, os.path.join(output_dir, f"{base}.docx"), self.title, author, progress_callback=engine_progress))
+                            out = engine.create_docx(entries, os.path.join(output_dir, f"{base}.docx"), self.title, author, progress_callback=engine_progress)
+                            results.append(out)
+                            if out: single_outputs.append(str(out))
                         if self.output_format in ['all', 'pdf']:
                             pdf_result = engine.create_pdf(entries, os.path.join(output_dir, f"{base}.pdf"), self.title, author)
                             if pdf_result:
                                 results.append(pdf_result)
+                                single_outputs.append(str(pdf_result))
+
+                        scene_count = sum(1 for e in entries if e.get('type') == 'scene')
+                        self.last_records.append({
+                            "input_file": file_path,
+                            "output_files": single_outputs,
+                            "output_format": self.output_format,
+                            "title": self.title or base,
+                            "author": author,
+                            "entry_count": len(entries),
+                            "scene_count": scene_count,
+                            "success": bool(single_outputs),
+                        })
 
             self.progress.emit(100, "완료!")
 
             success_count = sum(1 for r in results if r)
+            # last_records 에 duration_ms 추가 — 사용자가 변환마다 걸린 시간을
+            # history 에서 확인 가능.
+            duration_ms = int((_time.monotonic() - start_ts) * 1000)
+            for rec in self.last_records:
+                rec["duration_ms"] = duration_ms
             self.finished.emit(True, f"변환 완료!\n{success_count}개 파일 생성\n출력 위치: {output_dir}")
         
         except InterruptedError:
@@ -379,6 +446,16 @@ class MainWindow(FluentWindow):
 
         self.addSubInterface(self.advanced_settings_page, FIF.DEVELOPER_TOOLS, '고급 설정',
                             position=NavigationItemPosition.BOTTOM)
+
+        # 변환 이력
+        self.navigationInterface.addItem(
+            routeKey='history',
+            icon=FIF.HISTORY,
+            text='변환 이력',
+            onClick=self._show_history_dialog,
+            selectable=False,
+            position=NavigationItemPosition.BOTTOM,
+        )
 
         # 업데이트 확인
         self.navigationInterface.addItem(
@@ -526,6 +603,10 @@ class MainWindow(FluentWindow):
         # ⌘+L: 로그 보기
         log_shortcut = QShortcut(QKeySequence("Ctrl+L"), self)
         log_shortcut.activated.connect(self.show_conversion_log)
+
+        # ⌘+H: 변환 이력 다이얼로그
+        history_shortcut = QShortcut(QKeySequence("Ctrl+H"), self)
+        history_shortcut.activated.connect(self._show_history_dialog)
 
         # ⌘+P: 미리보기 토글
         preview_shortcut = QShortcut(QKeySequence("Ctrl+P"), self)
@@ -795,8 +876,30 @@ class MainWindow(FluentWindow):
         self.add_conversion_log(f"[{value}%] {message}")
 
     def _on_conversion_finished(self, success: bool, message: str):
-        """변환 완료 처리"""
+        """변환 완료 처리 — InfoBar + HistoryManager 자동 기록."""
         self.home_page.conversion_complete(success, message)
+
+        # Worker 가 보관한 각 파일의 결과 → HistoryManager 에 영구 저장.
+        # 실패 (worker 예외) 시 last_records 가 비어 있을 수 있어 대비.
+        worker = self._worker
+        if worker is not None and self.config_manager.history is not None:
+            records = getattr(worker, "last_records", [])
+            for rec in records:
+                try:
+                    self.config_manager.history.add_record(
+                        input_file=rec["input_file"],
+                        output_files=rec.get("output_files", []),
+                        output_format=rec.get("output_format", ""),
+                        title=rec.get("title", ""),
+                        author=rec.get("author", ""),
+                        entry_count=rec.get("entry_count", 0),
+                        scene_count=rec.get("scene_count", 0),
+                        success=rec.get("success", success),
+                        error_message=None if rec.get("success") else message,
+                        duration_ms=rec.get("duration_ms", 0),
+                    )
+                except Exception:
+                    logger.exception("Failed to record conversion to history")
 
         if success:
             InfoBar.success(
@@ -825,6 +928,21 @@ class MainWindow(FluentWindow):
         """앱 정보 다이얼로그 표시."""
         from gui.dialogs import AboutDialog
         AboutDialog(self).exec()
+
+    def _show_history_dialog(self) -> None:
+        """변환 이력 다이얼로그 표시."""
+        from gui.dialogs import HistoryDialog
+        hm = self.config_manager.history
+        if hm is None:
+            InfoBar.warning(
+                title='이력 기능 불가',
+                content='이력 관리자 로드에 실패했습니다.',
+                parent=self,
+                position=InfoBarPosition.TOP,
+                duration=3000,
+            )
+            return
+        HistoryDialog(hm, self).exec()
 
     def _open_releases_page(self) -> None:
         """시스템 브라우저로 GitHub Releases 페이지 열기.
