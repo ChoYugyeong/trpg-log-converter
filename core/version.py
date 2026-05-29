@@ -16,8 +16,8 @@ __app_name__ = "TRPG Log Converter Pro"
 __author__ = "TRPG Tools"
 __copyright__ = "© 2026 TRPG Tools"
 __license__ = "MIT"
-__homepage__ = "https://github.com/ChoYugyeong/trpg-log-converter-pro"
-__update_repo__ = "ChoYugyeong/trpg-log-converter-pro"
+__homepage__ = "https://github.com/ChoYugyeong/trpg-log-converter"
+__update_repo__ = "ChoYugyeong/trpg-log-converter"
 
 
 def version_tuple() -> tuple[int, int, int]:
