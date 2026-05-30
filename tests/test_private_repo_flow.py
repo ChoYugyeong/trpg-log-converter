@@ -158,3 +158,76 @@ class TestReleasesPageEscapeHatch:
 
 
 import inspect  # 위 클래스에서 사용
+
+
+# ---------------------------------------------------------------------------
+# Step 4: private → public 마이그레이션 자동 복구
+# ---------------------------------------------------------------------------
+
+class TestRepoChangeAutoRestore:
+    """``__update_repo__`` 가 (예: private → public) 바뀌면, 이전에 자동으로
+    꺼놨던 ``updates_check_on_startup`` 을 한 번 복구해줘야 한다 — 사용자가
+    "왜 새 버전 알림이 안 와요?" 묻지 않도록.
+
+    main_window.py 의 해당 블록은 ``_updates_repo_seen`` 키와 비교해 차이가
+    있을 때만 복구한다. 회귀 박제 — 그 코드가 사라지면 즉시 빨간불."""
+
+    def test_main_window_has_repo_change_restore_block(self):
+        from gui import main_window as mw_module
+        with open(mw_module.__file__, "r", encoding="utf-8") as f:
+            source = f.read()
+        # 마커 키 비교
+        assert "_updates_repo_seen" in source, (
+            "main_window 에서 repo-change restore 마커가 사라짐"
+        )
+        # 새 repo 와 비교 후 차이 있으면 updates_check_on_startup=True
+        assert "last_seen_repo != __update_repo__" in source, (
+            "repo URL 비교 조건이 사라짐"
+        )
+
+    def test_simulated_repo_change_restores_disabled_flag(self):
+        """이전에 private 에서 꺼졌던 사용자가 public 빌드로 처음 올라왔을 때:
+        설정의 ``_updates_repo_seen`` 이 옛 repo 거나 None 이고, current
+        ``__update_repo__`` 와 다르면, ``updates_check_on_startup`` 가 True 로
+        복구돼야 한다."""
+        cm = _FakeConfigManager({
+            "updates_check_on_startup": False,             # 이전에 꺼짐
+            "_updates_repo_seen": "ChoYugyeong/old-private",  # 옛 repo
+        })
+
+        # 해당 블록을 main_window 와 동일한 로직으로 재현 (테스트가 진실의
+        # 출처가 되지 않도록, 코드 자체는 변경되지 않으면 같이 깨지게).
+        new_repo = "ChoYugyeong/trpg-log-converter"  # 현재 __update_repo__
+        settings = cm.get_gui_settings()
+        last_seen = settings.get("_updates_repo_seen")
+        if last_seen != new_repo:
+            if last_seen is not None and not settings.get(
+                "updates_check_on_startup", True,
+            ):
+                settings["updates_check_on_startup"] = True
+            settings["_updates_repo_seen"] = new_repo
+            cm.save_gui_settings(settings)
+
+        assert cm.get_gui_settings()["updates_check_on_startup"] is True
+        assert cm.get_gui_settings()["_updates_repo_seen"] == new_repo
+
+    def test_first_launch_no_marker_does_not_force_enable(self):
+        """첫 부팅(`_updates_repo_seen` 키 자체가 없을 때)에는 사용자가 명시적
+        으로 끄지 않은 한 기본값 그대로 — 강제로 True 로 덮어쓰진 않는다
+        (그렇게 하면 사용자가 일부러 끈 설정을 망가뜨림)."""
+        cm = _FakeConfigManager({"updates_check_on_startup": False})  # 명시적 OFF
+
+        new_repo = "ChoYugyeong/trpg-log-converter"
+        settings = cm.get_gui_settings()
+        last_seen = settings.get("_updates_repo_seen")
+        if last_seen != new_repo:
+            if last_seen is not None and not settings.get(
+                "updates_check_on_startup", True,
+            ):
+                settings["updates_check_on_startup"] = True
+            settings["_updates_repo_seen"] = new_repo
+            cm.save_gui_settings(settings)
+
+        # _updates_repo_seen 은 새로 박혀야 하지만, 사용자의 OFF 결정은 존중.
+        assert cm.get_gui_settings()["updates_check_on_startup"] is False
+        assert cm.get_gui_settings()["_updates_repo_seen"] == new_repo

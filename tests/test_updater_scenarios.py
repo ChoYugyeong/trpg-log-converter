@@ -91,7 +91,7 @@ class TestNetworkFailures:
     """Network-layer failures must all return None within timeout, no exception."""
 
     def _assert_quick_none(self, side_effect):
-        with patch("core.services.updater.urllib.request.urlopen", side_effect=side_effect):
+        with patch("core.services.updater._OPENER.open", side_effect=side_effect):
             start = time.monotonic()
             result = UpdateService(repo="fake/repo").check()
             elapsed = time.monotonic() - start
@@ -143,7 +143,7 @@ class TestHTTPStatusCodes:
     def test_http_error_returns_none(self, code: int):
         """모든 HTTP 에러 코드가 graceful None 반환."""
         with patch(
-            "core.services.updater.urllib.request.urlopen",
+            "core.services.updater._OPENER.open",
             side_effect=self._mock_http_error(code),
         ):
             start = time.monotonic()
@@ -159,7 +159,7 @@ class TestMalformedResponses:
     def _assert_quick_none(self, body: bytes):
         mock_resp = _mock_response(body)
         with patch(
-            "core.services.updater.urllib.request.urlopen",
+            "core.services.updater._OPENER.open",
             return_value=mock_resp,
         ):
             start = time.monotonic()
@@ -185,7 +185,7 @@ class TestMalformedResponses:
         body = json.dumps({"unrelated": "stuff"}).encode("utf-8")
         mock_resp = _mock_response(body)
         with patch(
-            "core.services.updater.urllib.request.urlopen",
+            "core.services.updater._OPENER.open",
             return_value=mock_resp,
         ):
             result = UpdateService(repo="fake/repo").check()
@@ -203,7 +203,7 @@ class TestRapidSequentialCalls:
 
         mock_resp = _mock_response(_release_payload(future_tag))
         with patch(
-            "core.services.updater.urllib.request.urlopen",
+            "core.services.updater._OPENER.open",
             return_value=mock_resp,
         ):
             start = time.monotonic()
@@ -237,7 +237,7 @@ class TestLargeResponses:
 
         mock_resp = _mock_response(big_body)
         with patch(
-            "core.services.updater.urllib.request.urlopen",
+            "core.services.updater._OPENER.open",
             return_value=mock_resp,
         ):
             start = time.monotonic()
@@ -251,36 +251,100 @@ class TestLargeResponses:
 
 
 class TestSocketTimeoutContract:
-    """``socket.setdefaulttimeout`` 이 check() 종료 후 원복되는지 확인 —
-    side-effect 가 다른 코드 (예: requests 사용) 의 timeout 을 망가뜨리면 안 됨."""
+    """check() 는 더 이상 ``socket.setdefaulttimeout`` 을 만지지 않는다 —
+    이 함수는 프로세스 전역 설정이라 Qt 내부 소켓이나 다른 호출자의 timeout 을
+    예기치 않게 흔들 수 있어, 원래 의도(connect+read bound)는 ``_OPENER.open``
+    의 ``timeout=`` 으로만 처리하도록 단일화.
 
-    def test_default_socket_timeout_restored_on_success(self):
+    이 박제 테스트는 check() 호출 전후 ``socket.getdefaulttimeout()`` 이 절대
+    바뀌지 않음을 강제한다. 누군가가 globally-mutating 코드를 다시 넣으면 즉시
+    빨간불."""
+
+    def test_default_socket_timeout_untouched_on_success(self):
+        sentinel = 12.345
         original = socket.getdefaulttimeout()
         try:
-            socket.setdefaulttimeout(99)
+            socket.setdefaulttimeout(sentinel)
             mock_resp = _mock_response(_release_payload("v0.0.1"))
             with patch(
-                "core.services.updater.urllib.request.urlopen",
+                "core.services.updater._OPENER.open",
                 return_value=mock_resp,
             ):
                 UpdateService(repo="fake/repo").check()
-            assert socket.getdefaulttimeout() == 99, (
-                "socket.setdefaulttimeout was not restored after check()"
+            assert socket.getdefaulttimeout() == sentinel, (
+                "check() must not touch process-global socket timeout on success"
             )
         finally:
             socket.setdefaulttimeout(original)
 
-    def test_default_socket_timeout_restored_on_failure(self):
+    def test_default_socket_timeout_untouched_on_failure(self):
+        sentinel = 9.876
         original = socket.getdefaulttimeout()
         try:
-            socket.setdefaulttimeout(77)
+            socket.setdefaulttimeout(sentinel)
             with patch(
-                "core.services.updater.urllib.request.urlopen",
+                "core.services.updater._OPENER.open",
                 side_effect=urllib.error.URLError("fail"),
             ):
                 UpdateService(repo="fake/repo").check()
-            assert socket.getdefaulttimeout() == 77, (
-                "socket.setdefaulttimeout was not restored on exception path"
+            assert socket.getdefaulttimeout() == sentinel, (
+                "check() must not touch process-global socket timeout on failure"
             )
         finally:
             socket.setdefaulttimeout(original)
+
+
+class TestProxyBypass:
+    """모듈 레벨 ``_OPENER`` 가 빈 ``ProxyHandler`` 를 들고 있어야 한다 —
+    Windows WPAD 자동 감지로 인한 5–30s 블로킹을 막는 결정적 안전장치.
+    누군가가 ``urlopen`` 직접 호출이나 ``build_opener()`` 인자 없이 만든
+    opener 로 리팩토링하면 즉시 빨간불."""
+
+    def test_check_does_not_call_getproxies(self):
+        """결정적 검증 — 어떤 경로로든 ``urllib.request.getproxies`` 가 불리면
+        Windows 에서 WPAD 가 트리거될 수 있음. 우리 opener 는 그 호출을 절대
+        하지 말아야 한다."""
+        from unittest.mock import patch as _patch
+        sentinel = {"called": 0}
+
+        def boom(*a, **kw):
+            sentinel["called"] += 1
+            return {}
+
+        # getproxies 가 정의된 두 위치 모두 감시 (Windows / POSIX 분기).
+        mock_resp = _mock_response(_release_payload("v0.0.1"))
+        with _patch("urllib.request.getproxies", side_effect=boom), \
+             _patch("core.services.updater._OPENER.open", return_value=mock_resp):
+            UpdateService(repo="fake/repo").check()
+        assert sentinel["called"] == 0, (
+            "check() invoked urllib.request.getproxies — WPAD bypass leak"
+        )
+
+    def test_no_proxy_handler_in_dispatch_chain(self):
+        """``_OPENER`` 가 도는 어느 protocol dispatch 에도 ProxyHandler 가
+        없어야 한다 — 있다면 default ``ProxyHandler()`` 가 살아남은 것이고
+        그게 곧 WPAD 트리거 경로."""
+        import urllib.request as _urlreq
+        from core.services.updater import _OPENER
+        for proto, handlers in _OPENER.handle_open.items():
+            for h in handlers:
+                assert not isinstance(h, _urlreq.ProxyHandler), (
+                    f"ProxyHandler found in {proto} dispatch — WPAD bypass leak"
+                )
+
+    def test_check_uses_module_opener_not_urlopen(self):
+        """``urllib.request.urlopen`` 패치는 더 이상 효력이 없어야 한다 —
+        그 사실이 곧 우리가 모듈 opener 만 통해 가고 있음을 의미."""
+        sentinel = object()
+        mock_resp = _mock_response(_release_payload("v0.0.1"))
+        with patch(
+            "core.services.updater.urllib.request.urlopen",
+            return_value=sentinel,  # 호출되면 그대로 새어나와 다른 곳에서 폭발
+        ), patch(
+            "core.services.updater._OPENER.open",
+            return_value=mock_resp,
+        ) as opener_mock:
+            UpdateService(repo="fake/repo").check()
+        assert opener_mock.call_count == 1, (
+            "check() did not use the module-level _OPENER — WPAD bypass not active"
+        )

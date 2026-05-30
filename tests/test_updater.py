@@ -44,7 +44,7 @@ class TestCheck:
         mock_resp.__enter__ = lambda self: self
         mock_resp.__exit__ = lambda *a: None
 
-        with patch("core.services.updater.urllib.request.urlopen", return_value=mock_resp):
+        with patch("core.services.updater._OPENER.open", return_value=mock_resp):
             result = UpdateService(repo="fake/repo").check()
         assert result is None
 
@@ -64,7 +64,7 @@ class TestCheck:
         mock_resp.__enter__ = lambda self: self
         mock_resp.__exit__ = lambda *a: None
 
-        with patch("core.services.updater.urllib.request.urlopen", return_value=mock_resp):
+        with patch("core.services.updater._OPENER.open", return_value=mock_resp):
             info = UpdateService(repo="fake/repo").check()
 
         assert info is not None
@@ -76,7 +76,7 @@ class TestCheck:
     def test_returns_none_on_network_error(self):
         import urllib.error
         with patch(
-            "core.services.updater.urllib.request.urlopen",
+            "core.services.updater._OPENER.open",
             side_effect=urllib.error.URLError("DNS fail"),
         ):
             result = UpdateService(repo="fake/repo").check()
@@ -90,7 +90,7 @@ class TestCheck:
         mock_resp.__enter__ = lambda self: self
         mock_resp.__exit__ = lambda *a: None
 
-        with patch("core.services.updater.urllib.request.urlopen", return_value=mock_resp):
+        with patch("core.services.updater._OPENER.open", return_value=mock_resp):
             info = UpdateService(repo="fake/repo").check()
         # Fallback rule includes any .zip; weird_artifact.tar.gz won't match — returns None.
         assert info is None

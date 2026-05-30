@@ -64,13 +64,25 @@ _USER_AGENT = f"TRPG-Log-Converter-Pro/{__version__} (+https://github.com/{__upd
 
 # 1.5초 타이트한 timeout — GitHub 정상 응답은 < 0.5s. 사용자가 [업데이트 확인]
 # 눌렀을 때 1.5초 이상 "멈춤"으로 느끼지 않게.
-# DNS getaddrinfo 도 ``socket.setdefaulttimeout`` 으로 같은 제한.
+# 이 timeout 은 opener.open(timeout=) 으로 connect+read 양쪽을 동시에 bound.
 # closeEvent thread wait (5s) 안에 확실히 종료.
 _TIMEOUT_SECONDS = 1.5
 
 # 한 번 결과 받으면 N초간 캐싱. 사용자가 [업데이트 확인] 연타해도 두 번째부터는
 # 네트워크 호출 없이 즉시 같은 결과 반환 → "멈춤" 체감 0.
 _CACHE_TTL_SECONDS = 300  # 5분
+
+# Windows WPAD (Web Proxy Auto-Discovery) 우회용 빈 ProxyHandler.
+# urllib.request.urlopen 의 기본 opener 는 시스템 프록시를 자동 감지하는데,
+# Windows 에서 WPAD 가 활성화돼 있으면 DHCP/DNS 로 PAC 파일을 찾느라 10–30초간
+# 블로킹 됩니다. ProxyHandler({}) 를 명시적으로 박아 자동 감지를 끄면 이 freeze
+# 가 사라집니다.
+# 모듈 레벨에서 한 번만 만들고 재사용 — opener 생성 자체가 사소하지만 빈번한
+# 객체 생성을 피해 GC pressure 도 줄임.
+_OPENER = urllib.request.build_opener(
+    urllib.request.ProxyHandler({}),
+    urllib.request.HTTPSHandler(context=ssl.create_default_context()),
+)
 
 # 결과 코드 — 404 인지 (private repo / no releases) 사용자에게 정확한 메시지를
 # 줄 수 있도록 구분된 마커.
@@ -124,12 +136,15 @@ class UpdateService:
         """Query GitHub for the latest release. Returns None if no newer version.
 
         Network safety:
-          - urlopen ``timeout`` argument bounds the entire HTTP operation.
-          - ``socket.setdefaulttimeout`` bounds DNS getaddrinfo / TCP connect
-            which urlopen's timeout doesn't always cover on slow networks.
+          - ``_OPENER.open(req, timeout=...)`` bounds connect + read end-to-end.
+          - Uses an explicit ``ProxyHandler({})`` opener so urllib never invokes
+            Windows WPAD (Web Proxy Auto-Discovery), which used to block the
+            worker thread for 10–30s and indirectly stalled the Qt UI thread.
+          - We deliberately do NOT call ``socket.setdefaulttimeout`` — that
+            setting is process-wide and would affect Qt's own internal sockets
+            during the check window.
           - HTTPError (404 등) 는 URLError 의 서브클래스라 같은 except 로 잡힘.
         """
-        import socket
         import time
 
         # 1. Cache hit fast path — 두 번째 클릭부터 네트워크 호출 X.
@@ -146,8 +161,6 @@ class UpdateService:
 
         url = _API_LATEST.format(repo=self.repo)
         logger.info("Checking for updates: %s", url)
-        prev_default_timeout = socket.getdefaulttimeout()
-        socket.setdefaulttimeout(_TIMEOUT_SECONDS)
         start = time.monotonic()
         try:
             req = urllib.request.Request(
@@ -157,8 +170,7 @@ class UpdateService:
                     "User-Agent": _USER_AGENT,
                 },
             )
-            with urllib.request.urlopen(req, timeout=_TIMEOUT_SECONDS,
-                                         context=ssl.create_default_context()) as resp:
+            with _OPENER.open(req, timeout=_TIMEOUT_SECONDS) as resp:
                 payload = json.loads(resp.read().decode("utf-8"))
         except urllib.error.HTTPError as exc:
             # 404 == 저장소가 private 거나 아직 release 가 없음.
@@ -187,8 +199,6 @@ class UpdateService:
             self.last_outcome = CheckOutcome.NETWORK_ERROR
             self._cache[self.repo] = (time.monotonic(), None, self.last_outcome)
             return None
-        finally:
-            socket.setdefaulttimeout(prev_default_timeout)
         elapsed = time.monotonic() - start
         logger.info("Update check succeeded in %.2fs", elapsed)
 
@@ -258,7 +268,11 @@ class UpdateService:
 
         logger.info("Downloading %s -> %s", info.download_url, target)
         req = urllib.request.Request(info.download_url, headers={"User-Agent": _USER_AGENT})
-        with urllib.request.urlopen(req, timeout=_TIMEOUT_SECONDS) as resp, \
+        # 다운로드는 큰 파일이라 connect timeout 만 짧게(_TIMEOUT_SECONDS)
+        # 두고 전체 진행은 chunk 단위로 무한정 허용. urlopen 의 timeout 은
+        # "socket operation between data" 이라 chunk 가 흐르는 동안엔 reset.
+        # WPAD 우회 위해 모듈 레벨 _OPENER 재사용.
+        with _OPENER.open(req, timeout=_TIMEOUT_SECONDS) as resp, \
                 open(target, "wb") as out:
             total = int(resp.headers.get("Content-Length", info.asset_size or 0))
             downloaded = 0

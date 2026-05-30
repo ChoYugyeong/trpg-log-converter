@@ -45,7 +45,7 @@ class TestCache:
     def test_second_call_hits_cache_no_network(self):
         mock_resp = _mock_resp(json.dumps({"tag_name": "v0.0.1"}).encode())
         with patch(
-            "core.services.updater.urllib.request.urlopen",
+            "core.services.updater._OPENER.open",
             return_value=mock_resp,
         ) as urlopen_mock:
             svc = UpdateService(repo="fake/repo")
@@ -58,7 +58,7 @@ class TestCache:
     def test_cache_is_per_repo(self):
         mock_resp = _mock_resp(json.dumps({"tag_name": "v0.0.1"}).encode())
         with patch(
-            "core.services.updater.urllib.request.urlopen",
+            "core.services.updater._OPENER.open",
             return_value=mock_resp,
         ) as urlopen_mock:
             UpdateService(repo="a/b").check()
@@ -69,7 +69,7 @@ class TestCache:
     def test_clear_cache_forces_refetch(self):
         mock_resp = _mock_resp(json.dumps({"tag_name": "v0.0.1"}).encode())
         with patch(
-            "core.services.updater.urllib.request.urlopen",
+            "core.services.updater._OPENER.open",
             return_value=mock_resp,
         ) as urlopen_mock:
             UpdateService(repo="r/r").check()
@@ -81,7 +81,7 @@ class TestCache:
         """1차 호출 후 2차는 네트워크 없이 즉시 반환되는지 시간 측정."""
         mock_resp = _mock_resp(json.dumps({"tag_name": "v0.0.1"}).encode())
         with patch(
-            "core.services.updater.urllib.request.urlopen",
+            "core.services.updater._OPENER.open",
             return_value=mock_resp,
         ):
             svc = UpdateService(repo="r/r")
@@ -95,7 +95,7 @@ class TestCache:
 class TestOutcomeClassification:
     def test_outcome_private_on_404(self):
         with patch(
-            "core.services.updater.urllib.request.urlopen",
+            "core.services.updater._OPENER.open",
             side_effect=_http_error(404),
         ):
             svc = UpdateService(repo="r/r")
@@ -104,7 +104,7 @@ class TestOutcomeClassification:
 
     def test_outcome_network_on_dns_fail(self):
         with patch(
-            "core.services.updater.urllib.request.urlopen",
+            "core.services.updater._OPENER.open",
             side_effect=urllib.error.URLError("DNS"),
         ):
             svc = UpdateService(repo="r/r")
@@ -113,7 +113,7 @@ class TestOutcomeClassification:
 
     def test_outcome_network_on_timeout(self):
         with patch(
-            "core.services.updater.urllib.request.urlopen",
+            "core.services.updater._OPENER.open",
             side_effect=TimeoutError(),
         ):
             svc = UpdateService(repo="r/r")
@@ -122,7 +122,7 @@ class TestOutcomeClassification:
 
     def test_outcome_network_on_500(self):
         with patch(
-            "core.services.updater.urllib.request.urlopen",
+            "core.services.updater._OPENER.open",
             side_effect=_http_error(503),
         ):
             svc = UpdateService(repo="r/r")
@@ -134,7 +134,7 @@ class TestOutcomeClassification:
         from core.version import __version__
         body = json.dumps({"tag_name": f"v{__version__}"}).encode()
         with patch(
-            "core.services.updater.urllib.request.urlopen",
+            "core.services.updater._OPENER.open",
             return_value=_mock_resp(body),
         ):
             svc = UpdateService(repo="r/r")
@@ -148,7 +148,7 @@ class TestPrivateRepoFastPath:
 
     def test_repeated_clicks_on_private_repo_are_instant(self):
         with patch(
-            "core.services.updater.urllib.request.urlopen",
+            "core.services.updater._OPENER.open",
             side_effect=_http_error(404),
         ) as urlopen_mock:
             svc = UpdateService(repo="private/repo")

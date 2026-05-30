@@ -409,6 +409,29 @@ class MainWindow(FluentWindow):
         # dev (frozen=False) 에서는 적용 스크립트가 의미 없으므로 frozen 빌드에서만 실행.
         # 설정에서 끄려면 gui_settings['updates_check_on_startup'] = False.
         import sys
+        from core.version import __update_repo__
+
+        # repo 자체가 바뀌었으면 (private→public 마이그레이션 등) 이전에
+        # 자동으로 꺼놨던 updates_check_on_startup 을 한 번 복구한다.
+        # _on_update_check_result 가 private 감지 시 무음으로 끄는 안전장치를
+        # 가지고 있는데, 그 결정의 전제(=옛 repo URL)가 깨졌으니 사용자가
+        # 명시적으로 끄지 않은 한 다시 켜는 게 옳음.
+        last_seen_repo = gui_settings.get('_updates_repo_seen')
+        if last_seen_repo != __update_repo__:
+            if last_seen_repo is not None and not gui_settings.get(
+                'updates_check_on_startup', True,
+            ):
+                gui_settings['updates_check_on_startup'] = True
+                logger.info(
+                    "Update repo changed (%s → %s); re-enabling startup check.",
+                    last_seen_repo, __update_repo__,
+                )
+            gui_settings['_updates_repo_seen'] = __update_repo__
+            try:
+                self.config_manager.save_gui_settings(gui_settings)
+            except Exception:
+                logger.exception("Failed to persist _updates_repo_seen marker")
+
         if (
             getattr(sys, 'frozen', False)
             and gui_settings.get('updates_check_on_startup', True)
@@ -971,11 +994,19 @@ class MainWindow(FluentWindow):
             settings['_welcome_seen'] = True
             self.config_manager.save_gui_settings(settings)
 
-    def _check_for_updates(self, *, silent: bool = False) -> None:
+    def _check_for_updates(self, _checked: bool = False, *, silent: bool = False) -> None:
         """GitHub Releases 에서 최신 버전 확인.
 
         silent=True : 새 버전이 없을 때 토스트 안 띄움 (앱 시작 시 자동 체크).
         silent=False: 항상 결과 알림 (메뉴에서 사용자가 직접 누른 경우).
+
+        ``_checked`` 위치 인자
+        ----------------------
+        qfluentwidgets NavigationPushButton 의 ``clicked = Signal(bool)`` 이
+        emit 할 때 ``True`` 를 위치 인자로 전달합니다. 현재 PySide6 는 keyword-
+        only slot 에 대해 잉여 positional 을 자동 drop 해 주지만, 이건 구현
+        세부에 의존하는 동작이라 (Qt 6.x 마이너 버전이 바뀌면 깨질 수 있음)
+        명시적으로 받아두는 게 안전합니다. 값 자체는 사용하지 않습니다.
 
         네트워크 요청은 별도 스레드에서 — UI 가 멈추지 않도록.
         """
@@ -997,15 +1028,19 @@ class MainWindow(FluentWindow):
             return
 
         # 2) 사용자 액션이면 즉시 시각 피드백.
-        #    duration 은 urlopen timeout(1.5초) 와 비슷하게 → "확인 중" 표시가
-        #    사라질 즈음 결과 InfoBar 가 들어와 자연스럽게 전환.
+        #    duration=-1 (sticky) 로 띄우고 결과가 도착하면 _on_update_check_result
+        #    에서 close() 한다. 예전엔 1800ms 고정으로 띄웠는데, 결과가 그 뒤에
+        #    도착하면 사용자 입장에서 InfoBar 가 사라지고 잠시 공백이 생겨
+        #    "멈춤"으로 보이는 문제가 있었음.
+        self._update_check_progress_bar = None
         if not silent:
-            InfoBar.info(
+            self._update_check_progress_bar = InfoBar.info(
                 title="업데이트 확인 중",
                 content="GitHub 에서 최신 버전을 조회하고 있어요...",
                 parent=self,
                 position=InfoBarPosition.TOP,
-                duration=1800,
+                duration=-1,
+                isClosable=False,
             )
         logger.info("Update check requested (silent=%s)", silent)
 
@@ -1037,6 +1072,16 @@ class MainWindow(FluentWindow):
         있을 수 있어 안전 fallback).
         """
         from core.services.updater import CheckOutcome, UpdateService
+
+        # sticky "조회 중" InfoBar 가 떠 있으면 닫는다 — 결과 표시 직전에 정리해야
+        # 사용자에게 끊김 없는 전환이 보임.
+        progress_bar = getattr(self, "_update_check_progress_bar", None)
+        if progress_bar is not None:
+            try:
+                progress_bar.close()
+            except Exception:
+                logger.exception("Failed to close update-checking InfoBar")
+            self._update_check_progress_bar = None
 
         # last_outcome 추출 (worker 가 이미 GC 된 경우 LATEST 로 fallback).
         outcome = CheckOutcome.LATEST
