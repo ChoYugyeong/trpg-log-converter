@@ -133,7 +133,10 @@ class TestSubsequentBootsAreSilent:
             "main_window.py 에서 updates_check_on_startup 키 체크가 사라지면 안 됨"
         )
         # 조건이 'and' 로 묶여 있어 False 면 short-circuit 으로 skip 보장.
-        assert "getattr(sys, 'frozen', False)" in source
+        # ruff format 이 quote-style 을 통일할 수 있으므로 single/double 둘 다 허용.
+        assert (
+            'getattr(sys, "frozen", False)' in source or "getattr(sys, 'frozen', False)" in source
+        )
         assert "_check_for_updates(silent=True)" in source
 
 

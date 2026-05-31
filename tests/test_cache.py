@@ -22,8 +22,14 @@ def temp_cache_dir():
 
 @pytest.fixture
 def sample_file():
-    """테스트용 샘플 파일 생성"""
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
+    """테스트용 샘플 파일 생성. Windows CI 의 cp1252 default 가 한글을 못
+    인코딩해 UnicodeEncodeError 가 떴던 회귀 — encoding="utf-8" 명시."""
+    with tempfile.NamedTemporaryFile(
+        mode="w",
+        suffix=".txt",
+        delete=False,
+        encoding="utf-8",
+    ) as f:
         f.write("테스트 파일 내용\n캐릭터A: 안녕하세요\n캐릭터B: 반갑습니다")
         return f.name
 
@@ -207,7 +213,12 @@ class TestCacheServiceIntegration:
 
         files = []
         for i in range(3):
-            with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
+            with tempfile.NamedTemporaryFile(
+                mode="w",
+                suffix=".txt",
+                delete=False,
+                encoding="utf-8",
+            ) as f:
                 f.write(f"파일 {i} 내용")
                 files.append(f.name)
 
