@@ -326,6 +326,14 @@ class ConfigManager:
             'toc': {
                 'include': gui_settings.get('include_toc', True),
                 'title': gui_settings.get('toc_title', '목차'),
+                # 사용자 명시 씬 제목만 포함 (auto-generated 'N장면' / 시스템 노이즈 제외).
+                'scene_only': bool(gui_settings.get('toc_scene_only', False)),
+                # 쉼표로 구분된 regex 문자열 → 리스트. 빈 항목 제거.
+                'exclude_patterns': [
+                    p.strip() for p in str(
+                        gui_settings.get('toc_exclude_patterns', '')
+                    ).split(',') if p.strip()
+                ],
             },
             'chapter': {
                 'split_mode': gui_settings.get('split_mode', 'scene'),

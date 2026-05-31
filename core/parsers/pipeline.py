@@ -118,7 +118,8 @@ def split_into_scenes(entries: List[Dict], config: Dict[str, Any]) -> List[Dict]
     chapter_config = config.get("chapter", {})
     split_mode = chapter_config.get("split_mode", "scene")
     if split_mode == "none":
-        return [{"title": None, "entries": entries}]
+        # 단일 chunk — auto_title=True 로 표시해 TOC scene_only 필터에서 제외 가능.
+        return [{"title": None, "entries": entries, "auto_title": True}]
     if split_mode == "count":
         return split_by_count(entries, chapter_config)
     return split_by_scene(entries, chapter_config)
@@ -130,7 +131,12 @@ def split_by_count(entries, chapter_config) -> List[Dict]:
     scenes: List[Dict] = []
     for i in range(0, len(entries), per_chapter):
         chunk = entries[i:i + per_chapter]
-        scenes.append({"title": title_format.format(n=len(scenes) + 1), "entries": chunk})
+        # count-split 은 모든 제목이 자동 생성이라 auto_title=True.
+        scenes.append({
+            "title": title_format.format(n=len(scenes) + 1),
+            "entries": chunk,
+            "auto_title": True,
+        })
     return scenes
 
 
@@ -165,11 +171,19 @@ def split_by_scene(entries, chapter_config) -> List[Dict]:
                     scenes[-1]["entries"].extend(current_scene["entries"])
 
             scene_count += 1
-            scene_title = extract_scene_title(content) if extract_title else None
-            if not scene_title:
+            extracted = extract_scene_title(content) if extract_title else None
+            if extracted:
+                scene_title = extracted
+                auto_title = False  # 사용자가 명시적으로 쓴 씬 제목
+            else:
                 scene_title = title_format.format(n=scene_count)
+                auto_title = True   # "장면 N" 같은 자동 생성
 
-            current_scene = {"title": scene_title, "entries": []}
+            # ``auto_title`` 은 TOC 필터링 (toc.scene_only) 에서 사용됨.
+            # 이 필드가 사라지면 renderers/epub.py / pdf_generator.py 의 filter 가
+            # 모든 scene 을 explicit 으로 간주해 동작이 깨짐 — tests/test_toc_filter.py
+            # 가 회귀 보장.
+            current_scene = {"title": scene_title, "entries": [], "auto_title": auto_title}
         else:
             current_scene["entries"].append(entry)
 
@@ -178,6 +192,9 @@ def split_by_scene(entries, chapter_config) -> List[Dict]:
             current_scene["title"] = (
                 title_format.format(n=scene_count + 1) if scene_count else None
             )
+            current_scene["auto_title"] = True
+        else:
+            current_scene.setdefault("auto_title", False)
         scenes.append(current_scene)
 
-    return scenes if scenes else [{"title": None, "entries": entries}]
+    return scenes if scenes else [{"title": None, "entries": entries, "auto_title": True}]

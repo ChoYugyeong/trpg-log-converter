@@ -30,6 +30,19 @@ from .pages.advanced_settings_page import AdvancedSettingsPage
 from .components import InspectorBar, DocumentPreview
 from .state import AppState
 from core.services import CacheService, CharacterColorService
+from core.constants import (
+    CONVERT_WORKER_SHUTDOWN_TIMEOUT_MS,
+    INFOBAR_DURATION_ATTENTION_MS,
+    INFOBAR_DURATION_INFO_MS,
+    INFOBAR_DURATION_TRANSIENT_MS,
+    INFOBAR_DURATION_WARNING_MS,
+    INFOBAR_STICKY,
+    THREAD_TERMINATE_GRACE_MS,
+    UPDATE_CHECK_HARD_TIMEOUT_MS,
+    UPDATE_CHECK_STARTUP_DELAY_MS,
+    UPDATE_THREAD_SHUTDOWN_TIMEOUT_MS,
+    WELCOME_DIALOG_DELAY_MS,
+)
 
 
 class RecentFilesManager:
@@ -91,11 +104,16 @@ class _UpdateCheckWorker(QObject):
         self._service = service
 
     def run(self) -> None:
+        logger.info("[update-worker] run() entry on thread %s", id(self.thread()))
         try:
             info = self._service.check()
         except Exception:
-            logger.exception("Update check raised")
+            logger.exception("[update-worker] check() raised")
             info = None
+        logger.info(
+            "[update-worker] check() returned %s; emitting finished",
+            "None" if info is None else f"v{info.version}",
+        )
         self.finished.emit(info)
 
 
@@ -432,17 +450,21 @@ class MainWindow(FluentWindow):
             except Exception:
                 logger.exception("Failed to persist _updates_repo_seen marker")
 
+        from core.constants import UPDATE_CHECK_STARTUP_DELAY_MS, WELCOME_DIALOG_DELAY_MS
         if (
             getattr(sys, 'frozen', False)
             and gui_settings.get('updates_check_on_startup', True)
         ):
-            QTimer.singleShot(5000, lambda: self._check_for_updates(silent=True))
+            QTimer.singleShot(
+                UPDATE_CHECK_STARTUP_DELAY_MS,
+                lambda: self._check_for_updates(silent=True),
+            )
 
         # 첫 실행 환영 다이얼로그 — gui_settings 에 _welcome_seen 플래그가
-        # 없는 사용자에게만 노출. 첫 paint 후 800ms 지연으로 메인 윈도우
-        # 렌더가 끝난 다음 자연스럽게 뜨도록.
+        # 없는 사용자에게만 노출. 첫 paint 후 일정 지연으로 메인 윈도우
+        # 렌더가 끝난 다음 자연스럽게 뜨도록 (WELCOME_DIALOG_DELAY_MS).
         if not gui_settings.get('_welcome_seen'):
-            QTimer.singleShot(800, self._show_welcome_dialog)
+            QTimer.singleShot(WELCOME_DIALOG_DELAY_MS, self._show_welcome_dialog)
 
     def _setup_navigation(self):
         """네비게이션 설정 - 4탭 구조 (홈, 서식, 파싱, 고급)"""
@@ -725,7 +747,7 @@ class MainWindow(FluentWindow):
                 content=f'설정이 저장되었습니다: {Path(file_path).name}',
                 parent=self,
                 position=InfoBarPosition.TOP,
-                duration=3000
+                duration=INFOBAR_DURATION_INFO_MS
             )
         except Exception as e:
             InfoBar.error(
@@ -733,7 +755,7 @@ class MainWindow(FluentWindow):
                 content=str(e),
                 parent=self,
                 position=InfoBarPosition.TOP,
-                duration=5000
+                duration=INFOBAR_DURATION_WARNING_MS
             )
 
     def import_settings(self):
@@ -782,7 +804,7 @@ class MainWindow(FluentWindow):
                 content='설정이 적용되었습니다. 일부 설정은 앱 재시작 후 적용됩니다.',
                 parent=self,
                 position=InfoBarPosition.TOP,
-                duration=3000
+                duration=INFOBAR_DURATION_INFO_MS
             )
         except Exception as e:
             InfoBar.error(
@@ -790,7 +812,7 @@ class MainWindow(FluentWindow):
                 content=str(e),
                 parent=self,
                 position=InfoBarPosition.TOP,
-                duration=5000
+                duration=INFOBAR_DURATION_WARNING_MS
             )
 
     def add_conversion_log(self, message: str):
@@ -837,7 +859,7 @@ class MainWindow(FluentWindow):
                 content='이전 변환이 끝난 뒤 다시 시도해주세요.',
                 parent=self,
                 position=InfoBarPosition.TOP,
-                duration=3000,
+                duration=INFOBAR_DURATION_INFO_MS,
             )
             return
 
@@ -848,7 +870,7 @@ class MainWindow(FluentWindow):
                 content='변환할 파일을 추가해주세요.',
                 parent=self,
                 position=InfoBarPosition.TOP,
-                duration=3000
+                duration=INFOBAR_DURATION_INFO_MS
             )
             return
 
@@ -930,7 +952,7 @@ class MainWindow(FluentWindow):
                 content=message,
                 parent=self,
                 position=InfoBarPosition.TOP,
-                duration=5000
+                duration=INFOBAR_DURATION_WARNING_MS
             )
         else:
             InfoBar.error(
@@ -938,10 +960,10 @@ class MainWindow(FluentWindow):
                 content=message,
                 parent=self,
                 position=InfoBarPosition.TOP,
-                duration=5000
+                duration=INFOBAR_DURATION_WARNING_MS
             )
 
-    _SHUTDOWN_WORKER_TIMEOUT_MS = 5_000
+    _SHUTDOWN_WORKER_TIMEOUT_MS = CONVERT_WORKER_SHUTDOWN_TIMEOUT_MS
 
     # ------------------------------------------------------------------
     # About / Update
@@ -962,7 +984,7 @@ class MainWindow(FluentWindow):
                 content='이력 관리자 로드에 실패했습니다.',
                 parent=self,
                 position=InfoBarPosition.TOP,
-                duration=3000,
+                duration=INFOBAR_DURATION_INFO_MS,
             )
             return
         HistoryDialog(hm, self).exec()
@@ -1011,27 +1033,35 @@ class MainWindow(FluentWindow):
         네트워크 요청은 별도 스레드에서 — UI 가 멈추지 않도록.
         """
         from core.services.updater import UpdateService
+        from core.constants import (
+            INFOBAR_DURATION_TRANSIENT_MS,
+            INFOBAR_STICKY,
+            UPDATE_CHECK_HARD_TIMEOUT_MS,
+        )
+
+        logger.info("[update] _check_for_updates entry (silent=%s)", silent)
 
         # 1) 중복 실행 가드 — 사용자가 메뉴를 연타하거나 silent 체크가 이미
         #    돌고 있을 때 동일 worker 가 여러개 떠서 thread 정리가 꼬이는 것을
         #    막는다.
         existing = getattr(self, "_update_check_thread", None)
         if existing is not None and existing.isRunning():
+            logger.info("[update] duplicate guard — existing check still running")
             if not silent:
                 InfoBar.info(
                     title="이미 확인 중",
                     content="업데이트 확인이 진행 중입니다. 잠시만 기다려주세요.",
                     parent=self,
                     position=InfoBarPosition.TOP,
-                    duration=2500,
+                    duration=INFOBAR_DURATION_TRANSIENT_MS,
                 )
             return
 
         # 2) 사용자 액션이면 즉시 시각 피드백.
-        #    duration=-1 (sticky) 로 띄우고 결과가 도착하면 _on_update_check_result
-        #    에서 close() 한다. 예전엔 1800ms 고정으로 띄웠는데, 결과가 그 뒤에
-        #    도착하면 사용자 입장에서 InfoBar 가 사라지고 잠시 공백이 생겨
-        #    "멈춤"으로 보이는 문제가 있었음.
+        #    Sticky InfoBar — 결과 도착 시 _on_update_check_result 가 close() 함.
+        #    또한 hard-timeout watchdog (아래) 이 만일에 worker 가 응답 안 줄 때
+        #    강제로 close + 에러 InfoBar 를 띄움.
+        #    isClosable=True — 사용자가 직접 X 눌러 dismiss 할 수 있게 (안전망).
         self._update_check_progress_bar = None
         if not silent:
             self._update_check_progress_bar = InfoBar.info(
@@ -1039,10 +1069,10 @@ class MainWindow(FluentWindow):
                 content="GitHub 에서 최신 버전을 조회하고 있어요...",
                 parent=self,
                 position=InfoBarPosition.TOP,
-                duration=-1,
-                isClosable=False,
+                duration=INFOBAR_STICKY,
+                isClosable=True,
             )
-        logger.info("Update check requested (silent=%s)", silent)
+            logger.info("[update] sticky progress InfoBar shown")
 
         worker = _UpdateCheckWorker(UpdateService())
         thread = QThread(self)
@@ -1055,9 +1085,59 @@ class MainWindow(FluentWindow):
         # 사라진 thread 참조를 정리하는 콜백 — closeEvent 에서 cleanup 로직과 연계.
         thread.finished.connect(self._on_update_check_thread_finished)
         thread.start()
+        logger.info("[update] worker thread started")
         # 참조 유지 (GC 방지)
         self._update_check_thread = thread
         self._update_check_worker = worker
+
+        # 3) Hard-timeout watchdog — 어떤 이유로든 (urlopen 후크 누락, signal
+        #    드롭, qfluentwidgets 버그 등) 결과가 안 돌아오면 UI 가 영원히 sticky
+        #    InfoBar 와 함께 멈춤 상태로 보임. 이 timer 가 결정적으로 그것을 막음.
+        #    결과 핸들러가 정상 실행되면 timer 는 stop() 으로 무력화됨.
+        self._update_check_watchdog = QTimer(self)
+        self._update_check_watchdog.setSingleShot(True)
+        self._update_check_watchdog.timeout.connect(
+            lambda: self._on_update_check_timeout(silent)
+        )
+        self._update_check_watchdog.start(UPDATE_CHECK_HARD_TIMEOUT_MS)
+        logger.info(
+            "[update] hard-timeout watchdog armed (%dms)", UPDATE_CHECK_HARD_TIMEOUT_MS
+        )
+
+    def _on_update_check_timeout(self, silent: bool) -> None:
+        """Hard-timeout 발동 — worker 가 응답 없음. UI 를 항상 깨끗하게 복구."""
+        from core.constants import INFOBAR_DURATION_WARNING_MS
+        from core.services.updater import CheckOutcome
+        thread = getattr(self, "_update_check_thread", None)
+        if thread is None or not thread.isRunning():
+            # 결과가 timeout 직전에 도착했으면 아무것도 안 해도 됨.
+            logger.info("[update] watchdog fired but thread already done — no-op")
+            return
+        logger.warning(
+            "[update] HARD TIMEOUT — worker did not respond in %dms; forcing cleanup",
+            self._update_check_watchdog.interval(),
+        )
+        # sticky InfoBar 강제 close.
+        bar = getattr(self, "_update_check_progress_bar", None)
+        if bar is not None:
+            try:
+                bar.close()
+            except Exception:
+                logger.exception("[update] failed to force-close sticky InfoBar")
+            self._update_check_progress_bar = None
+        # 스레드 정리는 closeEvent 의 graceful shutdown 에 위임 — 강제 terminate 는
+        # 데이터 손상 위험. 대신 사용자 안내만.
+        if not silent:
+            InfoBar.warning(
+                title="응답이 없어요",
+                content=(
+                    "업데이트 서버 응답이 늦어지고 있어요. "
+                    "잠시 후 다시 시도해주세요."
+                ),
+                parent=self,
+                position=InfoBarPosition.TOP,
+                duration=INFOBAR_DURATION_WARNING_MS,
+            )
 
     def _on_update_check_thread_finished(self) -> None:
         """Thread 정상 종료 시 우리 쪽 참조도 해제 — 그래야 다음 클릭이 동작."""
@@ -1072,6 +1152,21 @@ class MainWindow(FluentWindow):
         있을 수 있어 안전 fallback).
         """
         from core.services.updater import CheckOutcome, UpdateService
+
+        logger.info(
+            "[update] result handler entry: info=%s, silent=%s",
+            "None" if info is None else f"v{info.version}", silent,
+        )
+
+        # Hard-timeout watchdog 무력화 — 정상 도착이니까 더 이상 강제 cleanup 불필요.
+        watchdog = getattr(self, "_update_check_watchdog", None)
+        if watchdog is not None:
+            try:
+                watchdog.stop()
+                watchdog.deleteLater()
+            except Exception:
+                logger.exception("[update] watchdog disarm failed")
+            self._update_check_watchdog = None
 
         # sticky "조회 중" InfoBar 가 떠 있으면 닫는다 — 결과 표시 직전에 정리해야
         # 사용자에게 끊김 없는 전환이 보임.
@@ -1090,6 +1185,7 @@ class MainWindow(FluentWindow):
             service = getattr(worker, "_service", None)
             if service is not None:
                 outcome = getattr(service, "last_outcome", CheckOutcome.LATEST)
+        logger.info("[update] outcome=%s", outcome)
 
         if info is None:
             if silent:
@@ -1116,7 +1212,7 @@ class MainWindow(FluentWindow):
                     ),
                     parent=self,
                     position=InfoBarPosition.TOP,
-                    duration=8000,
+                    duration=INFOBAR_DURATION_ATTENTION_MS,
                 )
                 # InfoBar action 버튼 추가 — qfluentwidgets InfoBar 는
                 # addWidget 으로 임의 위젯을 받음.
@@ -1133,7 +1229,7 @@ class MainWindow(FluentWindow):
                     content="GitHub 에 연결하지 못했어요. 인터넷 연결을 확인해주세요.",
                     parent=self,
                     position=InfoBarPosition.TOP,
-                    duration=4500,
+                    duration=INFOBAR_DURATION_WARNING_MS,
                 )
             elif outcome == CheckOutcome.PARSE_ERROR:
                 InfoBar.warning(
@@ -1141,7 +1237,7 @@ class MainWindow(FluentWindow):
                     content="GitHub 응답을 처리하지 못했어요. 잠시 후 다시 시도해주세요.",
                     parent=self,
                     position=InfoBarPosition.TOP,
-                    duration=4500,
+                    duration=INFOBAR_DURATION_WARNING_MS,
                 )
             else:  # LATEST
                 InfoBar.info(
@@ -1149,7 +1245,7 @@ class MainWindow(FluentWindow):
                     content="현재 사용 중인 버전이 최신입니다.",
                     parent=self,
                     position=InfoBarPosition.TOP,
-                    duration=3500,
+                    duration=INFOBAR_DURATION_INFO_MS,
                 )
             return
 
@@ -1200,7 +1296,7 @@ class MainWindow(FluentWindow):
                     self._SHUTDOWN_WORKER_TIMEOUT_MS,
                 )
                 self._worker.terminate()
-                self._worker.wait(1_000)
+                self._worker.wait(THREAD_TERMINATE_GRACE_MS)
 
         self._cleanup_worker()
 
@@ -1211,12 +1307,12 @@ class MainWindow(FluentWindow):
             logger.info("Waiting for update check thread to finish...")
             update_thread.quit()
             # urlopen 의 timeout 은 4초 → 약간 더 줘서 5초 대기.
-            if not update_thread.wait(5_000):
+            if not update_thread.wait(UPDATE_THREAD_SHUTDOWN_TIMEOUT_MS):
                 logger.warning(
                     "Update check thread did not finish in time; forcing terminate"
                 )
                 update_thread.terminate()
-                update_thread.wait(1_000)
+                update_thread.wait(THREAD_TERMINATE_GRACE_MS)
         self._update_check_thread = None
         self._update_check_worker = None
 

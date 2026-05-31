@@ -807,6 +807,27 @@ class FormatStylePage(BasePage):
             help_text="목차 페이지의 제목입니다. 기본값은 '목차'입니다."
         )
 
+        # 사용자 명시 씬 제목만 목차에 포함. 기본 OFF — 기존 동작 보존.
+        # ON 으로 두면 "장면 1" 같은 자동 생성 제목과 system noise 제외.
+        self.toc_scene_only = toc_card.add_checkbox(
+            "명시적 씬 제목만 목차에 포함", "toc_scene_only",
+            checked=self.settings.get('toc_scene_only', False),
+            help_text=(
+                "ON: 본문에 직접 적힌 씬 제목만 목차에 표시 (예: 'Scene 1 — 숲의 입구'). "
+                "자동 생성된 '장면 N', 시스템 노이즈 등은 목차에서 제외됩니다."
+            ),
+        )
+
+        self.toc_exclude_patterns = toc_card.add_text_field(
+            "목차 제외 패턴 (쉼표 구분)", "toc_exclude_patterns",
+            placeholder="main\\s*process, system, ^debug",
+            default=self.settings.get('toc_exclude_patterns', ''),
+            help_text=(
+                "정규식 패턴을 쉼표로 구분해 입력. 매칭되는 씬 제목은 목차에서 숨김. "
+                "예: 'main\\s*process, system' → 'Main Process started' / 'System Load' 등 제외."
+            ),
+        )
+
         section.add_widget(toc_card)
 
     # ==================================================================

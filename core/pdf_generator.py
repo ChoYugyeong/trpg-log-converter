@@ -503,18 +503,25 @@ def create_cover(story: List, config: Dict, title: str, author: str,
 def create_toc(story: List, scenes: List[Dict], config: Dict,
                styles: Dict[str, ParagraphStyle]):
     """목차 생성"""
+    from core.renderers.toc_filter import filter_toc_scenes
+
     toc_config = config.get('toc', {})
     if not toc_config.get('include', True) or len(scenes) <= 1:
         return
+
+    filtered = filter_toc_scenes(scenes, config)
+    if not filtered:
+        return  # 필터링 결과 전부 제외 → TOC 생략 (빈 페이지 방지)
 
     toc_title = toc_config.get('title', '목차')
     story.append(Paragraph(escape_xml(toc_title), styles['TOCTitle']))
     story.append(Spacer(1, 10*mm))
 
-    for idx, scene in enumerate(scenes):
-        scene_title = scene.get('title') or f"장면 {idx + 1}"
-        # 목차 항목
-        toc_entry = f"{idx + 1}. {escape_xml(scene_title)}"
+    # 표시 번호는 1부터 순차 — 원본 인덱스(original_idx) 와 다를 수 있음.
+    # 본문 챕터 매핑은 PDF 의 bookmark 가 별도 처리하므로 표시 번호 재할당 안전.
+    for display_n, (_orig_idx, scene) in enumerate(filtered, start=1):
+        scene_title = scene.get('title') or f"장면 {display_n}"
+        toc_entry = f"{display_n}. {escape_xml(scene_title)}"
         story.append(Paragraph(toc_entry, styles['TOCEntry']))
 
     story.append(PageBreak())

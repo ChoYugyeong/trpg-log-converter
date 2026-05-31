@@ -62,15 +62,12 @@ ProgressCallback = Callable[[int, int], None]  # (downloaded_bytes, total_bytes)
 _API_LATEST = "https://api.github.com/repos/{repo}/releases/latest"
 _USER_AGENT = f"TRPG-Log-Converter-Pro/{__version__} (+https://github.com/{__update_repo__})"
 
-# 1.5초 타이트한 timeout — GitHub 정상 응답은 < 0.5s. 사용자가 [업데이트 확인]
-# 눌렀을 때 1.5초 이상 "멈춤"으로 느끼지 않게.
-# 이 timeout 은 opener.open(timeout=) 으로 connect+read 양쪽을 동시에 bound.
-# closeEvent thread wait (5s) 안에 확실히 종료.
-_TIMEOUT_SECONDS = 1.5
-
-# 한 번 결과 받으면 N초간 캐싱. 사용자가 [업데이트 확인] 연타해도 두 번째부터는
-# 네트워크 호출 없이 즉시 같은 결과 반환 → "멈춤" 체감 0.
-_CACHE_TTL_SECONDS = 300  # 5분
+# 모든 timing 상수는 core/constants.py 한 곳에서 관리. 코드 곳곳의 매직넘버를
+# 추적하지 않아도 한 파일만 보면 UX 튜닝이 가능.
+from core.constants import (  # noqa: E402 — 모듈 상단에 두면 순환 import 가능성
+    UPDATE_CHECK_NETWORK_TIMEOUT_S as _TIMEOUT_SECONDS,
+    UPDATE_CHECK_CACHE_TTL_S as _CACHE_TTL_SECONDS,
+)
 
 # Windows WPAD (Web Proxy Auto-Discovery) 우회용 빈 ProxyHandler.
 # urllib.request.urlopen 의 기본 opener 는 시스템 프록시를 자동 감지하는데,

@@ -124,6 +124,14 @@ class CoverSettings(BaseModel):
     cover_image: str = Field("", description="표지 이미지 경로 또는 base64")
     include_toc: bool = Field(True, description="목차 포함 여부")
     toc_title: str = Field("목차", description="목차 제목")
+    toc_scene_only: bool = Field(
+        False,
+        description="True 면 자동 생성된 '장면 N' 제목과 시스템 노이즈를 목차에서 제외",
+    )
+    toc_exclude_patterns: str = Field(
+        "",
+        description="목차에서 숨길 씬 제목 정규식 (쉼표로 여러 개)",
+    )
 
     @field_validator("cover_bg", "cover_title_color")
     @classmethod

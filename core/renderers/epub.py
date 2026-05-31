@@ -128,11 +128,17 @@ def create_cover_html(config: Dict[str, Any], title: str, author: str) -> str:
 
 
 def create_toc_html(scenes: List[Dict[str, Any]], config: Dict[str, Any]) -> str:
+    from core.renderers.toc_filter import filter_toc_scenes
+
     toc_title = config.get("toc", {}).get("title", "목차")
     html = f'<div class="toc"><h2>{escape_html(toc_title)}</h2><ul>'
-    for idx, scene in enumerate(scenes):
-        title = scene.get("title") or f"장면 {idx + 1}"
-        html += f'<li><a href="chapter_{idx+1}.xhtml">{escape_html(title)}</a></li>'
+    # 챕터 파일명은 원본 인덱스 기준 (filter 후에도 chapter_3.xhtml 식별 유지).
+    for original_idx, scene in filter_toc_scenes(scenes, config):
+        title = scene.get("title") or f"장면 {original_idx + 1}"
+        html += (
+            f'<li><a href="chapter_{original_idx+1}.xhtml">'
+            f'{escape_html(title)}</a></li>'
+        )
     html += "</ul></div>"
     return html
 
