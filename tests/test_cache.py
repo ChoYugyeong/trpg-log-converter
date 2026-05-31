@@ -82,7 +82,7 @@ class TestCacheService:
 
         # 파일 수정
         time.sleep(0.1)  # 수정 시간 차이를 위해
-        with open(sample_file, "a") as f:
+        with open(sample_file, "a", encoding="utf-8") as f:
             f.write("\n추가 내용")
 
         # 캐시 미스
@@ -162,7 +162,7 @@ class TestCacheService:
 
         # 수동으로 오래된 캐시 파일 생성
         old_cache = Path(temp_cache_dir) / "old_cache.json"
-        with open(old_cache, "w") as f:
+        with open(old_cache, "w", encoding="utf-8") as f:
             json.dump({"cached_at": 0}, f)
 
         # 파일 수정 시간을 과거로 설정 (1일 전)
