@@ -17,8 +17,13 @@ from PySide6.QtCore import Signal
 
 
 @pytest.fixture
-def app_state(tmp_path):
-    """AppState + ConfigManager를 생성하고 BasePage에 주입한다."""
+def app_state(tmp_path, qapp):
+    """AppState + ConfigManager를 생성하고 BasePage에 주입한다.
+
+    ``qapp`` 의존성: AppState 는 QObject 라서 QApplication 이 먼저 존재해야
+    하고, 일부 test 만 qtbot 을 받으면 뒤늦은 QApplication 생성과 충돌해
+    Linux SIGABRT (exit 134) 가 났던 회귀 방지.
+    """
     from core.config_manager import ConfigManager
     from gui.pages.base_page import BasePage
     from gui.state import AppState

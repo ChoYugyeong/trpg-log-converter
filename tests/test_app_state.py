@@ -17,8 +17,14 @@ from PySide6.QtCore import QObject
 
 
 @pytest.fixture
-def app_state(tmp_path):
-    """AppState + ConfigManager 를 생성하고 BasePage에 주입한다."""
+def app_state(tmp_path, qapp):
+    """AppState + ConfigManager 를 생성하고 BasePage에 주입한다.
+
+    ``qapp`` 의존성: AppState 는 QObject 라서 QApplication 이 먼저 존재해야
+    한다. 일부 test 만 qtbot 을 받아서 뒤늦게 QApplication 이 생기면 이전에
+    parent 없이 만들어진 QObject 와 충돌해 Linux 에서 SIGABRT (exit 134)
+    가 났던 회귀 방지.
+    """
     from core.config_manager import ConfigManager
     from gui.pages.base_page import BasePage
     from gui.state import AppState
