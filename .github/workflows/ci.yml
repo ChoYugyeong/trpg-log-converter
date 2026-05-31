@@ -101,16 +101,14 @@ jobs:
 
       - name: Run pytest with coverage gate
         shell: bash
-        # Linux 에서 Qt 의 xcb 플랫폼 플러그인 로딩이 미세한 libxcb-cursor / libGL
-        # 의존성 누락 등으로 "Fatal Python error: Aborted" (exit 134) 를 일으킴.
-        # ``QT_QPA_PLATFORM=offscreen`` 으로 display 의존 자체를 제거해 headless
-        # 실행을 보장. xvfb-run 은 보험으로 유지 — 일부 widget 이 정말 화면을
-        # 필요로 하면 그쪽으로 폴백.
-        env:
-          QT_QPA_PLATFORM: offscreen
+        # Linux 에서만 Qt 의 xcb 플랫폼 플러그인 동적 로딩이 위태로워 SIGABRT
+        # (exit 134) 가 나므로 ``QT_QPA_PLATFORM=offscreen`` 으로 display 의존을
+        # 우회한다. Windows/macOS 는 native Qt platform plugin (windows / cocoa)
+        # 이 정상 동작하고, 같은 offscreen 설정을 거기 강제하면 qfluentwidgets
+        # 등 일부 widget 이 access violation (exit 139) 으로 죽어서 OS 별 분기.
         run: |
           if [ "$RUNNER_OS" = "Linux" ]; then
-            xvfb-run -a pytest --cov=core --cov-report=term-missing --cov-report=xml
+            QT_QPA_PLATFORM=offscreen xvfb-run -a pytest --cov=core --cov-report=term-missing --cov-report=xml
           else
             pytest --cov=core --cov-report=term-missing --cov-report=xml
           fi
