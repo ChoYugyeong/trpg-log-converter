@@ -24,7 +24,7 @@ The framework guarantees:
 from __future__ import annotations
 
 import logging
-from typing import Callable
+from collections.abc import Callable
 
 from core.config.defaults import CONFIG_SCHEMA_VERSION
 from core.exceptions import SchemaMigrationError
@@ -75,7 +75,7 @@ def migrate_gui_settings(settings: dict) -> dict:
             settings = fn(settings)
         except SchemaMigrationError:
             raise
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             raise SchemaMigrationError(
                 f"Migration v{current} -> v{current + 1} failed: {exc}",
                 context={"from": current, "to": current + 1, "cause": repr(exc)},
@@ -106,7 +106,7 @@ def _v1_to_v2(settings: dict) -> dict:
 
 
 __all__ = [
+    "MigrationFn",
     "migrate_gui_settings",
     "migration",
-    "MigrationFn",
 ]

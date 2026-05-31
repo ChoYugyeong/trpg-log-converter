@@ -31,15 +31,15 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
 def filter_toc_scenes(
-    scenes: List[Dict[str, Any]],
-    config: Dict[str, Any],
-) -> List[Tuple[int, Dict[str, Any]]]:
+    scenes: list[dict[str, Any]],
+    config: dict[str, Any],
+) -> list[tuple[int, dict[str, Any]]]:
     """Return ``(original_index, scene)`` pairs eligible for the TOC.
 
     원본 ``scenes`` 의 인덱스를 유지해서 ``chapter_{idx+1}.xhtml`` / PDF
@@ -66,7 +66,7 @@ def filter_toc_scenes(
         except re.error as exc:
             logger.warning("TOC exclude_patterns 정규식 오류 '%s': %s", raw, exc)
 
-    result: List[Tuple[int, Dict[str, Any]]] = []
+    result: list[tuple[int, dict[str, Any]]] = []
     for idx, scene in enumerate(scenes):
         title = scene.get("title") or ""
         entries = scene.get("entries") or []

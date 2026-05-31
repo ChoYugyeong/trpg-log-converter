@@ -17,6 +17,7 @@ Style:
 """
 from __future__ import annotations
 
+import contextlib
 import json
 import logging
 import logging.handlers
@@ -24,7 +25,7 @@ import os
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from typing import ClassVar
 
 # Third-party loggers that flood DEBUG/INFO with noise we don't own.
 _NOISY_LOGGERS = (
@@ -41,7 +42,7 @@ _NOISY_LOGGERS = (
 class _JsonFormatter(logging.Formatter):
     """One JSON object per line. Suitable for ingest into Loki / Datadog / CloudWatch."""
 
-    _RESERVED = {
+    _RESERVED: ClassVar[dict] = {
         "name", "msg", "args", "levelname", "levelno", "pathname", "filename",
         "module", "exc_info", "exc_text", "stack_info", "lineno", "funcName",
         "created", "msecs", "relativeCreated", "thread", "threadName",
@@ -72,7 +73,7 @@ class AppLogger:
     defined at module bottom; this class is kept for backwards compat.
     """
 
-    _instance: Optional["AppLogger"] = None
+    _instance: AppLogger | None = None
     _initialized: bool = False
 
     def __new__(cls):
@@ -84,9 +85,9 @@ class AppLogger:
         if AppLogger._initialized:
             return
         AppLogger._initialized = True
-        self._log_dir: Optional[Path] = None
-        self._file_handler: Optional[logging.Handler] = None
-        self._console_handler: Optional[logging.Handler] = None
+        self._log_dir: Path | None = None
+        self._file_handler: logging.Handler | None = None
+        self._console_handler: logging.Handler | None = None
         self._log_level: int = logging.INFO
 
     def setup(
@@ -97,7 +98,7 @@ class AppLogger:
         file_output: bool = True,
         max_bytes: int = 5 * 1024 * 1024,
         backup_count: int = 5,
-        json_output: Optional[bool] = None,
+        json_output: bool | None = None,
     ) -> None:
         self._log_level = log_level
         # In production: logs go to the OS-standard per-user dir so frozen
@@ -125,10 +126,8 @@ class AppLogger:
         # Tear down any prior handlers to keep setup idempotent.
         for handler in list(root_logger.handlers):
             root_logger.removeHandler(handler)
-            try:
+            with contextlib.suppress(Exception):
                 handler.close()
-            except Exception:  # noqa: BLE001
-                pass
 
         text_formatter = logging.Formatter(
             "%(asctime)s [%(levelname)s] %(name)s: %(message)s",
@@ -179,10 +178,8 @@ class AppLogger:
         if not self._log_dir:
             return
         for legacy in self._log_dir.glob("app_*.log"):
-            try:
+            with contextlib.suppress(OSError):
                 legacy.unlink()
-            except OSError:
-                pass
 
     def set_level(self, level: int) -> None:
         self._log_level = level
@@ -191,7 +188,7 @@ class AppLogger:
             if handler is not None:
                 handler.setLevel(level)
 
-    def get_log_dir(self) -> Optional[Path]:
+    def get_log_dir(self) -> Path | None:
         return self._log_dir
 
     def get_recent_logs(self, lines: int = 100) -> list[str]:
@@ -201,7 +198,7 @@ class AppLogger:
         if not candidates:
             return []
         try:
-            with open(candidates[0], "r", encoding="utf-8") as fh:
+            with open(candidates[0], encoding="utf-8") as fh:
                 return fh.readlines()[-lines:]
         except OSError:
             return []

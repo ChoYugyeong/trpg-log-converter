@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Any, Dict, List
+from typing import Any
 
 from core.parsers.helpers import (
     is_dice_roll,
@@ -24,8 +24,8 @@ from core.parsers.helpers import (
 logger = logging.getLogger(__name__)
 
 
-def parse_roll20(soup, config: Dict[str, Any]) -> List[Dict[str, Any]]:
-    entries: List[Dict[str, Any]] = []
+def parse_roll20(soup, config: dict[str, Any]) -> list[dict[str, Any]]:
+    entries: list[dict[str, Any]] = []
     parsing_config = config.get("parsing", {})
     normalize = parsing_config.get("normalize_punctuation", True)
     scene_patterns = config.get("chapter", {}).get("scene_patterns", [])

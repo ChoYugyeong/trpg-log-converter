@@ -12,6 +12,7 @@ If any of these regress, this test fails and blocks the build.
 """
 from __future__ import annotations
 
+import inspect
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -123,7 +124,7 @@ class TestSubsequentBootsAreSilent:
         #   if (getattr(sys, 'frozen', False)
         #       and gui_settings.get('updates_check_on_startup', True)):
         # 둘 다 True 일 때만 schedule. False 면 skip — 회귀 방지.
-        with open(mw_module.__file__, "r", encoding="utf-8") as f:
+        with open(mw_module.__file__, encoding="utf-8") as f:
             source = f.read()
         assert "updates_check_on_startup" in source, (
             "main_window.py 에서 updates_check_on_startup 키 체크가 사라지면 안 됨"
@@ -141,8 +142,9 @@ class TestReleasesPageEscapeHatch:
     def test_about_dialog_exposes_releases_button(self):
         """About 다이얼로그는 'Releases' 직링크 버튼을 항상 노출해야 한다 —
         private 운영 사용자가 새 버전 받는 유일한 경로."""
-        from gui.dialogs.about_dialog import AboutDialog
         import inspect
+
+        from gui.dialogs.about_dialog import AboutDialog
         src = inspect.getsource(AboutDialog)
         # Button label + URL fragment that opens the releases page
         assert "새 버전 받기" in src
@@ -155,9 +157,6 @@ class TestReleasesPageEscapeHatch:
         src = inspect.getsource(mw_module)
         assert "_open_releases_page" in src
         assert "/releases/latest" in src
-
-
-import inspect  # 위 클래스에서 사용
 
 
 # ---------------------------------------------------------------------------
@@ -174,7 +173,7 @@ class TestRepoChangeAutoRestore:
 
     def test_main_window_has_repo_change_restore_block(self):
         from gui import main_window as mw_module
-        with open(mw_module.__file__, "r", encoding="utf-8") as f:
+        with open(mw_module.__file__, encoding="utf-8") as f:
             source = f.read()
         # 마커 키 비교
         assert "_updates_repo_seen" in source, (

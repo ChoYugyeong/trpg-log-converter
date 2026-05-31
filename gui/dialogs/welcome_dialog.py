@@ -19,7 +19,7 @@ Implementation note (재작성 사유):
 from __future__ import annotations
 
 from PySide6.QtCore import QSize, Qt
-from PySide6.QtGui import QBrush, QColor, QFont, QPainter, QPen
+from PySide6.QtGui import QBrush, QColor, QPainter, QPen
 from PySide6.QtWidgets import (
     QCheckBox,
     QDialog,
@@ -33,7 +33,6 @@ from PySide6.QtWidgets import (
 )
 
 from core.version import __app_name__, __version__
-
 
 # ---------------------------------------------------------------------------
 # Step rendering
@@ -57,7 +56,7 @@ class _StepBadge(QWidget):
         self.setFixedSize(self._SIZE, self._SIZE)
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 
-    def sizeHint(self) -> QSize:  # noqa: D401
+    def sizeHint(self) -> QSize:
         return QSize(self._SIZE, self._SIZE)
 
     def paintEvent(self, _event) -> None:

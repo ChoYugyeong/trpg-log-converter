@@ -3,12 +3,21 @@ TRPG Log Converter Pro - 입력 컴포넌트
 ColorPicker, TagInput, FileDropArea 등
 """
 
-from PySide6.QtWidgets import (
-    QWidget, QHBoxLayout, QVBoxLayout, QLabel, QPushButton,
-    QLineEdit, QFrame, QFileDialog, QColorDialog
-)
-from PySide6.QtCore import Signal, Qt, QTimer
+from typing import ClassVar
+
+from PySide6.QtCore import Qt, QTimer, Signal
 from PySide6.QtGui import QColor, QDragEnterEvent, QDropEvent
+from PySide6.QtWidgets import (
+    QColorDialog,
+    QFileDialog,
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
 
 from ..theme import Colors, Sizes, Spacing, Typography
 
@@ -17,7 +26,7 @@ class ColorPicker(QWidget):
     """macOS 스타일 컬러 피커"""
     color_changed = Signal(str)
 
-    def __init__(self, initial_color: str = None, parent=None):
+    def __init__(self, initial_color: str | None = None, parent=None):
         super().__init__(parent)
         self._color = initial_color or Colors.ACCENT
         self.setFixedHeight(Sizes.BUTTON_LG_H)
@@ -256,7 +265,7 @@ class FileDropArea(QFrame):
     files_dropped = Signal(list)
     invalid_files_dropped = Signal(list)  # 잘못된 파일 드롭 시
 
-    SUPPORTED_EXTENSIONS = {'.html', '.htm', '.txt', '.log'}
+    SUPPORTED_EXTENSIONS: ClassVar[dict] = {'.html', '.htm', '.txt', '.log'}
 
     def __init__(self, parent=None):
         super().__init__(parent)

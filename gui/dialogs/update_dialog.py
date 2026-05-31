@@ -10,9 +10,8 @@ from __future__ import annotations
 import logging
 import sys
 from pathlib import Path
-from typing import Optional
 
-from PySide6.QtCore import QObject, Qt, QThread, Signal
+from PySide6.QtCore import QObject, QThread, Signal
 from PySide6.QtWidgets import (
     QDialog,
     QHBoxLayout,
@@ -45,7 +44,7 @@ class _DownloadWorker(QObject):
                 on_progress=lambda d, t: self.progress.emit(d, t),
             )
             self.finished.emit(path)
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.exception("Update download failed")
             self.failed.emit(str(exc))
 
@@ -62,9 +61,9 @@ class UpdateDialog(QDialog):
         super().__init__(parent)
         self._info = info
         self._service = service
-        self._archive_path: Optional[Path] = None
-        self._thread: Optional[QThread] = None
-        self._worker: Optional[_DownloadWorker] = None
+        self._archive_path: Path | None = None
+        self._thread: QThread | None = None
+        self._worker: _DownloadWorker | None = None
 
         self.setWindowTitle("업데이트 알림")
         self.setMinimumSize(520, 480)
@@ -230,7 +229,7 @@ class UpdateDialog(QDialog):
             return
         try:
             self._service.apply(self._info, self._archive_path)
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             self._status.setStyleSheet("font-size: 12px; color: rgb(200,30,30);")
             self._status.setText(f"적용 실패: {exc}")
             return

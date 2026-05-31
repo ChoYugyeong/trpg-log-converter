@@ -3,10 +3,11 @@
 빈 파일, 깨진 HTML, 유니코드, 잘못된 설정 등
 """
 
-import pytest
-import tempfile
 import os
+import tempfile
 from pathlib import Path
+
+import pytest
 
 
 class TestEmptyInput:
@@ -140,14 +141,14 @@ class TestConfigEdgeCases:
         assert isinstance(entries, list)
 
     def test_none_values_in_config(self, sample_config):
+        import contextlib
+
         from core.engine import filter_entries
         config = sample_config.copy()
         config['content'] = None
-        # None이어도 크래시하지 않아야 함
-        try:
+        # None이어도 크래시하지 않아야 함 — TypeError/AttributeError 는 예상된 에러.
+        with contextlib.suppress(TypeError, AttributeError):
             filter_entries([], config)
-        except (TypeError, AttributeError):
-            pass  # 예상된 에러
 
     def test_deep_merge_with_empty(self):
         from core.engine import deep_merge
@@ -171,8 +172,8 @@ class TestConfigEdgeCases:
         assert isinstance(migrated['margins'], dict)
 
     def test_config_schema_already_current(self):
+        from core.config.defaults import CONFIG_SCHEMA_VERSION
         from core.config.migrations import migrate_gui_settings
-        from core.config_manager import CONFIG_SCHEMA_VERSION
         settings = {'_schema_version': CONFIG_SCHEMA_VERSION}
         result = migrate_gui_settings(settings)
         assert result['_schema_version'] == CONFIG_SCHEMA_VERSION
@@ -207,18 +208,18 @@ class TestNameSplitting:
 
     def test_no_colon(self):
         from core.engine import smart_split_name_content
-        name, content = smart_split_name_content("콜론없는텍스트")
+        name, _content = smart_split_name_content("콜론없는텍스트")
         assert name is None
 
     def test_time_format_rejection(self):
         from core.engine import smart_split_name_content
-        name, content = smart_split_name_content("10:30 게임 시작")
+        name, _content = smart_split_name_content("10:30 게임 시작")
         assert name is None
 
     def test_very_long_name(self):
         from core.engine import smart_split_name_content
         long_text = "A" * 100 + ": 내용"
-        name, content = smart_split_name_content(long_text, max_name_length=50)
+        name, _content = smart_split_name_content(long_text, max_name_length=50)
         assert name is None
 
     def test_multiple_colons(self):
@@ -267,17 +268,15 @@ class TestFileEncoding:
         filepath = temp_dir / "utf8.html"
         filepath.write_text("<html><body><p>한글 테스트</p></body></html>", encoding='utf-8')
 
-        from core.engine import convert
-        from core.engine import load_config
+        from core.engine import convert, load_config
         config = load_config()
         config['paths']['output_dir'] = str(temp_dir)
         config['output_format'] = 'epub'
 
-        # 파일이 읽히기만 하면 성공
-        try:
+        # 파일이 읽히기만 하면 성공 — 변환 실패는 OK, 인코딩 에러만 아니면 됨.
+        import contextlib
+        with contextlib.suppress(Exception):
             convert(str(filepath), config=config, format='epub')
-        except Exception:
-            pass  # 변환 실패는 OK, 인코딩 에러만 아니면 됨
 
     def test_euckr_file(self, temp_dir):
         filepath = temp_dir / "euckr.html"

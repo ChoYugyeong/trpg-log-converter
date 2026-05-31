@@ -110,7 +110,7 @@ class TestNetworkFailures:
         )
 
     def test_socket_timeout(self):
-        self._assert_quick_none(socket.timeout("timed out"))
+        self._assert_quick_none(TimeoutError("timed out"))
 
     def test_ssl_error(self):
         import ssl
@@ -198,7 +198,7 @@ class TestRapidSequentialCalls:
 
     def test_ten_consecutive_calls_complete_quickly(self):
         from core.version import version_tuple
-        major, minor, patch_v = version_tuple()
+        major, _minor, _patch_v = version_tuple()
         future_tag = f"v{major + 1}.0.0"
 
         mock_resp = _mock_response(_release_payload(future_tag))
@@ -220,7 +220,7 @@ class TestLargeResponses:
 
     def test_handles_large_payload(self):
         from core.version import version_tuple
-        major, minor, patch_v = version_tuple()
+        major, _minor, _patch_v = version_tuple()
         future_tag = f"v{major + 1}.0.0"
 
         # 5MB body 시뮬레이션 — body 데이터로 채워서 크기 늘리기.
@@ -325,6 +325,7 @@ class TestProxyBypass:
         없어야 한다 — 있다면 default ``ProxyHandler()`` 가 살아남은 것이고
         그게 곧 WPAD 트리거 경로."""
         import urllib.request as _urlreq
+
         from core.services.updater import _OPENER
         for proto, handlers in _OPENER.handle_open.items():
             for h in handlers:

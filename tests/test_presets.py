@@ -2,10 +2,11 @@
 프리셋 서비스 테스트
 """
 
-import pytest
 from pathlib import Path
 
-from core.services.presets import PresetService, Preset
+import pytest
+
+from core.services.presets import Preset, PresetService
 
 
 class TestPresetService:

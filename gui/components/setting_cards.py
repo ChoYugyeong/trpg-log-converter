@@ -7,25 +7,29 @@ qfluentwidgets의 SettingCard 생태계를 기반으로 한 커스텀 카드 컴
 OS 네이티브 툴팁(setToolTip)은 사용하지 않는다.
 """
 
-from typing import List, Optional, Union
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QColor, QIcon, QCursor
-from PySide6.QtWidgets import QWidget, QHBoxLayout, QColorDialog
-
+from PySide6.QtGui import QColor, QCursor, QIcon
+from PySide6.QtWidgets import QColorDialog, QHBoxLayout, QWidget
 from qfluentwidgets import (
-    SettingCard, SettingCardGroup,
-    ComboBox, SwitchButton, SpinBox, LineEdit,
-    FluentIcon, IconWidget,
-    TeachingTip, TeachingTipTailPosition, TeachingTipView,
+    ComboBox,
+    FluentIcon,
+    IconWidget,
+    LineEdit,
+    SettingCard,
+    SettingCardGroup,
+    SpinBox,
+    StrongBodyLabel,
+    SwitchButton,
+    TeachingTip,
+    TeachingTipTailPosition,
+    TeachingTipView,
     ToolTipFilter,
-    StrongBodyLabel, CaptionLabel, BodyLabel,
-    ExpandLayout, setFont,
+    setFont,
 )
 from qfluentwidgets.common.icon import FluentIconBase
 
-from ..theme import Colors, Sizes, Spacing
-
+from ..theme import Sizes, Spacing
 
 # ---------------------------------------------------------------------------
 # 기본 클래스: 도움말 아이콘이 포함된 SettingCard
@@ -47,15 +51,15 @@ class HelpableSettingCard(SettingCard):
 
     def __init__(
         self,
-        icon: Union[str, QIcon, FluentIconBase],
+        icon: str | QIcon | FluentIconBase,
         title: str,
         content: str = "",
         help_text: str = "",
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
     ):
         super().__init__(icon, title, content, parent)
         self._help_text = help_text
-        self._help_icon: Optional[IconWidget] = None
+        self._help_icon: IconWidget | None = None
 
         if help_text:
             self._setup_help(help_text)
@@ -127,7 +131,6 @@ class HelpableSettingCard(SettingCard):
 
     def set_value(self, value):
         """값을 설정한다. 서브클래스에서 구현."""
-        pass
 
 
 # ---------------------------------------------------------------------------
@@ -163,13 +166,13 @@ class HelpableComboBoxCard(HelpableSettingCard):
 
     def __init__(
         self,
-        icon: Union[str, QIcon, FluentIconBase],
+        icon: str | QIcon | FluentIconBase,
         title: str,
         content: str = "",
-        options: Optional[List[str]] = None,
-        default: Optional[str] = None,
+        options: list[str] | None = None,
+        default: str | None = None,
         help_text: str = "",
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
     ):
         super().__init__(icon, title, content, help_text, parent)
         options = options or []
@@ -221,14 +224,14 @@ class HelpableSwitchCard(HelpableSettingCard):
 
     def __init__(
         self,
-        icon: Union[str, QIcon, FluentIconBase],
+        icon: str | QIcon | FluentIconBase,
         title: str,
         content: str = "",
         default: bool = False,
         on_text: str = "켜짐",
         off_text: str = "꺼짐",
         help_text: str = "",
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
     ):
         super().__init__(icon, title, content, help_text, parent)
 
@@ -268,7 +271,7 @@ class HelpableSpinBoxCard(HelpableSettingCard):
 
     def __init__(
         self,
-        icon: Union[str, QIcon, FluentIconBase],
+        icon: str | QIcon | FluentIconBase,
         title: str,
         content: str = "",
         minimum: int = 0,
@@ -277,7 +280,7 @@ class HelpableSpinBoxCard(HelpableSettingCard):
         default: int = 0,
         suffix: str = "",
         help_text: str = "",
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
     ):
         super().__init__(icon, title, content, help_text, parent)
 
@@ -321,14 +324,14 @@ class HelpableLineEditCard(HelpableSettingCard):
 
     def __init__(
         self,
-        icon: Union[str, QIcon, FluentIconBase],
+        icon: str | QIcon | FluentIconBase,
         title: str,
         content: str = "",
         placeholder: str = "",
         default: str = "",
         clear_button: bool = True,
         help_text: str = "",
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
     ):
         super().__init__(icon, title, content, help_text, parent)
 
@@ -373,12 +376,12 @@ class HelpableColorCard(HelpableSettingCard):
 
     def __init__(
         self,
-        icon: Union[str, QIcon, FluentIconBase],
+        icon: str | QIcon | FluentIconBase,
         title: str,
         content: str = "",
         default_color: str = "#007AFF",
         help_text: str = "",
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
     ):
         super().__init__(icon, title, content, help_text, parent)
         self._color = default_color
@@ -463,7 +466,7 @@ class _ColorSwatchButton(QWidget):
 
     clicked = Signal()
 
-    def __init__(self, color: str = "#007AFF", parent: Optional[QWidget] = None):
+    def __init__(self, color: str = "#007AFF", parent: QWidget | None = None):
         super().__init__(parent)
         self._color = QColor(color)
         self.setObjectName("ColorSwatch")
@@ -475,7 +478,7 @@ class _ColorSwatchButton(QWidget):
 
     def paintEvent(self, event):
         """색상 스와치를 직접 그린다."""
-        from PySide6.QtGui import QPainter, QPen, QBrush
+        from PySide6.QtGui import QBrush, QPainter, QPen
         from qfluentwidgets.common.style_sheet import isDarkTheme
 
         painter = QPainter(self)
@@ -511,7 +514,7 @@ class FluentSettingGroup(SettingCardGroup):
     인라인 CSS 없이 qfluentwidgets 테마를 따른다.
     """
 
-    def __init__(self, title: str, parent: Optional[QWidget] = None):
+    def __init__(self, title: str, parent: QWidget | None = None):
         super().__init__(title, parent)
 
         # 기본 QLabel 대신 StrongBodyLabel로 교체
@@ -532,7 +535,7 @@ class FluentSettingGroup(SettingCardGroup):
         """
         self.addSettingCard(card)
 
-    def add_cards(self, cards: List[QWidget]):
+    def add_cards(self, cards: list[QWidget]):
         """여러 카드를 한번에 추가한다.
 
         addSettingCards()의 한국어 별칭.

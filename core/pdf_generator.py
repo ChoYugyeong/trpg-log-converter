@@ -4,25 +4,26 @@ PDF 생성 모듈
 reportlab 사용 - 표지, 목차, 이미지 처리 완전 지원
 """
 
-import os
 import logging
+import os
 from pathlib import Path
-from typing import List, Dict, Optional, Any
 
 try:
+    from reportlab.lib.colors import HexColor, black, gray
+    from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY
     from reportlab.lib.pagesizes import A4, A5, B5, letter
-    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-    from reportlab.lib.units import mm, cm, inch
-    from reportlab.lib.colors import HexColor, black, gray, white
-    from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_JUSTIFY
-    from reportlab.platypus import (
-        SimpleDocTemplate, Paragraph, Spacer, PageBreak, Image,
-        Table, TableStyle, KeepTogether, ListFlowable, ListItem
-    )
-    from reportlab.platypus.tableofcontents import TableOfContents
+    from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+    from reportlab.lib.units import inch, mm
     from reportlab.pdfbase import pdfmetrics
     from reportlab.pdfbase.ttfonts import TTFont
     from reportlab.pdfgen import canvas
+    from reportlab.platypus import (
+        Image,
+        PageBreak,
+        Paragraph,
+        SimpleDocTemplate,
+        Spacer,
+    )
     PDF_AVAILABLE = True
 except ImportError:
     PDF_AVAILABLE = False
@@ -89,7 +90,7 @@ def make_numbered_canvas(skip_first_pages: int) -> type:
     return type(cls_name, (NumberedCanvas,), {"skip_first_pages": skip})
 
 
-def register_fonts(config: Dict) -> tuple:
+def register_fonts(config: dict) -> tuple:
     """한글 폰트 등록.
 
     DOCX 와 동일한 폰트(``fonts.docx_fallback.body/name``)를 우선 사용한다.
@@ -247,7 +248,7 @@ def register_fonts(config: Dict) -> tuple:
     return body_font, name_font
 
 
-def find_image_file(filename: str, config: Dict) -> Optional[Path]:
+def find_image_file(filename: str, config: dict) -> Path | None:
     """이미지 파일 찾기 - 에러 처리 강화"""
     if not filename:
         return None
@@ -293,7 +294,7 @@ def get_image_size(img_path: Path, max_width: float, max_height: float) -> tuple
         return max_width * 0.8, max_height * 0.5
 
 
-def create_styles(body_font: str, name_font: str, config: Dict) -> Dict[str, ParagraphStyle]:
+def create_styles(body_font: str, name_font: str, config: dict) -> dict[str, ParagraphStyle]:
     """PDF 스타일 정의"""
     styles = getSampleStyleSheet()
     style_config = config.get('style', {})
@@ -455,8 +456,8 @@ def escape_xml(text: str) -> str:
             .replace("'", '&#39;'))
 
 
-def create_cover(story: List, config: Dict, title: str, author: str,
-                 styles: Dict[str, ParagraphStyle], page_size: tuple):
+def create_cover(story: list, config: dict, title: str, author: str,
+                 styles: dict[str, ParagraphStyle], page_size: tuple):
     """표지 생성"""
     cover_config = config.get('cover', {})
     if not cover_config.get('include', True):
@@ -500,8 +501,8 @@ def create_cover(story: List, config: Dict, title: str, author: str,
     story.append(PageBreak())
 
 
-def create_toc(story: List, scenes: List[Dict], config: Dict,
-               styles: Dict[str, ParagraphStyle]):
+def create_toc(story: list, scenes: list[dict], config: dict,
+               styles: dict[str, ParagraphStyle]):
     """목차 생성"""
     from core.renderers.toc_filter import filter_toc_scenes
 
@@ -527,9 +528,9 @@ def create_toc(story: List, scenes: List[Dict], config: Dict,
     story.append(PageBreak())
 
 
-def add_image_to_story(story: List, img_path: Path, config: Dict,
-                       styles: Dict[str, ParagraphStyle], page_size: tuple,
-                       caption: str = None):
+def add_image_to_story(story: list, img_path: Path, config: dict,
+                       styles: dict[str, ParagraphStyle], page_size: tuple,
+                       caption: str | None = None):
     """이미지를 스토리에 추가"""
     page_width, page_height = page_size
     max_width = page_width - 50*mm
@@ -548,8 +549,8 @@ def add_image_to_story(story: List, img_path: Path, config: Dict,
         logger.error(f"이미지 추가 실패: {img_path} - {e}")
 
 
-def create_pdf(entries: List[Dict], output_path: str, config: Dict,
-               title: str = "TRPG 리플레이", author: str = None) -> Optional[str]:
+def create_pdf(entries: list[dict], output_path: str, config: dict,
+               title: str = "TRPG 리플레이", author: str | None = None) -> str | None:
     """PDF 생성 - 완전한 기능"""
     if not PDF_AVAILABLE:
         logger.error("PDF 라이브러리 없음 (reportlab 설치 필요)")
@@ -563,7 +564,7 @@ def create_pdf(entries: List[Dict], output_path: str, config: Dict,
         body_font, name_font = register_fonts(config)
 
         # 페이지 크기 — DOCX 와 공용인 core.layout 헬퍼 사용
-        from core.layout import parse_page_format, get_page_format, get_page_margins_inch
+        from core.layout import get_page_format, get_page_margins_inch, parse_page_format
         page_w_mm, page_h_mm = parse_page_format(get_page_format(config))
         page_size = (page_w_mm * mm, page_h_mm * mm)
 
@@ -575,7 +576,7 @@ def create_pdf(entries: List[Dict], output_path: str, config: Dict,
         bottom_margin = margins_inch['bottom'] * inch
 
         # 문서 생성
-        doc = SimpleDocTemplate(
+        SimpleDocTemplate(
             output_path,
             pagesize=page_size,
             rightMargin=right_margin,
@@ -703,8 +704,8 @@ def create_pdf(entries: List[Dict], output_path: str, config: Dict,
         return None
 
 
-def create_pdf_simple(entries: List[Dict], output_path: str, config: Dict,
-                      title: str = "TRPG 리플레이", author: str = None) -> Optional[str]:
+def create_pdf_simple(entries: list[dict], output_path: str, config: dict,
+                      title: str = "TRPG 리플레이", author: str | None = None) -> str | None:
     """간단한 PDF 생성 (목차/표지 없음, 대용량 파일용)"""
     if not PDF_AVAILABLE:
         return None
@@ -713,7 +714,7 @@ def create_pdf_simple(entries: List[Dict], output_path: str, config: Dict,
         if author is None:
             author = config.get('metadata', {}).get('author', 'GM')
 
-        body_font, name_font = register_fonts(config)
+        body_font, _name_font = register_fonts(config)
 
         page_format = config.get('page', {}).get('format', 'A5')
         page_size = PAGE_SIZES.get(page_format, A5)

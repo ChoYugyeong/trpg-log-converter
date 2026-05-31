@@ -5,19 +5,14 @@ TRPG Log Converter Pro - 파싱 및 콘텐츠 통합 페이지
 
 import logging
 
-from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QPlainTextEdit
-)
 from PySide6.QtCore import Signal
+from PySide6.QtWidgets import QHBoxLayout, QPlainTextEdit
+from qfluentwidgets import InfoBar, InfoBarPosition, PrimaryPushButton
+from qfluentwidgets import PushButton as FluentPushButton
 
-from qfluentwidgets import (
-    PushButton as FluentPushButton, PrimaryPushButton,
-    InfoBar, InfoBarPosition
-)
-
+from ..components import CollapsibleSection, ContentCard
+from ..theme import Sizes, Spacing
 from .base_page import BasePage
-from ..components import ContentCard, CollapsibleSection
-from ..theme import Spacing, Sizes
 
 logger = logging.getLogger(__name__)
 
@@ -278,7 +273,6 @@ class ParsingContentPage(BasePage):
         template_card.add_layout(template_layout)
 
         # 룰 시스템 선택 드롭다운
-        from qfluentwidgets import ComboBox
         self.rule_system = template_card.add_dropdown(
             "룰 시스템", "rule_system",
             options=[
@@ -603,10 +597,12 @@ class ParsingContentPage(BasePage):
             if name and name in narrators:
                 entry_type = 'narration'
 
-            # 주사위 체크
-            if any(kw in content.upper() for kw in dice_keywords):
-                if '→' in content or '=' in content or '>' in content:
-                    entry_type = 'dice'
+            # 주사위 체크 — 키워드 매칭 AND 결과 기호 (→ / = / >) 가 같이 있어야 dice.
+            if (
+                any(kw in content.upper() for kw in dice_keywords)
+                and ('→' in content or '=' in content or '>' in content)
+            ):
+                entry_type = 'dice'
 
             # 이름 없는 텍스트를 나레이션으로 처리
             if not name and self.narration_no_name.isChecked():

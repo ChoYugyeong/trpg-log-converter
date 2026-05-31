@@ -53,8 +53,10 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
-      - run: pip install bandit
-      - run: bandit -r core/ -s B101 -ll
+      # bandit 1.7.5+ 부터 pyproject.toml 의 [tool.bandit] 을 자동 인식하지 못해
+      # ``-c pyproject.toml`` 로 명시 지정. 우리 skips 리스트는 거기서 관리.
+      - run: pip install "bandit[toml]"
+      - run: bandit -r core/ -s B101 -ll -c pyproject.toml
 
   # ─── Tests ───────────────────────────────────────────────────────────
   test:

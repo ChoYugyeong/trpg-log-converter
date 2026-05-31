@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Any, Dict, List
+from typing import Any
 
 from core.parsers.helpers import (
     is_dice_roll,
@@ -24,8 +24,8 @@ from core.parsers.images import extract_image_markers
 logger = logging.getLogger(__name__)
 
 
-def parse_cocofolia(soup, config: Dict[str, Any]) -> List[Dict[str, Any]]:
-    entries: List[Dict[str, Any]] = []
+def parse_cocofolia(soup, config: dict[str, Any]) -> list[dict[str, Any]]:
+    entries: list[dict[str, Any]] = []
 
     parsing_config = config.get("parsing", {})
     skip_channels = parsing_config.get("skip_channels", [])
@@ -83,7 +83,7 @@ def parse_cocofolia(soup, config: Dict[str, Any]) -> List[Dict[str, Any]]:
             text = normalize_punctuation(text)
 
         img_filename, text = extract_image_markers(text, config)
-        entry: Dict[str, Any] = {
+        entry: dict[str, Any] = {
             "type": "dialogue",
             "name": name or "",
             "content": text,

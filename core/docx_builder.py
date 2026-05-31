@@ -15,12 +15,12 @@ import os
 import tempfile
 
 from docx import Document
-from docx.shared import Pt, Inches, Mm
 from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
+from docx.shared import Inches, Mm, Pt
 
-from core.parsers.fonts import get_font_files, get_font_family_name
+from core.parsers.fonts import get_font_family_name, get_font_files
 from core.parsers.helpers import hex_to_rgb
 from core.parsers.images import find_image_file, optimize_image
 from core.parsers.pipeline import split_into_scenes
@@ -67,7 +67,7 @@ def create_docx(entries, output_path, config, title="TRPG 리플레이", author=
     # 페이지 판형 / 여백 적용 — PDF 와 동일한 core.layout 헬퍼를 사용해
     # DOCX 와 PDF 의 레이아웃이 일치하도록 보장한다.
     try:
-        from core.layout import parse_page_format, get_page_format, get_page_margins_inch
+        from core.layout import get_page_format, get_page_margins_inch, parse_page_format
         page_w_mm, page_h_mm = parse_page_format(get_page_format(config))
         margins = get_page_margins_inch(config)
         section = doc.sections[0]

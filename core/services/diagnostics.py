@@ -16,6 +16,7 @@ user controls what to share.
 """
 from __future__ import annotations
 
+import contextlib
 import io
 import json
 import logging
@@ -24,7 +25,6 @@ import sys
 import zipfile
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
 from core.paths import user_data_dir, user_logs_dir
 from core.version import __app_name__, __version__
@@ -32,7 +32,7 @@ from core.version import __app_name__, __version__
 logger = logging.getLogger(__name__)
 
 
-def build_diagnostic_zip(output_path: Optional[Path] = None) -> Path:
+def build_diagnostic_zip(output_path: Path | None = None) -> Path:
     """Collect runtime + log + settings data into a single ZIP.
 
     Args:
@@ -72,10 +72,8 @@ def build_diagnostic_zip(output_path: Optional[Path] = None) -> Path:
         crashes = user_data / "crashes"
         if crashes.exists():
             for dump in sorted(crashes.glob("crash_*.txt"))[-10:]:  # last 10
-                try:
+                with contextlib.suppress(OSError):
                     zf.writestr(f"crashes/{dump.name}", dump.read_bytes())
-                except OSError:
-                    pass
 
         # 4. gui_settings.json (redacted — strip base64 image blobs)
         settings_path = user_data / "gui_settings.json"

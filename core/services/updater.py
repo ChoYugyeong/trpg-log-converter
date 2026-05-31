@@ -43,16 +43,24 @@ import json
 import logging
 import os
 import re
-import shutil
 import ssl
 import subprocess
 import sys
 import urllib.error
 import urllib.request
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, Optional
+from typing import ClassVar
 
+# 모든 timing 상수는 core/constants.py 한 곳에서 관리. 코드 곳곳의 매직넘버를
+# 추적하지 않아도 한 파일만 보면 UX 튜닝이 가능.
+from core.constants import (
+    UPDATE_CHECK_CACHE_TTL_S as _CACHE_TTL_SECONDS,
+)
+from core.constants import (
+    UPDATE_CHECK_NETWORK_TIMEOUT_S as _TIMEOUT_SECONDS,
+)
 from core.version import __update_repo__, __version__, is_newer_than
 
 logger = logging.getLogger(__name__)
@@ -62,12 +70,6 @@ ProgressCallback = Callable[[int, int], None]  # (downloaded_bytes, total_bytes)
 _API_LATEST = "https://api.github.com/repos/{repo}/releases/latest"
 _USER_AGENT = f"TRPG-Log-Converter-Pro/{__version__} (+https://github.com/{__update_repo__})"
 
-# 모든 timing 상수는 core/constants.py 한 곳에서 관리. 코드 곳곳의 매직넘버를
-# 추적하지 않아도 한 파일만 보면 UX 튜닝이 가능.
-from core.constants import (  # noqa: E402 — 모듈 상단에 두면 순환 import 가능성
-    UPDATE_CHECK_NETWORK_TIMEOUT_S as _TIMEOUT_SECONDS,
-    UPDATE_CHECK_CACHE_TTL_S as _CACHE_TTL_SECONDS,
-)
 
 # Windows WPAD (Web Proxy Auto-Discovery) 우회용 빈 ProxyHandler.
 # urllib.request.urlopen 의 기본 opener 는 시스템 프록시를 자동 감지하는데,
@@ -101,7 +103,7 @@ class UpdateInfo:
     download_url: str                  # platform asset URL
     asset_name: str
     asset_size: int                    # bytes
-    sha256: Optional[str] = None       # parsed from release body if present
+    sha256: str | None = None       # parsed from release body if present
     published_at: str = ""
 
 
@@ -118,9 +120,9 @@ class UpdateService:
     """
 
     # Class-level cache: { repo: (timestamp, info, outcome_code) }
-    _cache: dict[str, tuple[float, Optional["UpdateInfo"], str]] = {}
+    _cache: ClassVar[dict[str, tuple[float, UpdateInfo | None, str]]] = {}
 
-    def __init__(self, repo: str = __update_repo__, app_dir: Optional[Path] = None) -> None:
+    def __init__(self, repo: str = __update_repo__, app_dir: Path | None = None) -> None:
         self.repo = repo
         self.app_dir = Path(app_dir) if app_dir else self._guess_app_dir()
         # Set by ``check()`` so the caller can distinguish "latest" vs
@@ -129,7 +131,7 @@ class UpdateService:
 
     # ── 1. Check ─────────────────────────────────────────────────────
 
-    def check(self) -> Optional[UpdateInfo]:
+    def check(self) -> UpdateInfo | None:
         """Query GitHub for the latest release. Returns None if no newer version.
 
         Network safety:
@@ -243,7 +245,7 @@ class UpdateService:
     def download(
         self,
         info: UpdateInfo,
-        on_progress: Optional[ProgressCallback] = None,
+        on_progress: ProgressCallback | None = None,
     ) -> Path:
         """Stream the asset to a local cache. Returns the path on disk.
 
@@ -311,7 +313,7 @@ class UpdateService:
 
     # ── Internals ───────────────────────────────────────────────────
 
-    def _select_platform_asset(self, assets: list) -> Optional[dict]:
+    def _select_platform_asset(self, assets: list) -> dict | None:
         """Pick the .zip asset matching this OS by filename convention."""
         if sys.platform == "win32":
             patterns = ("windows.zip", "win.zip", "win64.zip")
@@ -494,7 +496,7 @@ open "{app_root}"
 _SHA256_RE = re.compile(r"sha256\s*[:=]\s*([0-9a-f]{64})", re.IGNORECASE)
 
 
-def _extract_sha256(body: str) -> Optional[str]:
+def _extract_sha256(body: str) -> str | None:
     match = _SHA256_RE.search(body)
     return match.group(1).lower() if match else None
 
@@ -511,4 +513,4 @@ def _verify_sha256(path: Path, expected: str) -> bool:
     return True
 
 
-__all__ = ["UpdateService", "UpdateInfo", "ProgressCallback", "CheckOutcome"]
+__all__ = ["CheckOutcome", "ProgressCallback", "UpdateInfo", "UpdateService"]

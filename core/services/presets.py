@@ -3,9 +3,9 @@
 코코포리아, Roll20 등 플랫폼별 최적화 설정
 """
 
-from typing import Dict, Any, List, Optional
-from dataclasses import dataclass, field
 from copy import deepcopy
+from dataclasses import dataclass, field
+from typing import Any, ClassVar
 
 
 @dataclass
@@ -15,15 +15,15 @@ class Preset:
     display_name: str
     description: str
     platform: str
-    config: Dict[str, Any] = field(default_factory=dict)
-    tags: List[str] = field(default_factory=list)
+    config: dict[str, Any] = field(default_factory=dict)
+    tags: list[str] = field(default_factory=list)
 
 
 class PresetService:
     """플랫폼별 프리셋 관리 서비스"""
 
     # 내장 프리셋 정의
-    BUILTIN_PRESETS: Dict[str, Preset] = {
+    BUILTIN_PRESETS: ClassVar[dict[str, Preset]] = {
         # ============ 코코포리아 (Cocofolia) 프리셋 ============
         "ccfolia_default": Preset(
             name="ccfolia_default",
@@ -621,27 +621,27 @@ class PresetService:
         ),
     }
 
-    def __init__(self, custom_presets: Optional[Dict[str, Dict]] = None):
+    def __init__(self, custom_presets: dict[str, dict] | None = None):
         """
         Args:
             custom_presets: 사용자 정의 프리셋 딕셔너리
         """
-        self._presets: Dict[str, Preset] = deepcopy(self.BUILTIN_PRESETS)
+        self._presets: dict[str, Preset] = deepcopy(self.BUILTIN_PRESETS)
 
         if custom_presets:
             for name, config in custom_presets.items():
                 self.add_custom_preset(name, config)
 
-    def get_preset(self, name: str) -> Optional[Preset]:
+    def get_preset(self, name: str) -> Preset | None:
         """프리셋 조회"""
         return self._presets.get(name)
 
-    def get_preset_config(self, name: str) -> Optional[Dict[str, Any]]:
+    def get_preset_config(self, name: str) -> dict[str, Any] | None:
         """프리셋 설정값만 반환"""
         preset = self.get_preset(name)
         return deepcopy(preset.config) if preset else None
 
-    def list_presets(self, platform: Optional[str] = None) -> List[Preset]:
+    def list_presets(self, platform: str | None = None) -> list[Preset]:
         """
         프리셋 목록 반환
 
@@ -655,19 +655,19 @@ class PresetService:
 
         return presets
 
-    def get_platforms(self) -> List[str]:
+    def get_platforms(self) -> list[str]:
         """지원 플랫폼 목록"""
-        platforms = set(p.platform for p in self._presets.values())
+        platforms = {p.platform for p in self._presets.values()}
         return sorted(platforms)
 
     def add_custom_preset(
         self,
         name: str,
-        config: Dict[str, Any],
-        display_name: Optional[str] = None,
+        config: dict[str, Any],
+        display_name: str | None = None,
         description: str = "",
         platform: str = "custom",
-        tags: Optional[List[str]] = None,
+        tags: list[str] | None = None,
     ) -> None:
         """사용자 정의 프리셋 추가"""
         self._presets[name] = Preset(
@@ -688,7 +688,7 @@ class PresetService:
             return True
         return False
 
-    def apply_preset(self, base_config: Dict[str, Any], preset_name: str) -> Dict[str, Any]:
+    def apply_preset(self, base_config: dict[str, Any], preset_name: str) -> dict[str, Any]:
         """
         기본 설정에 프리셋 적용
 
@@ -715,7 +715,7 @@ class PresetService:
             else:
                 base[key] = deepcopy(value)
 
-    def export_preset(self, name: str) -> Optional[Dict[str, Any]]:
+    def export_preset(self, name: str) -> dict[str, Any] | None:
         """프리셋을 직렬화 가능한 딕셔너리로 내보내기"""
         preset = self.get_preset(name)
         if not preset:
@@ -730,7 +730,7 @@ class PresetService:
             "tags": list(preset.tags),
         }
 
-    def import_preset(self, data: Dict[str, Any]) -> bool:
+    def import_preset(self, data: dict[str, Any]) -> bool:
         """직렬화된 프리셋 가져오기"""
         try:
             name = data["name"]

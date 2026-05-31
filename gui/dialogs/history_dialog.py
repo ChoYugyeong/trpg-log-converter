@@ -20,7 +20,6 @@ import platform
 import subprocess
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QAction, QColor
@@ -40,7 +39,6 @@ from PySide6.QtWidgets import (
 )
 
 from core.services.history import ConversionRecord, HistoryManager
-
 
 # Columns shown in the table (header label, attribute, width)
 _COLUMNS = [
@@ -288,7 +286,7 @@ class HistoryDialog(QDialog):
 
     # ── Helpers ─────────────────────────────────────────────
 
-    def _record_for_row(self, row: int) -> Optional[ConversionRecord]:
+    def _record_for_row(self, row: int) -> ConversionRecord | None:
         item = self._table.item(row, 0)
         if item is None:
             return None
@@ -304,12 +302,12 @@ class HistoryDialog(QDialog):
                 if path.is_file():
                     subprocess.Popen(["explorer", "/select,", str(path)])
                 else:
-                    os.startfile(str(path))  # noqa: S606
+                    os.startfile(str(path))
             elif system == "Darwin":
                 subprocess.Popen(["open", "-R" if path.is_file() else "", str(path)])
             else:
                 subprocess.Popen(["xdg-open", str(path.parent if path.is_file() else path)])
-        except Exception:  # noqa: BLE001
+        except Exception:
             pass
 
     def _copy_to_clipboard(self, text: str) -> None:
@@ -325,7 +323,10 @@ class HistoryDialog(QDialog):
 
     def eventFilter(self, obj, event) -> bool:
         from PySide6.QtCore import QEvent
-        if obj is self._table.viewport() and event.type() == QEvent.Resize:
-            if self._empty_state.isVisible():
-                self._empty_state.setGeometry(self._table.viewport().rect())
+        if (
+            obj is self._table.viewport()
+            and event.type() == QEvent.Resize
+            and self._empty_state.isVisible()
+        ):
+            self._empty_state.setGeometry(self._table.viewport().rect())
         return super().eventFilter(obj, event)

@@ -19,18 +19,18 @@ def hm(tmp_path: Path) -> HistoryManager:
 
 
 def _add(hm: HistoryManager, **overrides) -> ConversionRecord:
-    base = dict(
-        input_file=str(Path("session.html").resolve()),
-        output_files=[str(Path("session.epub").resolve()),
+    base = {
+        "input_file": str(Path("session.html").resolve()),
+        "output_files": [str(Path("session.epub").resolve()),
                        str(Path("session.docx").resolve())],
-        output_format="both",
-        title="테스트 변환",
-        author="GM",
-        entry_count=120,
-        scene_count=4,
-        success=True,
-        duration_ms=4321,
-    )
+        "output_format": "both",
+        "title": "테스트 변환",
+        "author": "GM",
+        "entry_count": 120,
+        "scene_count": 4,
+        "success": True,
+        "duration_ms": 4321,
+    }
     base.update(overrides)
     return hm.add_record(**base)
 
@@ -57,7 +57,7 @@ class TestPersistence:
 
     def test_delete_record(self, hm: HistoryManager):
         a = _add(hm, title="A")
-        b = _add(hm, title="B")
+        _add(hm, title="B")
         assert hm.delete_record(a.id) is True
         remaining = [r.title for r in hm.get_records()]
         assert remaining == ["B"]

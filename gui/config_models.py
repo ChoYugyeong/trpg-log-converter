@@ -14,10 +14,9 @@ Pydantic V2 기반 GUI 설정 모델
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
-from pydantic import BaseModel, Field, field_validator, model_validator
-
+from pydantic import BaseModel, Field, field_validator
 
 # ──────────────────────────────────────────────
 # 1. HomeSettings - 변환 페이지 (홈)
@@ -67,7 +66,7 @@ class StyleSettings(BaseModel):
     style_name_bold: bool = Field(True, description="캐릭터 이름 굵게 표시")
     style_separator: str = Field("「 」 (꺾쇠)", description="대사 구분자 스타일")
     custom_separator_text: str = Field("", description="직접 입력 대사 구분자")
-    character_colors: Dict[str, str] = Field(
+    character_colors: dict[str, str] = Field(
         default_factory=dict,
         description="캐릭터별 색상 매핑",
     )
@@ -75,7 +74,7 @@ class StyleSettings(BaseModel):
         default_factory=ColorPalette,
         description="요소별 색상 팔레트",
     )
-    custom_theme_presets: Dict[str, Any] = Field(
+    custom_theme_presets: dict[str, Any] = Field(
         default_factory=dict,
         description="사용자 정의 테마 프리셋",
     )

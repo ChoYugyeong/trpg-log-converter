@@ -13,7 +13,6 @@ from core.parsers.images import (
     optimize_image,
 )
 
-
 # ── Fonts ────────────────────────────────────────────────────────────────
 
 def test_get_font_files_returns_empty_when_dir_missing(tmp_path: Path):
@@ -77,13 +76,13 @@ def test_extract_image_markers_finds_filename(base_config):
 
 
 def test_extract_image_markers_handles_korean(base_config):
-    fname, remaining = extract_image_markers("[삽화: scene1.jpg]", base_config)
+    fname, _remaining = extract_image_markers("[삽화: scene1.jpg]", base_config)
     assert fname == "scene1.jpg"
 
 
 def test_extract_image_markers_disabled(base_config):
     base_config["images"]["enable"] = False
-    fname, remaining = extract_image_markers("[IMG: nope.png]", base_config)
+    fname, _remaining = extract_image_markers("[IMG: nope.png]", base_config)
     assert fname is None
 
 
@@ -148,7 +147,7 @@ def test_optimize_image_resizes_when_over_limit(tmp_path: Path):
     p = tmp_path / "big.png"
     Image.new("RGB", (4000, 2000), color=(0, 255, 0)).save(p, format="PNG")
     config = {"images": {"max_resolution": 500, "jpeg_quality": 85, "convert_webp": True}}
-    data, mime, _ = optimize_image(p, config)
+    data, _mime, _ = optimize_image(p, config)
     # Re-open the optimised bytes to verify dimensions.
     out_img = Image.open(io.BytesIO(data))
     assert max(out_img.size) <= 500

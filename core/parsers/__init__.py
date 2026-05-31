@@ -13,7 +13,12 @@ Lower-level helpers live in:
     parsers.images    — image marker extraction & optimisation
     parsers.fonts     — font-file discovery
 """
-from core.parsers.helpers import (  # noqa: F401
+from core.parsers.cocofolia import parse_cocofolia
+from core.parsers.fonts import (
+    get_font_family_name,
+    get_font_files,
+)
+from core.parsers.helpers import (
     escape_html,
     extract_scene_title,
     hex_to_rgb,
@@ -27,18 +32,12 @@ from core.parsers.helpers import (  # noqa: F401
     strip_channel_prefix,
     validate_regex,
 )
-from core.parsers.images import (  # noqa: F401
+from core.parsers.images import (
     extract_image_markers,
     find_image_file,
     optimize_image,
 )
-from core.parsers.fonts import (  # noqa: F401
-    get_font_family_name,
-    get_font_files,
-)
-from core.parsers.cocofolia import parse_cocofolia  # noqa: F401
-from core.parsers.roll20 import parse_roll20  # noqa: F401
-from core.parsers.pipeline import (  # noqa: F401
+from core.parsers.pipeline import (
     filter_entries,
     merge_consecutive_dialogues,
     parse_log,
@@ -46,3 +45,4 @@ from core.parsers.pipeline import (  # noqa: F401
     split_by_scene,
     split_into_scenes,
 )
+from core.parsers.roll20 import parse_roll20

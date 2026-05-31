@@ -9,17 +9,17 @@ Lower-level helpers:
     renderers.css  — CSS stylesheet generation
     renderers.epub — HTML/EPUB-specific builders
 """
-from core.renderers.css import generate_css  # noqa: F401
-from core.renderers.epub import (  # noqa: F401
+from core.docx_builder import create_docx
+from core.renderers.css import generate_css
+from core.renderers.epub import (
     create_cover_html,
     create_epub,
     create_toc_html,
     entries_to_html,
 )
-from core.docx_builder import create_docx  # noqa: F401
 
 try:
-    from core.pdf_generator import PDF_AVAILABLE, create_pdf  # noqa: F401
+    from core.pdf_generator import PDF_AVAILABLE, create_pdf
 except ImportError:  # pragma: no cover
     PDF_AVAILABLE = False
     create_pdf = None  # type: ignore[assignment]

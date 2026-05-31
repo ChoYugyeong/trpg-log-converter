@@ -11,7 +11,6 @@ pytest.importorskip("PySide6")
 
 from PySide6.QtCore import QObject
 
-
 # ---------------------------------------------------------------------------
 # 공통 fixture
 # ---------------------------------------------------------------------------
@@ -20,8 +19,8 @@ from PySide6.QtCore import QObject
 def app_state(tmp_path):
     """AppState + ConfigManager 를 생성하고 BasePage에 주입한다."""
     from core.config_manager import ConfigManager
-    from gui.state import AppState
     from gui.pages.base_page import BasePage
+    from gui.state import AppState
 
     cm = ConfigManager(app_dir=tmp_path)
     state = AppState(cm)
@@ -210,7 +209,7 @@ class TestSaveLoad:
 
     def test_save_load(self, app_state):
         """save() 후 load() 시 변경된 값이 유지된다."""
-        state, cm = app_state
+        state, _cm = app_state
 
         # GIVEN: 값을 변경
         state.set("style_font_size", 20)
@@ -226,7 +225,7 @@ class TestSaveLoad:
 
     def test_save_persists_to_file(self, app_state, tmp_path):
         """save()가 gui_settings.json 파일에 기록한다."""
-        state, cm = app_state
+        state, _cm = app_state
 
         # WHEN: 값 설정 후 저장
         state.set("author", "테스트 저자")
@@ -236,7 +235,7 @@ class TestSaveLoad:
         import json
         settings_path = tmp_path / "gui_settings.json"
         assert settings_path.exists()
-        with open(settings_path, "r", encoding="utf-8") as f:
+        with open(settings_path, encoding="utf-8") as f:
             data = json.load(f)
         assert data.get("author") == "테스트 저자"
 

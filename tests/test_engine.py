@@ -3,14 +3,20 @@
 변환 엔진 테스트
 """
 
-import pytest
 import os
 from pathlib import Path
 
+import pytest
+
 from core.engine import (
-    parse_log, filter_entries, merge_consecutive_dialogues,
-    split_into_scenes, is_dice_roll, is_narration_user,
-    smart_split_name_content, normalize_punctuation
+    filter_entries,
+    is_dice_roll,
+    is_narration_user,
+    merge_consecutive_dialogues,
+    normalize_punctuation,
+    parse_log,
+    smart_split_name_content,
+    split_into_scenes,
 )
 
 
@@ -37,7 +43,7 @@ class TestParsing:
 
     def test_smart_split_name_content_time_format(self):
         """시간 형식 처리"""
-        name, content = smart_split_name_content("10:30 회의 시작")
+        name, _content = smart_split_name_content("10:30 회의 시작")
         # 시간 형식은 분리하지 않아야 함
         assert name is None or name != "10"
 

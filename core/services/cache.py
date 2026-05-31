@@ -6,11 +6,11 @@
 import hashlib
 import json
 import os
-import time
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
-from dataclasses import dataclass, asdict
 import threading
+import time
+from dataclasses import asdict, dataclass
+from pathlib import Path
+from typing import Any
 
 
 @dataclass
@@ -20,8 +20,8 @@ class CacheEntry:
     file_path: str
     file_size: int
     file_mtime: float
-    entries: List[dict]
-    characters: List[str]
+    entries: list[dict]
+    characters: list[str]
     entry_count: int
     cached_at: float
     config_hash: str
@@ -36,7 +36,7 @@ class CacheService:
 
     def __init__(
         self,
-        cache_dir: Optional[str] = None,
+        cache_dir: str | None = None,
         max_size_mb: int = MAX_CACHE_SIZE_MB,
         max_age_days: int = MAX_CACHE_AGE_DAYS,
         enabled: bool = True,
@@ -52,7 +52,7 @@ class CacheService:
         self._max_size_bytes = max_size_mb * 1024 * 1024
         self._max_age_seconds = max_age_days * 24 * 60 * 60
         self._enabled = enabled
-        self._memory_cache: Dict[str, CacheEntry] = {}
+        self._memory_cache: dict[str, CacheEntry] = {}
         self._lock = threading.Lock()
 
         if self._enabled:
@@ -77,16 +77,18 @@ class CacheService:
 
         return hasher.hexdigest()[:16]
 
-    def _get_config_hash(self, config: Dict[str, Any]) -> str:
+    def _get_config_hash(self, config: dict[str, Any]) -> str:
         """설정 해시 계산"""
         # 캐시에 영향을 주는 설정만 추출
         relevant_keys = ["parsing", "narration", "chapter", "content"]
         relevant_config = {k: config.get(k, {}) for k in relevant_keys}
 
         config_str = json.dumps(relevant_config, sort_keys=True)
-        return hashlib.md5(config_str.encode()).hexdigest()[:8]
+        # MD5 는 캐시 key 생성용 — security 가 아니라 빠른 fingerprint 가 목적.
+        # usedforsecurity=False 로 명시해 bandit B324 false positive 차단.
+        return hashlib.md5(config_str.encode(), usedforsecurity=False).hexdigest()[:8]
 
-    def _get_cache_key(self, file_path: str, config: Dict[str, Any]) -> str:
+    def _get_cache_key(self, file_path: str, config: dict[str, Any]) -> str:
         """캐시 키 생성"""
         file_hash = self._get_file_hash(file_path)
         config_hash = self._get_config_hash(config)
@@ -99,8 +101,8 @@ class CacheService:
     def get(
         self,
         file_path: str,
-        config: Dict[str, Any],
-    ) -> Optional[Tuple[List[dict], List[str]]]:
+        config: dict[str, Any],
+    ) -> tuple[list[dict], list[str]] | None:
         """
         캐시된 파싱 결과 조회
 
@@ -129,7 +131,7 @@ class CacheService:
             # 디스크 캐시 확인
             cache_path = self._get_cache_path(cache_key)
             if cache_path.exists():
-                with open(cache_path, "r", encoding="utf-8") as f:
+                with open(cache_path, encoding="utf-8") as f:
                     data = json.load(f)
 
                 entry = CacheEntry(**data)
@@ -151,9 +153,9 @@ class CacheService:
     def set(
         self,
         file_path: str,
-        config: Dict[str, Any],
-        entries: List[dict],
-        characters: List[str],
+        config: dict[str, Any],
+        entries: list[dict],
+        characters: list[str],
     ) -> bool:
         """
         파싱 결과 캐싱
@@ -218,10 +220,7 @@ class CacheService:
                 return False
 
             # 캐시 만료 확인
-            if time.time() - entry.cached_at > self._max_age_seconds:
-                return False
-
-            return True
+            return not time.time() - entry.cached_at > self._max_age_seconds
 
         except OSError:
             return False
@@ -270,7 +269,7 @@ class CacheService:
 
         deleted = 0
         current_time = time.time()
-        cache_files: List[Tuple[Path, float, int]] = []
+        cache_files: list[tuple[Path, float, int]] = []
 
         try:
             # 캐시 파일 목록 수집
@@ -305,7 +304,7 @@ class CacheService:
 
         return deleted
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """캐시 통계"""
         try:
             cache_files = list(self._cache_dir.glob("*.json"))

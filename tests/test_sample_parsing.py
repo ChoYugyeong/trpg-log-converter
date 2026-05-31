@@ -4,10 +4,11 @@
 Roll20 및 Cocofolia 형식 파싱 검증
 """
 
-import pytest
 from pathlib import Path
 
-from core.engine import parse_log, DEFAULT_CONFIG, deep_merge
+import pytest
+
+from core.engine import DEFAULT_CONFIG, deep_merge, parse_log
 
 
 class TestRoll20Parsing:
@@ -17,7 +18,7 @@ class TestRoll20Parsing:
     def roll20_html(self):
         """Roll20 샘플 HTML 로드"""
         sample_path = Path(__file__).parent / "samples" / "roll20_sample.html"
-        with open(sample_path, 'r', encoding='utf-8') as f:
+        with open(sample_path, encoding='utf-8') as f:
             return f.read()
 
     @pytest.fixture
@@ -47,7 +48,7 @@ class TestRoll20Parsing:
         assert len(gm_entries) > 0, "GM 메시지가 파싱되어야 함"
 
         # 플레이어 이름 확인 (괄호 포함)
-        player_names = set(e['name'] for e in entries if e['name'])
+        player_names = {e['name'] for e in entries if e['name']}
         print(f"[Roll20] Speakers found: {player_names}")
 
         assert '김철수 (전사)' in player_names or any('김철수' in n for n in player_names)
@@ -109,7 +110,7 @@ class TestCocofoliaParsing:
     def cocofolia_html(self):
         """Cocofolia 샘플 HTML 로드"""
         sample_path = Path(__file__).parent / "samples" / "cocofolia_sample.html"
-        with open(sample_path, 'r', encoding='utf-8') as f:
+        with open(sample_path, encoding='utf-8') as f:
             return f.read()
 
     @pytest.fixture
@@ -119,8 +120,9 @@ class TestCocofoliaParsing:
 
     def test_cocofolia_detection(self, cocofolia_html, config):
         """Cocofolia 형식 감지 (firing_name_ 클래스)"""
-        from bs4 import BeautifulSoup
         import re
+
+        from bs4 import BeautifulSoup
         soup = BeautifulSoup(cocofolia_html, 'html.parser')
 
         # firing_name_ 클래스 확인 (모든 span 검사)
@@ -147,7 +149,7 @@ class TestCocofoliaParsing:
         assert len(kp_entries) > 0, "KP 메시지가 파싱되어야 함"
 
         # 플레이어 이름 확인
-        player_names = set(e['name'] for e in entries if e['name'])
+        player_names = {e['name'] for e in entries if e['name']}
         print(f"[Cocofolia] Speakers found: {player_names}")
 
         # 언더스코어가 공백으로 변환되었는지 확인 또는 원본 유지
@@ -220,14 +222,14 @@ class TestFormatComparison:
     @pytest.fixture
     def roll20_entries(self):
         sample_path = Path(__file__).parent / "samples" / "roll20_sample.html"
-        with open(sample_path, 'r', encoding='utf-8') as f:
+        with open(sample_path, encoding='utf-8') as f:
             html = f.read()
         return parse_log(html, DEFAULT_CONFIG)
 
     @pytest.fixture
     def cocofolia_entries(self):
         sample_path = Path(__file__).parent / "samples" / "cocofolia_sample.html"
-        with open(sample_path, 'r', encoding='utf-8') as f:
+        with open(sample_path, encoding='utf-8') as f:
             html = f.read()
         return parse_log(html, DEFAULT_CONFIG)
 
@@ -257,7 +259,7 @@ class TestFormatComparison:
         for e in roll20_entries:
             roll20_types[e['type']] = roll20_types.get(e['type'], 0) + 1
         print(f"  Types: {roll20_types}")
-        print(f"  Sample entries:")
+        print("  Sample entries:")
         for e in roll20_entries[:3]:
             print(f"    - [{e['type']}] {e['name']}: {e['content'][:40]}...")
 
@@ -266,7 +268,7 @@ class TestFormatComparison:
         for e in cocofolia_entries:
             cocofolia_types[e['type']] = cocofolia_types.get(e['type'], 0) + 1
         print(f"  Types: {cocofolia_types}")
-        print(f"  Sample entries:")
+        print("  Sample entries:")
         for e in cocofolia_entries[:3]:
             print(f"    - [{e['type']}] {e['name']}: {e['content'][:40]}...")
 

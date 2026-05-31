@@ -42,12 +42,15 @@ APP_FOLDER_NAME = "TRPG_Converter_Pro"
 
 def user_data_dir() -> Path:
     """Per-user writable directory for settings, presets, history."""
+    # mypy 는 ``sys.platform`` 비교를 strict 하게 narrow 해서 첫 분기가 True 면
+    # 이후 분기를 unreachable 로 보지만, 이 함수는 빌드 host (지금) 와 실행 host
+    # 가 다를 수 있는 cross-platform 모듈이라 모든 분기가 의도된 경로. type: ignore.
     if sys.platform == "win32":
         base = os.environ.get("APPDATA")
         if base:
             return Path(base) / APP_FOLDER_NAME
         return Path.home() / "AppData" / "Roaming" / APP_FOLDER_NAME
-    if sys.platform == "darwin":
+    if sys.platform == "darwin":  # type: ignore[unreachable]
         return Path.home() / "Library" / "Application Support" / APP_FOLDER_NAME
     # Linux / *BSD — follow XDG Base Directory Specification.
     xdg = os.environ.get("XDG_CONFIG_HOME")
@@ -63,7 +66,7 @@ def user_cache_dir() -> Path:
         if base:
             return Path(base) / APP_FOLDER_NAME / "Cache"
         return Path.home() / "AppData" / "Local" / APP_FOLDER_NAME / "Cache"
-    if sys.platform == "darwin":
+    if sys.platform == "darwin":  # type: ignore[unreachable]
         return Path.home() / "Library" / "Caches" / APP_FOLDER_NAME
     xdg = os.environ.get("XDG_CACHE_HOME")
     if xdg:
@@ -131,12 +134,12 @@ def migrate_from_install_dir(install_dir: Path) -> None:
 
 __all__ = [
     "APP_FOLDER_NAME",
-    "user_data_dir",
-    "user_cache_dir",
-    "user_logs_dir",
+    "ensure_dirs",
     "gui_settings_path",
     "history_path",
-    "profiles_dir",
-    "ensure_dirs",
     "migrate_from_install_dir",
+    "profiles_dir",
+    "user_cache_dir",
+    "user_data_dir",
+    "user_logs_dir",
 ]

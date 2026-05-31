@@ -1,17 +1,17 @@
-import yaml
+import contextlib
 import json
 import logging
 import sys
 from pathlib import Path
-from typing import Dict, Optional
 
-from core.utils import deep_merge, safe_int, safe_float
+import yaml
+
 from core.config.defaults import (
-    CONFIG_SCHEMA_VERSION,
     DEFAULT_ENGINE_CONFIG,
     default_engine_config,
 )
 from core.config.migrations import migrate_gui_settings
+from core.utils import deep_merge, safe_float, safe_int
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +27,7 @@ def _default_gui_settings() -> dict:
     return flatten_settings(AppSettings())
 
 
-def _load_bundled_default(app_dir: Path) -> Optional[dict]:
+def _load_bundled_default(app_dir: Path) -> dict | None:
     """배포에 동봉된 default_settings.json 을 읽는다.
 
     배포자가 미리 정한 디폴트(폰트, 판형, scene_patterns, custom_css 등)를
@@ -46,7 +46,7 @@ def _load_bundled_default(app_dir: Path) -> Optional[dict]:
     for p in candidates:
         if p.exists():
             try:
-                with open(p, "r", encoding="utf-8") as f:
+                with open(p, encoding="utf-8") as f:
                     data = json.load(f)
                 data.pop("_meta", None)
                 logger.info("배포 기본 설정 로드: %s (%d 키)", p.name, len(data))
@@ -66,7 +66,7 @@ class ConfigManager:
     # Backwards-compatible alias — 새 코드는 core.config.default_engine_config() 사용
     DEFAULT_CONFIG = DEFAULT_ENGINE_CONFIG
 
-    def __init__(self, app_dir: Optional[Path] = None) -> None:
+    def __init__(self, app_dir: Path | None = None) -> None:
         if app_dir is None:
             self.app_dir = Path(__file__).parent.parent
         else:
@@ -91,10 +91,10 @@ class ConfigManager:
             migrate_from_install_dir(self.app_dir)
             self.settings_path: Path = gui_settings_path()
         else:
-            self.settings_path: Path = self.app_dir / "gui_settings.json"
+            self.settings_path = self.app_dir / "gui_settings.json"
 
-        self.yaml_config: Dict = self._load_yaml_config()
-        self.gui_settings: Dict = self._load_gui_settings()
+        self.yaml_config: dict = self._load_yaml_config()
+        self.gui_settings: dict = self._load_gui_settings()
 
         # 서비스 초기화 (지연 로딩)
         self._history_manager = None
@@ -122,17 +122,17 @@ class ConfigManager:
                 logger.warning("ProfileManager를 로드할 수 없습니다")
         return self._profile_manager
 
-    def _load_yaml_config(self) -> Dict:
+    def _load_yaml_config(self) -> dict:
         """config.yaml 로드"""
         if self.config_path.exists():
             try:
-                with open(self.config_path, 'r', encoding='utf-8') as f:
+                with open(self.config_path, encoding='utf-8') as f:
                     return yaml.safe_load(f) or {}
-            except (IOError, yaml.YAMLError) as e:
+            except (OSError, yaml.YAMLError) as e:
                 logger.warning("config.yaml 로드 실패: %s", e)
         return {}
 
-    def _load_gui_settings(self) -> Dict:
+    def _load_gui_settings(self) -> dict:
         """GUI 설정 로드 — 파일을 읽고 스키마 마이그레이션만 수행한다.
 
         우선순위:
@@ -142,7 +142,7 @@ class ConfigManager:
         """
         if self.settings_path.exists():
             try:
-                with open(self.settings_path, 'r', encoding='utf-8') as f:
+                with open(self.settings_path, encoding='utf-8') as f:
                     loaded = json.load(f)
                 loaded = migrate_gui_settings(loaded)
                 # 기본값과 병합: 사용자 파일에 없는 신규 키에 기본값을 채워준다
@@ -165,7 +165,7 @@ class ConfigManager:
     # 덮어쓴 경우 직전 N개로 복구 가능하도록.
     _BACKUP_SLOTS = 5
 
-    def save_gui_settings(self, settings: Dict) -> None:
+    def save_gui_settings(self, settings: dict) -> None:
         """GUI 설정 저장 + 직전 버전을 ``backups/`` 폴더로 회전 보관."""
         # 1) 직전 settings 가 있으면 rotating backup 으로 보존.
         if self.settings_path.exists():
@@ -209,10 +209,8 @@ class ConfigManager:
             reverse=True,
         )
         for old in backups[self._BACKUP_SLOTS:]:
-            try:
+            with contextlib.suppress(OSError):
                 old.unlink()
-            except OSError:
-                pass
 
     def list_backups(self) -> list[Path]:
         """현재 보관 중인 백업 파일 목록 (최신순)."""
@@ -225,22 +223,22 @@ class ConfigManager:
             reverse=True,
         )
 
-    def restore_backup(self, backup_path: Path) -> Dict:
+    def restore_backup(self, backup_path: Path) -> dict:
         """백업 파일을 현재 설정으로 복원하고 새 dict 반환."""
-        with open(backup_path, "r", encoding="utf-8") as f:
+        with open(backup_path, encoding="utf-8") as f:
             restored = json.load(f)
         self.save_gui_settings(restored)
         return restored
 
-    def get_gui_settings(self) -> Dict:
+    def get_gui_settings(self) -> dict:
         """GUI 설정 반환"""
         return self.gui_settings
 
-    def get_default_gui_settings(self) -> Dict:
+    def get_default_gui_settings(self) -> dict:
         """기본 GUI 설정 반환 (Pydantic AppSettings 기반)"""
         return _default_gui_settings()
 
-    def build_engine_config(self, gui_settings: Optional[Dict] = None) -> Dict:
+    def build_engine_config(self, gui_settings: dict | None = None) -> dict:
         """GUI 설정을 엔진이 이해하는 config 형식으로 변환"""
         if gui_settings is None:
             gui_settings = self.gui_settings
@@ -438,7 +436,7 @@ class ConfigManager:
         """엔진 config 반환 (호환성 유지)"""
         return self.build_engine_config()
 
-    def build_engine_config_with_profile(self, gui_settings=None, profile_id: str = None) -> Dict:
+    def build_engine_config_with_profile(self, gui_settings=None, profile_id: str | None = None) -> dict:
         """프로필을 적용한 엔진 config 생성"""
         config = self.build_engine_config(gui_settings)
 
@@ -450,8 +448,8 @@ class ConfigManager:
     def record_conversion(self, input_file: str, output_files: list,
                           output_format: str, title: str, author: str,
                           entry_count: int, scene_count: int,
-                          success: bool, error_message: str = None,
-                          duration_ms: int = 0, profile_used: str = None):
+                          success: bool, error_message: str | None = None,
+                          duration_ms: int = 0, profile_used: str | None = None):
         """변환 기록 추가"""
         if self.history:
             return self.history.add_record(
@@ -475,7 +473,7 @@ class ConfigManager:
             return self.history.get_recent_files(limit)
         return []
 
-    def get_conversion_stats(self) -> Dict:
+    def get_conversion_stats(self) -> dict:
         """변환 통계"""
         if self.history:
             return self.history.get_stats()

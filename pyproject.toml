@@ -198,3 +198,10 @@ ignore = [
 quote-style = "double"
 indent-style = "space"
 docstring-code-format = true
+
+[tool.bandit]
+# B608: bandit treats Windows batch scripts (cmd.exe SET = "..." pattern) as
+#       potential SQL injection. updater._apply_windows assembles an applier.bat
+#       from already-validated install paths; not SQL. Skip globally — repo has
+#       no actual SQL anywhere.
+skips = ["B608"]

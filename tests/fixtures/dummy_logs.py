@@ -35,9 +35,8 @@ from __future__ import annotations
 
 import random
 import textwrap
+from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Iterable
-
 
 # ---------------------------------------------------------------------------
 # Cocofolia (firing_name_* spans)

@@ -4,6 +4,7 @@ macOS Human Interface Guidelines 기반
 """
 
 from pathlib import Path
+from typing import ClassVar
 
 
 class MacOSPalette:
@@ -51,7 +52,7 @@ class Theme:
     """앱 전체 테마 관리"""
 
     # 테마 프리셋
-    PRESETS = {
+    PRESETS: ClassVar[dict] = {
         "Tokyo Night": {
             "colors": ["#1a1b26", "#24283b", "#414868", "#7aa2f7", "#bb9af7",
                        "#7dcfff", "#9ece6a", "#e0af68", "#f7768e", "#c0caf5"],
@@ -90,7 +91,7 @@ class Theme:
     }
 
     # 캐릭터 색상 팔레트
-    CHARACTER_COLORS = [
+    CHARACTER_COLORS: ClassVar[list] = [
         "#007AFF",  # Blue
         "#34C759",  # Green
         "#FF9500",  # Orange

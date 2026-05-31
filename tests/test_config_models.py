@@ -8,22 +8,21 @@ AppSettings, flatten_settings, unflatten_settings 등
 import pytest
 
 from gui.config_models import (
-    AppSettings,
-    HomeSettings,
-    CoverSettings,
-    ColorPalette,
-    StyleSettings,
-    FontSettings,
-    DecorationSettings,
-    ContentFilterSettings,
-    SceneSplitSettings,
-    ParsingRulesSettings,
-    OutputSettings,
     AdvancedOptions,
+    AppSettings,
+    ColorPalette,
+    ContentFilterSettings,
+    CoverSettings,
+    DecorationSettings,
+    FontSettings,
+    HomeSettings,
+    OutputSettings,
+    ParsingRulesSettings,
+    SceneSplitSettings,
+    StyleSettings,
     flatten_settings,
     unflatten_settings,
 )
-
 
 # ===================================================================
 # 1. 기본값 유효성

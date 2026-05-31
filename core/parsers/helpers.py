@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from docx.shared import RGBColor
 
@@ -31,7 +31,7 @@ def hex_to_rgb(hex_color: str) -> RGBColor:
     return RGBColor(int(hex_color[0:2], 16), int(hex_color[2:4], 16), int(hex_color[4:6], 16))
 
 
-def is_narration_user(name: str, config: Dict[str, Any]) -> bool:
+def is_narration_user(name: str, config: dict[str, Any]) -> bool:
     default_users = [
         "GM", "KP", "DM", "System", "시스템", "나레이션",
         "Narrator", "진행자", "Storyteller", "Keeper",
@@ -41,7 +41,7 @@ def is_narration_user(name: str, config: Dict[str, Any]) -> bool:
     return name.lower().strip() in [u.lower() for u in narration_users]
 
 
-def match_custom_style(content: str, config: Dict[str, Any]) -> Optional[str]:
+def match_custom_style(content: str, config: dict[str, Any]) -> str | None:
     for _, style_config in config.get("custom_styles", {}).items():
         pattern = style_config.get("pattern", "")
         if pattern:
@@ -74,9 +74,7 @@ def is_dice_roll(text: str) -> bool:
         r"(성공|실패|critical|crit|fumble|대성공|대실패)", text, re.IGNORECASE
     ):
         return True
-    if re.search(r"\d+d\d+\s*[+\-]?\s*\d*\s*=\s*\d+", text, re.IGNORECASE):
-        return True
-    return False
+    return bool(re.search(r"\d+d\d+\s*[+\-]?\s*\d*\s*=\s*\d+", text, re.IGNORECASE))
 
 
 def validate_regex(pattern: str) -> bool:
@@ -88,7 +86,7 @@ def validate_regex(pattern: str) -> bool:
         return False
 
 
-def is_scene_marker(text: str, patterns: List[str]) -> bool:
+def is_scene_marker(text: str, patterns: list[str]) -> bool:
     for pattern in patterns:
         try:
             if re.search(pattern, text, re.IGNORECASE):
@@ -100,7 +98,7 @@ def is_scene_marker(text: str, patterns: List[str]) -> bool:
     return False
 
 
-def extract_scene_title(text: str) -> Optional[str]:
+def extract_scene_title(text: str) -> str | None:
     text = text.strip()
     text = re.sub(r"^[─━\-=\*]+\s*", "", text)
     text = re.sub(r"\s*[─━\-=\*]+$", "", text)
@@ -115,7 +113,7 @@ _DEFAULT_SCENE_END_PATTERNS = (
 )
 
 
-def is_scene_end(text: str, patterns: Optional[List[str]] = None) -> bool:
+def is_scene_end(text: str, patterns: list[str] | None = None) -> bool:
     """씬 종료 마커 여부. 본문 중에 '종료' 가 들어가는 일반 문장은 제외하기 위해
     줄 시작에 ㅡ/─/대시 같은 구분 기호가 와야 매칭된다.
     """
@@ -135,7 +133,7 @@ def is_scene_end(text: str, patterns: Optional[List[str]] = None) -> bool:
     return False
 
 
-def strip_channel_prefix(text: str) -> Tuple[str, Optional[str]]:
+def strip_channel_prefix(text: str) -> tuple[str, str | None]:
     """채널 접두사 제거 (예: [메인], [잡담], [정보] 등).
 
     이미지 마커(``[IMG: x.png]``, ``[삽화: y.jpg]``)는 콜론을 포함하므로
@@ -147,7 +145,7 @@ def strip_channel_prefix(text: str) -> Tuple[str, Optional[str]]:
     return text, None
 
 
-def smart_split_name_content(text: str, max_name_length: int = 50) -> Tuple[Optional[str], str]:
+def smart_split_name_content(text: str, max_name_length: int = 50) -> tuple[str | None, str]:
     """이름과 내용을 지능적으로 분리 (복잡한 이름 처리)."""
     if ":" not in text:
         return None, text
@@ -163,7 +161,7 @@ def smart_split_name_content(text: str, max_name_length: int = 50) -> Tuple[Opti
             return name_part, text[pos + 1:].strip()
         return None, text
 
-    best_pos: Optional[int] = None
+    best_pos: int | None = None
     best_score = -1
 
     for pos in colon_positions:

@@ -50,7 +50,7 @@ class TestCheck:
 
     def test_returns_info_when_remote_is_newer(self, monkeypatch):
         from core.version import version_tuple
-        major, minor, patch_v = version_tuple()
+        major, _minor, _patch_v = version_tuple()
         future_tag = f"v{major + 1}.0.0"
         platform_asset = (
             "TRPG_Converter_Pro_Windows.zip" if sys.platform == "win32"

@@ -3,33 +3,27 @@ TRPG Log Converter Pro - 메인 윈도우
 QFluentWidgets 기반 현대적 UI
 """
 
-from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QStackedWidget, QMessageBox,
-    QSplitter, QFileDialog, QFrame
-)
-from PySide6.QtCore import QObject, Qt, QThread, QTimer, Signal
-import threading
-from PySide6.QtGui import QIcon, QShortcut, QKeySequence
-from pathlib import Path
-import os
+import contextlib
 import json
 import logging
+import os
+import threading
+from pathlib import Path
 
-logger = logging.getLogger(__name__)
-
-from qfluentwidgets import (
-    FluentWindow, NavigationItemPosition, FluentIcon,
-    setTheme, Theme, setThemeColor, InfoBar, InfoBarPosition
-)
+from PySide6.QtCore import QObject, Qt, QThread, QTimer, Signal
+from PySide6.QtGui import QKeySequence, QShortcut
+from PySide6.QtWidgets import QFileDialog, QFrame, QMessageBox, QSplitter, QVBoxLayout
 from qfluentwidgets import FluentIcon as FIF
+from qfluentwidgets import (
+    FluentWindow,
+    InfoBar,
+    InfoBarPosition,
+    NavigationItemPosition,
+    Theme,
+    setTheme,
+    setThemeColor,
+)
 
-from .pages.home_page import HomePage
-from .pages.format_style_page import FormatStylePage
-from .pages.parsing_content_page import ParsingContentPage
-from .pages.advanced_settings_page import AdvancedSettingsPage
-from .components import InspectorBar, DocumentPreview
-from .state import AppState
-from core.services import CacheService, CharacterColorService
 from core.constants import (
     CONVERT_WORKER_SHUTDOWN_TIMEOUT_MS,
     INFOBAR_DURATION_ATTENTION_MS,
@@ -43,6 +37,16 @@ from core.constants import (
     UPDATE_THREAD_SHUTDOWN_TIMEOUT_MS,
     WELCOME_DIALOG_DELAY_MS,
 )
+from core.services import CacheService
+
+from .components import DocumentPreview
+from .pages.advanced_settings_page import AdvancedSettingsPage
+from .pages.format_style_page import FormatStylePage
+from .pages.home_page import HomePage
+from .pages.parsing_content_page import ParsingContentPage
+from .state import AppState
+
+logger = logging.getLogger(__name__)
 
 
 class RecentFilesManager:
@@ -185,7 +189,7 @@ class ConversionWorker(QThread):
                 entries = engine.parse_file(file_path)
 
                 if self.cache_service and entries:
-                    characters = list(set(e.get('name', '') for e in entries if e.get('name')))
+                    characters = list({e.get('name', '') for e in entries if e.get('name')})
                     self.cache_service.set(file_path, config, entries, characters)
 
                 return entries
@@ -211,11 +215,13 @@ class ConversionWorker(QThread):
                     if self.output_format in ['both', 'all', 'epub']:
                         out = engine.create_epub(all_entries, os.path.join(output_dir, f"{base}.epub"), self.title, author, progress_callback=engine_progress)
                         results.append(out)
-                        if out: merged_outputs.append(str(out))
+                        if out:
+                            merged_outputs.append(str(out))
                     if self.output_format in ['both', 'all', 'docx']:
                         out = engine.create_docx(all_entries, os.path.join(output_dir, f"{base}.docx"), self.title, author, progress_callback=engine_progress)
                         results.append(out)
-                        if out: merged_outputs.append(str(out))
+                        if out:
+                            merged_outputs.append(str(out))
                     if self.output_format in ['all', 'pdf']:
                         pdf_result = engine.create_pdf(all_entries, os.path.join(output_dir, f"{base}.pdf"), self.title, author)
                         if pdf_result:
@@ -274,11 +280,13 @@ class ConversionWorker(QThread):
                         if self.output_format in ['both', 'all', 'epub']:
                             out = engine.create_epub(entries, os.path.join(output_dir, f"{base}.epub"), file_title, author, progress_callback=engine_progress)
                             results.append(out)
-                            if out: file_outputs.append(str(out))
+                            if out:
+                                file_outputs.append(str(out))
                         if self.output_format in ['both', 'all', 'docx']:
                             out = engine.create_docx(entries, os.path.join(output_dir, f"{base}.docx"), file_title, author, progress_callback=engine_progress)
                             results.append(out)
-                            if out: file_outputs.append(str(out))
+                            if out:
+                                file_outputs.append(str(out))
                         if self.output_format in ['all', 'pdf']:
                             pdf_result = engine.create_pdf(entries, os.path.join(output_dir, f"{base}.pdf"), file_title, author)
                             if pdf_result:
@@ -312,11 +320,13 @@ class ConversionWorker(QThread):
                         if self.output_format in ['both', 'all', 'epub']:
                             out = engine.create_epub(entries, os.path.join(output_dir, f"{base}.epub"), self.title, author, progress_callback=engine_progress)
                             results.append(out)
-                            if out: single_outputs.append(str(out))
+                            if out:
+                                single_outputs.append(str(out))
                         if self.output_format in ['both', 'all', 'docx']:
                             out = engine.create_docx(entries, os.path.join(output_dir, f"{base}.docx"), self.title, author, progress_callback=engine_progress)
                             results.append(out)
-                            if out: single_outputs.append(str(out))
+                            if out:
+                                single_outputs.append(str(out))
                         if self.output_format in ['all', 'pdf']:
                             pdf_result = engine.create_pdf(entries, os.path.join(output_dir, f"{base}.pdf"), self.title, author)
                             if pdf_result:
@@ -344,7 +354,7 @@ class ConversionWorker(QThread):
             for rec in self.last_records:
                 rec["duration_ms"] = duration_ms
             self.finished.emit(True, f"변환 완료!\n{success_count}개 파일 생성\n출력 위치: {output_dir}")
-        
+
         except InterruptedError:
             logger.info("변환 작업이 사용자에 의해 중단되었습니다.")
             self.finished.emit(False, "작업이 중단되었습니다.")
@@ -363,11 +373,11 @@ class ConversionWorker(QThread):
                 self.finished.emit(False, e.user_message)
             else:
                 self.finished.emit(False, f"변환 실패: {e}")
-    
+
     def stop(self):
         """스레드에 중지 신호를 보냅니다 (스레드 안전)."""
         self._stop_event.set()
-        
+
 class MainWindow(FluentWindow):
     """메인 애플리케이션 윈도우 - Fluent Design"""
 
@@ -427,6 +437,7 @@ class MainWindow(FluentWindow):
         # dev (frozen=False) 에서는 적용 스크립트가 의미 없으므로 frozen 빌드에서만 실행.
         # 설정에서 끄려면 gui_settings['updates_check_on_startup'] = False.
         import sys
+
         from core.version import __update_repo__
 
         # repo 자체가 바뀌었으면 (private→public 마이그레이션 등) 이전에
@@ -450,7 +461,6 @@ class MainWindow(FluentWindow):
             except Exception:
                 logger.exception("Failed to persist _updates_repo_seen marker")
 
-        from core.constants import UPDATE_CHECK_STARTUP_DELAY_MS, WELCOME_DIALOG_DELAY_MS
         if (
             getattr(sys, 'frozen', False)
             and gui_settings.get('updates_check_on_startup', True)
@@ -771,7 +781,7 @@ class MainWindow(FluentWindow):
             return
 
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, encoding='utf-8') as f:
                 imported = json.load(f)
             imported.pop('_meta', None)
 
@@ -903,14 +913,10 @@ class MainWindow(FluentWindow):
         worker = self._worker
         if worker is None:
             return
-        try:
+        with contextlib.suppress(TypeError, RuntimeError):
             worker.progress.disconnect(self._on_conversion_progress)
-        except (TypeError, RuntimeError):
-            pass
-        try:
+        with contextlib.suppress(TypeError, RuntimeError):
             worker.finished.disconnect(self._on_conversion_finished)
-        except (TypeError, RuntimeError):
-            pass
         if not worker.isRunning():
             worker.deleteLater()
             self._worker = None
@@ -997,6 +1003,7 @@ class MainWindow(FluentWindow):
         """
         from PySide6.QtCore import QUrl
         from PySide6.QtGui import QDesktopServices
+
         from core.version import __homepage__
         QDesktopServices.openUrl(QUrl(f"{__homepage__}/releases/latest"))
 
@@ -1033,11 +1040,6 @@ class MainWindow(FluentWindow):
         네트워크 요청은 별도 스레드에서 — UI 가 멈추지 않도록.
         """
         from core.services.updater import UpdateService
-        from core.constants import (
-            INFOBAR_DURATION_TRANSIENT_MS,
-            INFOBAR_STICKY,
-            UPDATE_CHECK_HARD_TIMEOUT_MS,
-        )
 
         logger.info("[update] _check_for_updates entry (silent=%s)", silent)
 
@@ -1107,7 +1109,6 @@ class MainWindow(FluentWindow):
     def _on_update_check_timeout(self, silent: bool) -> None:
         """Hard-timeout 발동 — worker 가 응답 없음. UI 를 항상 깨끗하게 복구."""
         from core.constants import INFOBAR_DURATION_WARNING_MS
-        from core.services.updater import CheckOutcome
         thread = getattr(self, "_update_check_thread", None)
         if thread is None or not thread.isRunning():
             # 결과가 timeout 직전에 도착했으면 아무것도 안 해도 됨.
@@ -1316,9 +1317,7 @@ class MainWindow(FluentWindow):
         self._update_check_thread = None
         self._update_check_worker = None
 
-        try:
+        with contextlib.suppress(TypeError, RuntimeError):
             self.app_state.group_changed.disconnect(self._on_state_group_changed)
-        except (TypeError, RuntimeError):
-            pass
 
         event.accept()

@@ -8,7 +8,6 @@ from __future__ import annotations
 import platform
 import sys
 
-from PySide6.QtCore import Qt
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import (
     QDialog,
@@ -21,13 +20,11 @@ from PySide6.QtWidgets import (
 
 from core.version import (
     __app_name__,
-    __author__,
     __copyright__,
     __homepage__,
     __license__,
     __version__,
 )
-
 
 _CREDITS = """\
 오픈소스 라이브러리
@@ -169,7 +166,7 @@ class AboutDialog(QDialog):
         try:
             from core.services.diagnostics import build_diagnostic_zip
             path = build_diagnostic_zip()
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             QMessageBox.warning(
                 self, "진단 정보 내보내기 실패",
                 f"진단 ZIP 을 만들지 못했어요:\n{exc}",
@@ -189,5 +186,5 @@ class AboutDialog(QDialog):
         try:
             from PySide6.QtCore import QUrl
             QDesktopServices.openUrl(QUrl.fromLocalFile(str(path.parent)))
-        except Exception:  # noqa: BLE001
+        except Exception:
             pass

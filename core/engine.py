@@ -14,13 +14,14 @@ from __future__ import annotations
 
 import logging
 import os
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
 
 import yaml
 
 from core.config.defaults import DEFAULT_ENGINE_CONFIG, default_engine_config
-from core.utils import deep_merge
+from core.docx_builder import add_paragraph_spacing, set_run_font  # noqa: F401
 
 # ── Re-exports for backwards compatibility ────────────────────────────────
 # Old call sites import these directly from core.engine; keep that working.
@@ -57,7 +58,7 @@ from core.renderers import (  # noqa: F401
     entries_to_html,
     generate_css,
 )
-from core.docx_builder import add_paragraph_spacing, set_run_font  # noqa: F401
+from core.utils import deep_merge
 
 logger = logging.getLogger(__name__)
 
@@ -68,11 +69,11 @@ ProgressCallback = Callable[[int, int, str], None]
 DEFAULT_CONFIG = DEFAULT_ENGINE_CONFIG
 
 
-def load_config(config_path: Optional[str | Path] = None) -> Dict[str, Any]:
+def load_config(config_path: str | Path | None = None) -> dict[str, Any]:
     config = default_engine_config()
     resolved = Path(config_path) if config_path else Path(__file__).parent / "config.yaml"
     if resolved.exists():
-        with open(resolved, "r", encoding="utf-8") as f:
+        with open(resolved, encoding="utf-8") as f:
             user_config = yaml.safe_load(f)
             if user_config:
                 config = deep_merge(config, user_config)
@@ -87,34 +88,34 @@ class ConversionEngine:
     so callers don't thread config through every call.
     """
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None) -> None:
-        self.config: Dict[str, Any] = config or load_config()
+    def __init__(self, config: dict[str, Any] | None = None) -> None:
+        self.config: dict[str, Any] = config or load_config()
 
-    def parse_file(self, file_path: str) -> List[Dict[str, Any]]:
+    def parse_file(self, file_path: str) -> list[dict[str, Any]]:
         from core.text_parser import parse_file as text_parse_file
-        result: List[Dict[str, Any]] = text_parse_file(file_path, self.config)
+        result: list[dict[str, Any]] = text_parse_file(file_path, self.config)
         return result
 
-    def parse_html(self, html_content: str) -> List[Dict[str, Any]]:
-        result: List[Dict[str, Any]] = parse_log(html_content, self.config)
+    def parse_html(self, html_content: str) -> list[dict[str, Any]]:
+        result: list[dict[str, Any]] = parse_log(html_content, self.config)
         return result
 
-    def filter(self, entries: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def filter(self, entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
         return filter_entries(entries, self.config)
 
-    def merge(self, entries: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def merge(self, entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
         return merge_consecutive_dialogues(entries, self.config)
 
-    def split_scenes(self, entries: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def split_scenes(self, entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
         return split_into_scenes(entries, self.config)
 
     def create_epub(
         self,
-        entries: List[Dict[str, Any]],
+        entries: list[dict[str, Any]],
         output_path: str,
         title: str = "TRPG 리플레이",
-        author: Optional[str] = None,
-        progress_callback: Optional[ProgressCallback] = None,
+        author: str | None = None,
+        progress_callback: ProgressCallback | None = None,
     ) -> str:
         return create_epub(
             entries, output_path, self.config, title, author,
@@ -123,11 +124,11 @@ class ConversionEngine:
 
     def create_docx(
         self,
-        entries: List[Dict[str, Any]],
+        entries: list[dict[str, Any]],
         output_path: str,
         title: str = "TRPG 리플레이",
-        author: Optional[str] = None,
-        progress_callback: Optional[ProgressCallback] = None,
+        author: str | None = None,
+        progress_callback: ProgressCallback | None = None,
     ) -> str:
         result: str = create_docx(
             entries, output_path, self.config, title, author,
@@ -137,13 +138,14 @@ class ConversionEngine:
 
     def create_pdf(
         self,
-        entries: List[Dict[str, Any]],
+        entries: list[dict[str, Any]],
         output_path: str,
         title: str = "TRPG 리플레이",
-        author: Optional[str] = None,
-    ) -> Optional[str]:
+        author: str | None = None,
+    ) -> str | None:
         try:
-            from core.pdf_generator import PDF_AVAILABLE, create_pdf as pdf_create
+            from core.pdf_generator import PDF_AVAILABLE
+            from core.pdf_generator import create_pdf as pdf_create
             if PDF_AVAILABLE:
                 return pdf_create(entries, output_path, self.config, title, author)
             return None
@@ -154,12 +156,12 @@ class ConversionEngine:
     def convert_file(
         self,
         input_path: str,
-        output_path: Optional[str] = None,
-        title: Optional[str] = None,
-        author: Optional[str] = None,
-        format: Optional[str] = None,
-        progress_callback: Optional[ProgressCallback] = None,
-    ) -> List[str]:
+        output_path: str | None = None,
+        title: str | None = None,
+        author: str | None = None,
+        format: str | None = None,
+        progress_callback: ProgressCallback | None = None,
+    ) -> list[str]:
         return convert(
             input_path, output_path, title, author, self.config, format,
             progress_callback=progress_callback,
@@ -167,17 +169,17 @@ class ConversionEngine:
 
     def batch_convert(
         self,
-        input_files: List[str],
-        output_dir: Optional[str] = None,
-        title_prefix: Optional[str] = None,
-        author: Optional[str] = None,
-        format: Optional[str] = None,
-        progress_callback: Optional[ProgressCallback] = None,
-    ) -> List[Dict[str, Any]]:
+        input_files: list[str],
+        output_dir: str | None = None,
+        title_prefix: str | None = None,
+        author: str | None = None,
+        format: str | None = None,
+        progress_callback: ProgressCallback | None = None,
+    ) -> list[dict[str, Any]]:
         if output_dir:
             self.config["paths"]["output_dir"] = output_dir
 
-        results: List[Dict[str, Any]] = []
+        results: list[dict[str, Any]] = []
         for i, file_path in enumerate(input_files, 1):
             base = os.path.splitext(os.path.basename(file_path))[0]
             try:
@@ -190,7 +192,7 @@ class ConversionEngine:
                 )
                 results.append({"file": file_path, "success": True, "outputs": output_paths})
                 logger.info("[%d/%d] OK: %s", i, len(input_files), base)
-            except Exception as e:  # noqa: BLE001
+            except Exception as e:
                 results.append({"file": file_path, "success": False, "error": str(e)})
                 logger.error("[%d/%d] FAIL: %s: %s", i, len(input_files), base, e)
         return results
@@ -198,13 +200,13 @@ class ConversionEngine:
 
 def convert(
     input_path: str,
-    output_path: Optional[str] = None,
-    title: Optional[str] = None,
-    author: Optional[str] = None,
-    config: Optional[Dict[str, Any]] = None,
-    format: Optional[str] = None,
-    progress_callback: Optional[ProgressCallback] = None,
-) -> List[str]:
+    output_path: str | None = None,
+    title: str | None = None,
+    author: str | None = None,
+    config: dict[str, Any] | None = None,
+    format: str | None = None,
+    progress_callback: ProgressCallback | None = None,
+) -> list[str]:
     """Convert one log file into the requested output format(s)."""
     if config is None:
         config = load_config()
@@ -234,7 +236,7 @@ def convert(
     entries = merge_consecutive_dialogues(entries, config)
 
     if logger.isEnabledFor(logging.DEBUG):
-        stats: Dict[str, int] = {}
+        stats: dict[str, int] = {}
         for e in entries:
             stats[e["type"]] = stats.get(e["type"], 0) + 1
         logger.debug(
@@ -243,7 +245,7 @@ def convert(
         )
 
     output_format = format or config.get("output_format", "both")
-    results: List[str] = []
+    results: list[str] = []
 
     if output_format in ("epub", "both", "all"):
         if progress_callback:
@@ -276,12 +278,12 @@ def convert(
 
 
 def batch_convert(
-    input_dir: Optional[str] = None,
-    output_dir: Optional[str] = None,
-    config: Optional[Dict[str, Any]] = None,
-    format: Optional[str] = None,
-    progress_callback: Optional[ProgressCallback] = None,
-) -> List[str]:
+    input_dir: str | None = None,
+    output_dir: str | None = None,
+    config: dict[str, Any] | None = None,
+    format: str | None = None,
+    progress_callback: ProgressCallback | None = None,
+) -> list[str]:
     """Convert every HTML file in ``input_dir`` to the configured output format(s)."""
     if config is None:
         config = load_config()
@@ -296,12 +298,12 @@ def batch_convert(
 
     logger.info("Batch converting %d files", len(html_files))
 
-    results: List[str] = []
+    results: list[str] = []
     for html_file in sorted(html_files):
         try:
             output_paths = convert(str(html_file), config=config, format=format)
             results.extend(output_paths)
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:
             logger.error("Conversion error: %s - %s", html_file, e)
 
     logger.info("Batch complete: %d files created", len(results))

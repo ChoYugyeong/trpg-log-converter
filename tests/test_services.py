@@ -3,17 +3,25 @@
 서비스 모듈 테스트
 """
 
-import pytest
-import tempfile
 import shutil
+import tempfile
 from pathlib import Path
 
-from core.services.history import HistoryManager, ConversionRecord
-from core.services.profiles import ProfileManager, Profile
+import pytest
+
 from core.services.errors import (
-    ErrorHandler, ConversionError, FileError, ParseError, ExportError,
-    validate_file_path, validate_config, ErrorSeverity, safe_operation
+    ConversionError,
+    ErrorHandler,
+    ErrorSeverity,
+    ExportError,
+    FileError,
+    ParseError,
+    safe_operation,
+    validate_config,
+    validate_file_path,
 )
+from core.services.history import ConversionRecord, HistoryManager
+from core.services.profiles import Profile, ProfileManager
 
 
 class TestHistoryManager:

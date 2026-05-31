@@ -4,7 +4,7 @@
 """
 
 import logging
-from typing import Dict, List
+
 from pydantic import BaseModel, Field, field_validator
 
 logger = logging.getLogger(__name__)
@@ -38,7 +38,7 @@ class TocConfig(BaseModel):
     include: bool = True
     title: str = '목차'
     mode: str = 'auto'
-    entries: List = Field(default_factory=list)
+    entries: list = Field(default_factory=list)
     style: str = 'simple'
 
 
@@ -46,8 +46,8 @@ class FontsConfig(BaseModel):
     name_font: str = "'Pretendard', sans-serif"
     body_font: str = "'Nanum Myeongjo', serif"
     pretendard_cdn: str = "https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css"
-    embed: Dict = Field(default_factory=dict)
-    docx_fallback: Dict = Field(default_factory=lambda: {'body': '맑은 고딕', 'name': '맑은 고딕'})
+    embed: dict = Field(default_factory=dict)
+    docx_fallback: dict = Field(default_factory=lambda: {'body': '맑은 고딕', 'name': '맑은 고딕'})
 
 
 class StyleConfig(BaseModel):
@@ -69,7 +69,7 @@ class StyleConfig(BaseModel):
 
 
 class NarrationConfig(BaseModel):
-    users: List[str] = Field(default_factory=lambda: ['GM', 'KP', 'DM', 'Keeper', 'Narrator'])
+    users: list[str] = Field(default_factory=lambda: ['GM', 'KP', 'DM', 'Keeper', 'Narrator'])
     style: str = 'indent'
 
 
@@ -92,7 +92,7 @@ class DialogueConfig(BaseModel):
 
 class ImagesConfig(BaseModel):
     enable: bool = True
-    markers: List[str] = Field(default_factory=lambda: [r'\[IMG:\s*(.+?)\]', r'\[삽화:\s*(.+?)\]'])
+    markers: list[str] = Field(default_factory=lambda: [r'\[IMG:\s*(.+?)\]', r'\[삽화:\s*(.+?)\]'])
     show_caption: bool = True
     max_resolution: int = 0
     jpeg_quality: int = 85
@@ -115,7 +115,7 @@ class ChapterConfig(BaseModel):
     extract_scene_title: bool = True
     title_format: str = '장면 {n}'
     min_scene_entries: int = 10
-    scene_patterns: List[str] = Field(default_factory=lambda: [
+    scene_patterns: list[str] = Field(default_factory=lambda: [
         '^■', '^●', '^▶', '^씬\\s*\\d+', '^장면\\s*\\d+',
     ])
 
@@ -132,7 +132,7 @@ class ChapterConfig(BaseModel):
 
 class ParsingConfig(BaseModel):
     name_max_length: int = 50
-    skip_channels: List[str] = Field(default_factory=list)
+    skip_channels: list[str] = Field(default_factory=list)
     normalize_punctuation: bool = True
 
     @field_validator('name_max_length')
@@ -171,7 +171,7 @@ class EngineConfig(BaseModel):
     content: ContentConfig = Field(default_factory=ContentConfig)
     dialogue: DialogueConfig = Field(default_factory=DialogueConfig)
     images: ImagesConfig = Field(default_factory=ImagesConfig)
-    custom_styles: Dict = Field(default_factory=dict)
+    custom_styles: dict = Field(default_factory=dict)
     chapter: ChapterConfig = Field(default_factory=ChapterConfig)
     parsing: ParsingConfig = Field(default_factory=ParsingConfig)
     performance: PerformanceConfig = Field(default_factory=PerformanceConfig)

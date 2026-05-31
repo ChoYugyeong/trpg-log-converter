@@ -3,30 +3,43 @@ TRPG Log Converter Pro - 서식 및 스타일 통합 페이지
 스타일, 폰트, 표지, 장식 설정을 아코디언 섹션으로 통합
 """
 
-from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QFrame,
-    QSpinBox, QDoubleSpinBox, QFileDialog, QLabel,
-    QPlainTextEdit
-)
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QPixmap, QFont, QFontDatabase, QImage
-
-from qfluentwidgets import (
-    BodyLabel, StrongBodyLabel, CaptionLabel, PushButton, LineEdit, ComboBox,
-    CheckBox, Slider, InfoBar, InfoBarPosition, MessageBox
-)
-
-from pathlib import Path
+import base64
 import os
 import sys
-import base64
+from pathlib import Path
 
-from .base_page import BasePage
-from ..components import ContentCard, ColorPicker, CollapsibleSection
-from ..styles import Theme
-from ..theme import Colors, Sizes, Spacing, Typography
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QFont, QFontDatabase, QImage, QPixmap
+from PySide6.QtWidgets import (
+    QDoubleSpinBox,
+    QFileDialog,
+    QFrame,
+    QGridLayout,
+    QHBoxLayout,
+    QLabel,
+    QPlainTextEdit,
+    QSpinBox,
+    QVBoxLayout,
+    QWidget,
+)
+from qfluentwidgets import (
+    BodyLabel,
+    ComboBox,
+    InfoBar,
+    InfoBarPosition,
+    LineEdit,
+    MessageBox,
+    PushButton,
+    Slider,
+    StrongBodyLabel,
+)
+
 from core.services import CharacterColorService
 
+from ..components import CollapsibleSection, ColorPicker, ContentCard
+from ..styles import Theme
+from ..theme import Sizes, Spacing
+from .base_page import BasePage
 
 # ---------------------------------------------------------------------------
 # Helper widgets (from decoration_page)
@@ -52,7 +65,7 @@ class ImagePreview(QFrame):
         self._image_path = ""
         self._image_data = ""
 
-    def set_image(self, path: str = None, data: str = None):
+    def set_image(self, path: str | None = None, data: str | None = None):
         if path and os.path.exists(path):
             self._image_path = path
             pixmap = QPixmap(path)
@@ -1421,8 +1434,9 @@ class FormatStylePage(BasePage):
 
     def _auto_assign_colors(self):
         from PySide6.QtWidgets import QFileDialog as _QFD
-        from core.text_parser import parse_file
+
         from core.engine import load_config
+        from core.text_parser import parse_file
 
         files, _ = _QFD.getOpenFileNames(
             self, "캐릭터 추출용 로그 파일 선택", "",
@@ -1459,7 +1473,7 @@ class FormatStylePage(BasePage):
             )
         except Exception as e:
             InfoBar.error(
-                title='오류', content=f'캐릭터 추출 실패: {str(e)}',
+                title='오류', content=f'캐릭터 추출 실패: {e!s}',
                 parent=self, position=InfoBarPosition.TOP, duration=5000
             )
 

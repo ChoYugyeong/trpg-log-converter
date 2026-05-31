@@ -8,7 +8,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List
+from typing import Any
 
 from bs4 import BeautifulSoup
 
@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 _PROTECTED_TYPES = frozenset({"image", "system"})
 
 
-def parse_log(html_content: str, config: Dict[str, Any]) -> List[Dict[str, Any]]:
+def parse_log(html_content: str, config: dict[str, Any]) -> list[dict[str, Any]]:
     soup = BeautifulSoup(html_content, "html.parser")
 
     # Roll20 형식 감지
@@ -59,9 +59,9 @@ def parse_log(html_content: str, config: Dict[str, Any]) -> List[Dict[str, Any]]
     return entries
 
 
-def filter_entries(entries: List[Dict], config: Dict[str, Any]) -> List[Dict]:
+def filter_entries(entries: list[dict], config: dict[str, Any]) -> list[dict]:
     content_config = config.get("content", {})
-    filtered: List[Dict] = []
+    filtered: list[dict] = []
     for entry in entries:
         t = entry["type"]
         if t == "dice" and not content_config.get("include_dice", True):
@@ -76,7 +76,7 @@ def filter_entries(entries: List[Dict], config: Dict[str, Any]) -> List[Dict]:
     return filtered
 
 
-def merge_consecutive_dialogues(entries: List[Dict], config: Dict[str, Any]) -> List[Dict]:
+def merge_consecutive_dialogues(entries: list[dict], config: dict[str, Any]) -> list[dict]:
     dialogue_config = config.get("dialogue", {})
     if not dialogue_config.get("merge_consecutive", False):
         return entries
@@ -84,7 +84,7 @@ def merge_consecutive_dialogues(entries: List[Dict], config: Dict[str, Any]) -> 
     separator = dialogue_config.get("merge_separator", "\n")
     max_merge = dialogue_config.get("merge_max", 5)
 
-    merged: List[Dict] = []
+    merged: list[dict] = []
     i = 0
     while i < len(entries):
         entry = entries[i].copy()
@@ -114,7 +114,7 @@ def merge_consecutive_dialogues(entries: List[Dict], config: Dict[str, Any]) -> 
     return merged
 
 
-def split_into_scenes(entries: List[Dict], config: Dict[str, Any]) -> List[Dict]:
+def split_into_scenes(entries: list[dict], config: dict[str, Any]) -> list[dict]:
     chapter_config = config.get("chapter", {})
     split_mode = chapter_config.get("split_mode", "scene")
     if split_mode == "none":
@@ -125,10 +125,10 @@ def split_into_scenes(entries: List[Dict], config: Dict[str, Any]) -> List[Dict]
     return split_by_scene(entries, chapter_config)
 
 
-def split_by_count(entries, chapter_config) -> List[Dict]:
+def split_by_count(entries, chapter_config) -> list[dict]:
     per_chapter = chapter_config.get("entries_per_chapter", 300)
     title_format = chapter_config.get("title_format", "장면 {n}")
-    scenes: List[Dict] = []
+    scenes: list[dict] = []
     for i in range(0, len(entries), per_chapter):
         chunk = entries[i:i + per_chapter]
         # count-split 은 모든 제목이 자동 생성이라 auto_title=True.
@@ -140,7 +140,7 @@ def split_by_count(entries, chapter_config) -> List[Dict]:
     return scenes
 
 
-def split_by_scene(entries, chapter_config) -> List[Dict]:
+def split_by_scene(entries, chapter_config) -> list[dict]:
     patterns = chapter_config.get("scene_patterns", [])
     min_entries = chapter_config.get("min_scene_entries", 10)
     title_format = chapter_config.get("title_format", "장면 {n}")
@@ -149,8 +149,8 @@ def split_by_scene(entries, chapter_config) -> List[Dict]:
     if not patterns:
         return [{"title": None, "entries": entries}]
 
-    scenes: List[Dict] = []
-    current_scene: Dict[str, Any] = {"title": None, "entries": []}
+    scenes: list[dict] = []
+    current_scene: dict[str, Any] = {"title": None, "entries": []}
     scene_count = 0
 
     for entry in entries:
@@ -158,9 +158,7 @@ def split_by_scene(entries, chapter_config) -> List[Dict]:
         entry_type = entry["type"]
 
         is_scene = False
-        if entry_type == "scene":
-            is_scene = True
-        elif entry_type in ("system", "narration") and is_scene_marker(content, patterns):
+        if entry_type == "scene" or (entry_type in ("system", "narration") and is_scene_marker(content, patterns)):
             is_scene = True
 
         if is_scene:

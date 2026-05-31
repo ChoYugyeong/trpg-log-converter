@@ -105,7 +105,7 @@ def _assert_valid_epub(epub_path: Path) -> None:
 
         # 6. XHTML chapter files parse.
         for n in names:
-            if n.endswith(".xhtml") or n.endswith(".html"):
+            if n.endswith((".xhtml", ".html")):
                 # ET will raise on malformed XML.
                 ET.fromstring(zf.read(n))
 

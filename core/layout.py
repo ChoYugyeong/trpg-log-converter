@@ -5,10 +5,9 @@
 from __future__ import annotations
 
 import re
-from typing import Dict, Tuple
 
 # 표준 판형 (mm)
-STANDARD_SIZES_MM: Dict[str, Tuple[float, float]] = {
+STANDARD_SIZES_MM: dict[str, tuple[float, float]] = {
     "A4": (210.0, 297.0),
     "A5": (148.0, 210.0),
     "B5": (182.0, 257.0),
@@ -22,7 +21,7 @@ STANDARD_SIZES_MM: Dict[str, Tuple[float, float]] = {
 }
 
 
-def parse_page_format(format_str: str) -> Tuple[float, float]:
+def parse_page_format(format_str: str) -> tuple[float, float]:
     """GUI 판형 문자열을 (너비_mm, 높이_mm) 로 파싱.
 
     예시:
@@ -47,7 +46,7 @@ def parse_page_format(format_str: str) -> Tuple[float, float]:
     return STANDARD_SIZES_MM["A5"]
 
 
-def get_page_format(config: Dict, *, for_epub: bool = False) -> str:
+def get_page_format(config: dict, *, for_epub: bool = False) -> str:
     """config 에서 판형 문자열을 얻는다.
 
     엔진 config 의 통합 경로는 ``config['page_format']`` (DOCX/PDF 공통) 과
@@ -62,7 +61,7 @@ def get_page_format(config: Dict, *, for_epub: bool = False) -> str:
     return config.get("page_format") or "A5 (148x210mm)"
 
 
-def get_page_margins_inch(config: Dict) -> Dict[str, float]:
+def get_page_margins_inch(config: dict) -> dict[str, float]:
     """DOCX/PDF 가 공통으로 사용할 페이지 여백(인치 단위)을 얻는다.
 
     우선순위:

@@ -13,7 +13,8 @@ Usage:
 """
 from __future__ import annotations
 
-from typing import Callable, List, Literal, Optional, TypedDict
+from collections.abc import Callable
+from typing import Literal, TypedDict
 
 # Discrete entry types the parsers emit. Keep this in sync with the engine's
 # rendering switch in ``core.renderers.epub.entries_to_html`` and the DOCX/PDF
@@ -43,15 +44,15 @@ class Entry(TypedDict, total=False):
     name: str
     content: str
     raw: str
-    image: Optional[str]
-    channel: Optional[str]
+    image: str | None
+    channel: str | None
 
 
 class Scene(TypedDict):
     """A grouped collection of entries forming one chapter / scene."""
 
-    title: Optional[str]
-    entries: List[Entry]
+    title: str | None
+    entries: list[Entry]
 
 
 # Progress callbacks consistently use ``(current, total, message)``.
@@ -61,6 +62,6 @@ ProgressCallback = Callable[[int, int, str], None]
 __all__ = [
     "Entry",
     "EntryType",
-    "Scene",
     "ProgressCallback",
+    "Scene",
 ]

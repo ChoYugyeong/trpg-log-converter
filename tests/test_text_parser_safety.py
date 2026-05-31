@@ -77,12 +77,13 @@ def test_charset_normalizer_handles_euc_kr(tmp_path: Path):
     text, enc = _detect_and_read(f)
     assert "안녕하세요" in text
     # Either cp949 from whitelist or charset-normalizer can return either label.
-    assert enc.startswith("cp949") or enc.startswith("euc")
+    assert enc.startswith(("cp949", "euc"))
 
 
 def test_garbage_bytes_fall_back_with_warning(tmp_path: Path, caplog):
     """Pure garbage shouldn't crash — replacement decode + WARN log."""
     import logging
+
     from core.text_parser import _detect_and_read
 
     f = tmp_path / "garbage.bin"

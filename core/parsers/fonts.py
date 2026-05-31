@@ -2,12 +2,12 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 
-def get_font_files(config: Dict[str, Any]) -> Dict[str, Any]:
+def get_font_files(config: dict[str, Any]) -> dict[str, Any]:
     fonts_dir = Path(config.get("paths", {}).get("fonts_dir", "./fonts"))
-    fonts: Dict[str, Any] = {"body": None, "name": None, "all": []}
+    fonts: dict[str, Any] = {"body": None, "name": None, "all": []}
     if not fonts_dir.exists():
         return fonts
     embed_config = config.get("fonts", {}).get("embed", {})

@@ -41,13 +41,13 @@ def is_newer_than(remote: str) -> bool:
 
 
 __all__ = [
-    "__version__",
     "__app_name__",
     "__author__",
     "__copyright__",
-    "__license__",
     "__homepage__",
+    "__license__",
     "__update_repo__",
-    "version_tuple",
+    "__version__",
     "is_newer_than",
+    "version_tuple",
 ]

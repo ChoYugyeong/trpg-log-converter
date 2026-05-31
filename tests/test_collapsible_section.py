@@ -16,8 +16,7 @@ import pytest
 pytest.importorskip("PySide6")
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QWidget, QLabel
-
+from PySide6.QtWidgets import QLabel, QWidget
 
 # ---------------------------------------------------------------------------
 # 공통 fixture

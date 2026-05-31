@@ -2,8 +2,9 @@
 캐릭터 색상 서비스 테스트
 """
 
-import pytest
 from pathlib import Path
+
+import pytest
 
 from core.services.character_colors import CharacterColorService, get_contrasting_text_color
 
@@ -112,7 +113,7 @@ class TestCharacterColorService:
         colors = service.auto_assign(entries)
 
         assert isinstance(colors, dict)
-        assert "a" in colors or "A" in [k for k in colors.keys()]
+        assert "a" in colors or "A" in list(colors.keys())
 
     def test_apply_to_entries_adds_color_field(self):
         """apply_to_entries가 color 필드를 추가하는지 확인"""

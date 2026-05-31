@@ -3,18 +3,23 @@ TRPG Log Converter Pro - 카드 컴포넌트
 QFluentWidgets 기반 Fluent Design
 """
 
-from PySide6.QtWidgets import (
-    QVBoxLayout, QHBoxLayout, QWidget, QButtonGroup, QPushButton
-)
 from PySide6.QtCore import Qt, Signal
-
+from PySide6.QtWidgets import QButtonGroup, QHBoxLayout, QPushButton, QVBoxLayout, QWidget
 from qfluentwidgets import (
-    CardWidget, BodyLabel, StrongBodyLabel, CaptionLabel,
-    LineEdit, ComboBox, CheckBox, RadioButton,
-    ToolTipFilter, Flyout, FlyoutView
+    BodyLabel,
+    CaptionLabel,
+    CardWidget,
+    CheckBox,
+    ComboBox,
+    Flyout,
+    FlyoutView,
+    LineEdit,
+    RadioButton,
+    StrongBodyLabel,
+    ToolTipFilter,
 )
 
-from ..theme import Colors, Sizes, Spacing, Typography
+from ..theme import Sizes, Spacing
 
 
 class CollapsibleSection(QWidget):
@@ -108,8 +113,8 @@ class HelpButton(QPushButton):
 class ContentCard(CardWidget):
     """Fluent 스타일 설정 카드"""
 
-    def __init__(self, title: str = None, subtitle: str = None,
-                 help_text: str = None, parent=None):
+    def __init__(self, title: str | None = None, subtitle: str | None = None,
+                 help_text: str | None = None, parent=None):
         super().__init__(parent)
         self._fields = {}
 
@@ -152,8 +157,8 @@ class ContentCard(CardWidget):
         self._content_layout.setContentsMargins(0, 10, 0, 0)
         self._layout.addLayout(self._content_layout)
 
-    def add_field(self, label: str, widget: QWidget, key: str = None,
-                  stretch: int = 1, help_text: str = None) -> QWidget:
+    def add_field(self, label: str, widget: QWidget, key: str | None = None,
+                  stretch: int = 1, help_text: str | None = None) -> QWidget:
         """라벨 + 위젯 행 추가"""
         row = QHBoxLayout()
         row.setSpacing(Sizes.FIELD_SPACING)
@@ -183,7 +188,7 @@ class ContentCard(CardWidget):
         return widget
 
     def add_text_field(self, label: str, key: str, placeholder: str = "",
-                       default: str = "", help_text: str = None,
+                       default: str = "", help_text: str | None = None,
                        clear_button: bool = True) -> LineEdit:
         """텍스트 입력 필드 추가"""
         entry = LineEdit()
@@ -195,7 +200,7 @@ class ContentCard(CardWidget):
         return self.add_field(label, entry, key, help_text=help_text)
 
     def add_dropdown(self, label: str, key: str, options: list,
-                     default: str = None, help_text: str = None) -> ComboBox:
+                     default: str | None = None, help_text: str | None = None) -> ComboBox:
         """드롭다운 추가"""
         combo = ComboBox()
         combo.addItems(options)
@@ -216,7 +221,7 @@ class ContentCard(CardWidget):
         return self.add_field(label, combo, key, help_text=help_text)
 
     def add_checkbox(self, label: str, key: str, checked: bool = False,
-                     help_text: str = None) -> CheckBox:
+                     help_text: str | None = None) -> CheckBox:
         """체크박스 추가"""
         checkbox = CheckBox(label)
         checkbox.setChecked(checked)
@@ -242,7 +247,7 @@ class ContentCard(CardWidget):
 
         return checkbox
 
-    def add_radio_group(self, options: list, key: str, default: str = None) -> QButtonGroup:
+    def add_radio_group(self, options: list, key: str, default: str | None = None) -> QButtonGroup:
         """라디오 버튼 그룹 추가"""
         group = QButtonGroup(self)
         row = QHBoxLayout()

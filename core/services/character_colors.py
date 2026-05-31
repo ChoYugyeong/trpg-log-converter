@@ -3,16 +3,16 @@
 각 캐릭터에 고유한 색상을 자동으로 지정
 """
 
-from typing import Dict, List, Optional
-import hashlib
 import colorsys
+import hashlib
+from typing import ClassVar
 
 
 class CharacterColorService:
     """캐릭터별 색상 자동 할당 서비스"""
 
     # 미리 정의된 가독성 좋은 색상 팔레트
-    DEFAULT_PALETTE: List[str] = [
+    DEFAULT_PALETTE: ClassVar[list[str]] = [
         "#E53935",  # Red
         "#1E88E5",  # Blue
         "#43A047",  # Green
@@ -32,7 +32,7 @@ class CharacterColorService:
     ]
 
     # 나레이션/시스템 사용자용 색상
-    NARRATION_COLORS: Dict[str, str] = {
+    NARRATION_COLORS: ClassVar[dict[str, str]] = {
         "gm": "#666666",
         "kp": "#666666",
         "dm": "#666666",
@@ -41,13 +41,13 @@ class CharacterColorService:
         "system": "#888888",
     }
 
-    def __init__(self, custom_colors: Optional[Dict[str, str]] = None):
+    def __init__(self, custom_colors: dict[str, str] | None = None):
         """
         Args:
             custom_colors: 사용자 정의 색상 맵핑 {캐릭터명: 색상코드}
         """
         self._custom_colors = custom_colors or {}
-        self._assigned_colors: Dict[str, str] = {}
+        self._assigned_colors: dict[str, str] = {}
         self._palette_index = 0
 
     def get_color(self, character_name: str) -> str:
@@ -96,7 +96,12 @@ class CharacterColorService:
 
     def _generate_hash_color(self, name: str) -> str:
         """이름 해시 기반 고유 색상 생성"""
-        hash_val = int(hashlib.md5(name.encode()).hexdigest()[:8], 16)
+        # MD5 는 색상 분산용 hash — security 가 아닌 단순 fingerprint 목적.
+        # usedforsecurity=False 로 명시해 bandit B324 false positive 차단.
+        hash_val = int(
+            hashlib.md5(name.encode(), usedforsecurity=False).hexdigest()[:8],
+            16,
+        )
 
         # HSV 색상 공간 사용 (채도/명도 고정으로 가독성 유지)
         hue = (hash_val % 360) / 360.0
@@ -104,15 +109,13 @@ class CharacterColorService:
         value = 0.70 + (hash_val % 15) / 100.0  # 0.70-0.85
 
         r, g, b = colorsys.hsv_to_rgb(hue, saturation, value)
-        return "#{:02x}{:02x}{:02x}".format(
-            int(r * 255), int(g * 255), int(b * 255)
-        )
+        return f"#{int(r * 255):02x}{int(g * 255):02x}{int(b * 255):02x}"
 
     def set_custom_color(self, character_name: str, color: str) -> None:
         """사용자 정의 색상 설정"""
         self._custom_colors[character_name] = color
 
-    def get_all_colors(self) -> Dict[str, str]:
+    def get_all_colors(self) -> dict[str, str]:
         """모든 할당된 색상 반환"""
         result = {}
         result.update(self._assigned_colors)
@@ -124,7 +127,7 @@ class CharacterColorService:
         self._assigned_colors.clear()
         self._palette_index = 0
 
-    def extract_characters(self, entries: List[dict]) -> List[str]:
+    def extract_characters(self, entries: list[dict]) -> list[str]:
         """
         파싱된 엔트리에서 캐릭터 목록 추출
 
@@ -153,7 +156,7 @@ class CharacterColorService:
 
         return characters
 
-    def auto_assign(self, entries: List[dict]) -> Dict[str, str]:
+    def auto_assign(self, entries: list[dict]) -> dict[str, str]:
         """
         엔트리에서 캐릭터를 추출하고 자동으로 색상 할당
 
@@ -171,7 +174,7 @@ class CharacterColorService:
 
         return self.get_all_colors()
 
-    def apply_to_entries(self, entries: List[dict]) -> List[dict]:
+    def apply_to_entries(self, entries: list[dict]) -> list[dict]:
         """
         엔트리에 색상 정보 추가
 

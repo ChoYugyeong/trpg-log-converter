@@ -2,10 +2,9 @@
 TRPG Log Converter Pro - 공용 유틸리티
 """
 
-from typing import Dict
 
 
-def deep_merge(base: Dict, override: Dict) -> Dict:
+def deep_merge(base: dict, override: dict) -> dict:
     """딕셔너리 깊은 병합 (새 딕셔너리 반환, override 우선)"""
     result = base.copy()
     for key, value in override.items():

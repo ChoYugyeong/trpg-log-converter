@@ -4,13 +4,12 @@
 여러 설정을 프로필로 저장/불러오기
 """
 
+import copy
 import json
 import logging
+from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import List, Dict, Optional
-from dataclasses import dataclass, asdict
-import copy
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +22,7 @@ class Profile:
     description: str
     created: str
     modified: str
-    settings: Dict
+    settings: dict
     is_default: bool = False
     is_builtin: bool = False
 
@@ -131,7 +130,7 @@ class ProfileManager:
     def __init__(self, app_dir: Path):
         self._app_dir = app_dir
         self._profiles_file = app_dir / 'data' / 'profiles.json'
-        self._profiles: Dict[str, Profile] = {}
+        self._profiles: dict[str, Profile] = {}
         self._active_profile_id: str = 'default'
         self._load()
 
@@ -154,7 +153,7 @@ class ProfileManager:
         # 사용자 프로필 로드
         try:
             if self._profiles_file.exists():
-                with open(self._profiles_file, 'r', encoding='utf-8') as f:
+                with open(self._profiles_file, encoding='utf-8') as f:
                     data = json.load(f)
                     self._active_profile_id = data.get('active_profile', 'default')
 
@@ -186,11 +185,11 @@ class ProfileManager:
         except Exception as e:
             logger.error(f"프로필 저장 실패: {e}")
 
-    def get_profiles(self) -> List[Profile]:
+    def get_profiles(self) -> list[Profile]:
         """모든 프로필 목록"""
         return list(self._profiles.values())
 
-    def get_profile(self, profile_id: str) -> Optional[Profile]:
+    def get_profile(self, profile_id: str) -> Profile | None:
         """ID로 프로필 조회"""
         return self._profiles.get(profile_id)
 
@@ -208,7 +207,7 @@ class ProfileManager:
         return False
 
     def create_profile(self, name: str, description: str = '',
-                       settings: Dict = None, base_profile_id: str = None) -> Profile:
+                       settings: dict | None = None, base_profile_id: str | None = None) -> Profile:
         """새 프로필 생성"""
         profile_id = f"user_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
@@ -237,8 +236,8 @@ class ProfileManager:
         logger.info(f"프로필 생성: {name} ({profile_id})")
         return profile
 
-    def update_profile(self, profile_id: str, name: str = None,
-                       description: str = None, settings: Dict = None) -> Optional[Profile]:
+    def update_profile(self, profile_id: str, name: str | None = None,
+                       description: str | None = None, settings: dict | None = None) -> Profile | None:
         """프로필 업데이트"""
         profile = self._profiles.get(profile_id)
         if not profile or profile.is_builtin:
@@ -277,7 +276,7 @@ class ProfileManager:
         logger.info(f"프로필 삭제: {profile.name}")
         return True
 
-    def duplicate_profile(self, profile_id: str, new_name: str) -> Optional[Profile]:
+    def duplicate_profile(self, profile_id: str, new_name: str) -> Profile | None:
         """프로필 복제"""
         original = self._profiles.get(profile_id)
         if not original:
@@ -289,7 +288,7 @@ class ProfileManager:
             settings=copy.deepcopy(original.settings),
         )
 
-    def apply_profile_to_config(self, config: Dict, profile_id: str = None) -> Dict:
+    def apply_profile_to_config(self, config: dict, profile_id: str | None = None) -> dict:
         """프로필 설정을 config에 적용"""
         profile = self._profiles.get(profile_id or self._active_profile_id)
         if not profile:
@@ -297,7 +296,7 @@ class ProfileManager:
 
         return self._deep_merge(config, profile.settings)
 
-    def extract_profile_settings(self, config: Dict, name: str,
+    def extract_profile_settings(self, config: dict, name: str,
                                  description: str = '') -> Profile:
         """현재 config에서 프로필 생성"""
         # 중요 설정만 추출
@@ -310,7 +309,7 @@ class ProfileManager:
 
         return self.create_profile(name, description, settings)
 
-    def _deep_merge(self, base: Dict, override: Dict) -> Dict:
+    def _deep_merge(self, base: dict, override: dict) -> dict:
         """딕셔너리 깊은 병합"""
         result = copy.deepcopy(base)
         for key, value in override.items():
@@ -335,10 +334,10 @@ class ProfileManager:
             logger.error(f"프로필 내보내기 실패: {e}")
             return False
 
-    def import_profile(self, input_path: Path) -> Optional[Profile]:
+    def import_profile(self, input_path: Path) -> Profile | None:
         """파일에서 프로필 가져오기"""
         try:
-            with open(input_path, 'r', encoding='utf-8') as f:
+            with open(input_path, encoding='utf-8') as f:
                 data = json.load(f)
 
             # 새 ID 생성

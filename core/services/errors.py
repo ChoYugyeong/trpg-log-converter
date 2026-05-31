@@ -6,11 +6,12 @@
 
 import logging
 import traceback
+from collections.abc import Callable
 from datetime import datetime
-from pathlib import Path
-from typing import Optional, Callable, Any, Dict
-from functools import wraps
 from enum import Enum
+from functools import wraps
+from pathlib import Path
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -25,8 +26,8 @@ class ErrorSeverity(Enum):
 
 class ConversionError(Exception):
     """변환 관련 에러"""
-    def __init__(self, message: str, stage: str = None,
-                 recoverable: bool = True, details: Dict = None):
+    def __init__(self, message: str, stage: str | None = None,
+                 recoverable: bool = True, details: dict | None = None):
         super().__init__(message)
         self.stage = stage
         self.recoverable = recoverable
@@ -36,21 +37,21 @@ class ConversionError(Exception):
 
 class FileError(ConversionError):
     """파일 관련 에러"""
-    def __init__(self, message: str, file_path: str = None, **kwargs):
+    def __init__(self, message: str, file_path: str | None = None, **kwargs):
         super().__init__(message, stage="file_io", **kwargs)
         self.file_path = file_path
 
 
 class ParseError(ConversionError):
     """파싱 관련 에러"""
-    def __init__(self, message: str, line_number: int = None, **kwargs):
+    def __init__(self, message: str, line_number: int | None = None, **kwargs):
         super().__init__(message, stage="parsing", **kwargs)
         self.line_number = line_number
 
 
 class ExportError(ConversionError):
     """내보내기 관련 에러"""
-    def __init__(self, message: str, format: str = None, **kwargs):
+    def __init__(self, message: str, format: str | None = None, **kwargs):
         super().__init__(message, stage="export", **kwargs)
         self.format = format
 
@@ -58,7 +59,7 @@ class ExportError(ConversionError):
 class ErrorHandler:
     """에러 핸들러"""
 
-    def __init__(self, app_dir: Path = None):
+    def __init__(self, app_dir: Path | None = None):
         self._app_dir = app_dir
         self._error_log = []
         self._max_log_size = 100
@@ -70,7 +71,7 @@ class ErrorHandler:
         }
 
     def handle(self, error: Exception, severity: ErrorSeverity = ErrorSeverity.ERROR,
-               context: str = None, suppress: bool = False) -> Optional[str]:
+               context: str | None = None, suppress: bool = False) -> str | None:
         """에러 처리"""
         error_info = {
             'timestamp': datetime.now().isoformat(),
@@ -119,7 +120,7 @@ class ErrorHandler:
         """에러 로그 초기화"""
         self._error_log.clear()
 
-    def get_error_summary(self) -> Dict:
+    def get_error_summary(self) -> dict:
         """에러 요약"""
         summary = {
             'total': len(self._error_log),
@@ -138,7 +139,7 @@ class ErrorHandler:
 _error_handler = None
 
 
-def get_error_handler(app_dir: Path = None) -> ErrorHandler:
+def get_error_handler(app_dir: Path | None = None) -> ErrorHandler:
     """전역 에러 핸들러 가져오기"""
     global _error_handler
     if _error_handler is None:
@@ -147,7 +148,7 @@ def get_error_handler(app_dir: Path = None) -> ErrorHandler:
 
 
 def safe_operation(default_return=None, suppress_errors: bool = False,
-                   context: str = None, severity: ErrorSeverity = ErrorSeverity.ERROR):
+                   context: str | None = None, severity: ErrorSeverity = ErrorSeverity.ERROR):
     """안전한 작업 데코레이터"""
     def decorator(func: Callable) -> Callable:
         @wraps(func)
@@ -164,7 +165,7 @@ def safe_operation(default_return=None, suppress_errors: bool = False,
     return decorator
 
 
-def try_operation(operation: Callable, default=None, context: str = None) -> Any:
+def try_operation(operation: Callable, default=None, context: str | None = None) -> Any:
     """단일 작업 안전 실행"""
     try:
         return operation()
@@ -175,7 +176,7 @@ def try_operation(operation: Callable, default=None, context: str = None) -> Any
 
 
 def validate_file_path(path: str, must_exist: bool = True,
-                       allowed_extensions: list = None) -> Path:
+                       allowed_extensions: list | None = None) -> Path:
     """파일 경로 유효성 검사"""
     if not path:
         raise FileError("파일 경로가 비어있습니다")
@@ -185,18 +186,17 @@ def validate_file_path(path: str, must_exist: bool = True,
     if must_exist and not file_path.exists():
         raise FileError(f"파일이 존재하지 않습니다: {path}", file_path=str(path))
 
-    if allowed_extensions:
-        if file_path.suffix.lower() not in [e.lower() for e in allowed_extensions]:
-            raise FileError(
-                f"지원하지 않는 파일 형식입니다: {file_path.suffix}",
-                file_path=str(path),
-                details={'allowed': allowed_extensions}
-            )
+    if allowed_extensions and file_path.suffix.lower() not in [e.lower() for e in allowed_extensions]:
+        raise FileError(
+            f"지원하지 않는 파일 형식입니다: {file_path.suffix}",
+            file_path=str(path),
+            details={'allowed': allowed_extensions},
+        )
 
     return file_path
 
 
-def validate_config(config: Dict, required_keys: list = None) -> bool:
+def validate_config(config: dict, required_keys: list | None = None) -> bool:
     """설정 유효성 검사"""
     if not config:
         raise ConversionError("설정이 비어있습니다", stage="config")
@@ -222,7 +222,7 @@ class RetryHandler:
         self.delay_seconds = delay_seconds
         self.exponential_backoff = exponential_backoff
 
-    def execute(self, operation: Callable, context: str = None) -> Any:
+    def execute(self, operation: Callable, context: str | None = None) -> Any:
         """작업 재시도 실행"""
         import time
 

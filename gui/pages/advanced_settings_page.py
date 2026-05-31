@@ -7,21 +7,16 @@ import json
 import logging
 import subprocess
 import sys
-
-from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QFileDialog
-)
-from PySide6.QtCore import Signal
 from pathlib import Path
 
-from qfluentwidgets import (
-    BodyLabel, LineEdit, PushButton as FluentPushButton,
-    InfoBar, InfoBarPosition, MessageBox
-)
+from PySide6.QtCore import Signal
+from PySide6.QtWidgets import QFileDialog, QHBoxLayout, QWidget
+from qfluentwidgets import BodyLabel, InfoBar, InfoBarPosition, LineEdit, MessageBox
+from qfluentwidgets import PushButton as FluentPushButton
 
+from ..components import CollapsibleSection, ContentCard
+from ..theme import DEFAULTS, Sizes, Spacing
 from .base_page import BasePage
-from ..components import ContentCard, CollapsibleSection
-from ..theme import Sizes, Spacing, DEFAULTS
 
 logger = logging.getLogger(__name__)
 
@@ -424,7 +419,7 @@ class AdvancedSettingsPage(BasePage):
             return
 
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, encoding='utf-8') as f:
                 imported = json.load(f)
             imported.pop('_meta', None)  # 프리셋 메타는 앱 설정이 아님
 
@@ -453,7 +448,7 @@ class AdvancedSettingsPage(BasePage):
                         if hasattr(page, 'load_settings'):
                             try:
                                 page.load_settings()
-                            except Exception as page_err:  # noqa: BLE001
+                            except Exception as page_err:
                                 logger.warning(
                                     "페이지 설정 로드 중 오류(계속 진행): %s", page_err
                                 )

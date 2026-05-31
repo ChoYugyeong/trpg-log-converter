@@ -6,10 +6,9 @@
 
 import json
 import logging
+from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import List, Dict, Optional
-from dataclasses import dataclass, asdict
 
 logger = logging.getLogger(__name__)
 
@@ -21,16 +20,16 @@ class ConversionRecord:
     timestamp: str
     input_file: str
     input_filename: str
-    output_files: List[str]
+    output_files: list[str]
     output_format: str
     title: str
     author: str
     entry_count: int
     scene_count: int
     success: bool
-    error_message: Optional[str] = None
+    error_message: str | None = None
     duration_ms: int = 0
-    profile_used: Optional[str] = None
+    profile_used: str | None = None
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -55,14 +54,14 @@ class HistoryManager:
         else:
             self._history_file = app_dir / 'data' / 'conversion_history.json'
         self._max_records = max_records
-        self._records: List[ConversionRecord] = []
+        self._records: list[ConversionRecord] = []
         self._load()
 
     def _load(self):
         """이력 파일 로드"""
         try:
             if self._history_file.exists():
-                with open(self._history_file, 'r', encoding='utf-8') as f:
+                with open(self._history_file, encoding='utf-8') as f:
                     data = json.load(f)
                     self._records = [ConversionRecord.from_dict(r) for r in data.get('records', [])]
                 logger.debug(f"변환 이력 로드: {len(self._records)}개")
@@ -84,11 +83,11 @@ class HistoryManager:
         except Exception as e:
             logger.error(f"변환 이력 저장 실패: {e}")
 
-    def add_record(self, input_file: str, output_files: List[str],
+    def add_record(self, input_file: str, output_files: list[str],
                    output_format: str, title: str, author: str,
                    entry_count: int, scene_count: int,
-                   success: bool, error_message: str = None,
-                   duration_ms: int = 0, profile_used: str = None) -> ConversionRecord:
+                   success: bool, error_message: str | None = None,
+                   duration_ms: int = 0, profile_used: str | None = None) -> ConversionRecord:
         """새 변환 기록 추가"""
         record = ConversionRecord(
             id=datetime.now().strftime('%Y%m%d_%H%M%S_%f'),
@@ -117,20 +116,20 @@ class HistoryManager:
         logger.info(f"변환 기록 추가: {record.input_filename} -> {output_format}")
         return record
 
-    def get_records(self, limit: int = None) -> List[ConversionRecord]:
+    def get_records(self, limit: int | None = None) -> list[ConversionRecord]:
         """이력 목록 가져오기"""
         if limit:
             return self._records[:limit]
         return self._records.copy()
 
-    def get_record_by_id(self, record_id: str) -> Optional[ConversionRecord]:
+    def get_record_by_id(self, record_id: str) -> ConversionRecord | None:
         """ID로 기록 조회"""
         for record in self._records:
             if record.id == record_id:
                 return record
         return None
 
-    def get_recent_files(self, limit: int = 10) -> List[str]:
+    def get_recent_files(self, limit: int = 10) -> list[str]:
         """최근 변환 파일 목록"""
         files = []
         seen = set()
@@ -142,7 +141,7 @@ class HistoryManager:
                 break
         return files
 
-    def get_stats(self) -> Dict:
+    def get_stats(self) -> dict:
         """변환 통계"""
         if not self._records:
             return {
@@ -185,7 +184,7 @@ class HistoryManager:
                 return True
         return False
 
-    def search(self, query: str) -> List[ConversionRecord]:
+    def search(self, query: str) -> list[ConversionRecord]:
         """이력 검색"""
         query_lower = query.lower()
         results = []

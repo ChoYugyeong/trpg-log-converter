@@ -33,8 +33,9 @@ Pydantic V2 모델 기반 설정을 관리하며,
 from __future__ import annotations
 
 import logging
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Any, Dict, Iterator, Optional, Set
+from typing import Any
 
 from PySide6.QtCore import QMutex, QMutexLocker, QObject, Signal
 
@@ -49,7 +50,7 @@ logger = logging.getLogger(__name__)
 # 각 flat key가 어떤 UI 그룹에 속하는지를 정의합니다.
 # group_changed Signal은 이 매핑을 기준으로 방출됩니다.
 
-_KEY_GROUP_MAP: Dict[str, str] = {
+_KEY_GROUP_MAP: dict[str, str] = {
     # ── basic (홈) ──
     "platform": "basic",
     "title": "basic",
@@ -221,12 +222,12 @@ class AppState(QObject):
 
         # 배치 모드 상태
         self._batch_mode: bool = False
-        self._pending_groups: Set[str] = set()
+        self._pending_groups: set[str] = set()
         self._pending_keys: list[tuple[str, Any]] = []
 
         # Pydantic 모델 + 플랫 dict 초기화
         self._model: AppSettings = AppSettings()
-        self._flat: Dict[str, Any] = {}
+        self._flat: dict[str, Any] = {}
 
         # 저장 차단 플래그.
         # 앱 시작 시 페이지 __init__ 에서 위젯을 채우는 도중 changed 시그널이
@@ -260,7 +261,7 @@ class AppState(QObject):
         """
         return self._flat.get(key, default)
 
-    def get_all(self) -> Dict[str, Any]:
+    def get_all(self) -> dict[str, Any]:
         """전체 설정을 플랫 dict로 반환합니다.
 
         ConfigManager.save_gui_settings() 또는 엔진 빌드에 전달할 때 사용합니다.
@@ -310,7 +311,7 @@ class AppState(QObject):
             self.changed.emit(key, value)
             self.group_changed.emit(group)
 
-    def update(self, data: Dict[str, Any]) -> None:
+    def update(self, data: dict[str, Any]) -> None:
         """여러 키를 한번에 설정합니다 (자동으로 batch_update 사용).
 
         Args:
@@ -415,7 +416,7 @@ class AppState(QObject):
     # 미리보기 설정 생성
     # ──────────────────────────────────────────
 
-    def get_preview_settings(self) -> Dict[str, Any]:
+    def get_preview_settings(self) -> dict[str, Any]:
         """DocumentPreview가 필요로 하는 설정 dict를 반환합니다.
 
         MainWindow._collect_preview_settings()를 대체합니다.
@@ -488,7 +489,7 @@ class AppState(QObject):
         """해당 그룹의 변경이 미리보기 갱신을 필요로 하는지 반환합니다."""
         return group in _PREVIEW_GROUPS
 
-    def get_keys_for_group(self, group: str) -> Dict[str, Any]:
+    def get_keys_for_group(self, group: str) -> dict[str, Any]:
         """특정 그룹에 속하는 키-값 쌍을 반환합니다.
 
         Args:

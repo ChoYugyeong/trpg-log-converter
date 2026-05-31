@@ -11,7 +11,6 @@ pytest.importorskip("PySide6")
 
 from PySide6.QtCore import Signal
 
-
 # ---------------------------------------------------------------------------
 # 공통 fixture
 # ---------------------------------------------------------------------------
@@ -20,8 +19,8 @@ from PySide6.QtCore import Signal
 def app_state(tmp_path):
     """AppState + ConfigManager를 생성하고 BasePage에 주입한다."""
     from core.config_manager import ConfigManager
-    from gui.state import AppState
     from gui.pages.base_page import BasePage
+    from gui.state import AppState
 
     cm = ConfigManager(app_dir=tmp_path)
     state = AppState(cm)
@@ -48,7 +47,7 @@ class TestHomePageCreation:
 
     def test_home_page_creation(self, qtbot, app_state):
         """HomePage가 에러 없이 생성된다."""
-        state, cm = app_state
+        _state, cm = app_state
 
         # WHEN: HomePage를 생성한다
         from gui.pages.home_page import HomePage
@@ -201,7 +200,7 @@ class TestHomePageSaveLoadRoundTrip:
 
     def test_home_page_save_load_round_trip(self, home_page):
         """AppState를 통해 narrators를 설정·저장·로드하면 문자열로 보존된다."""
-        page, state, cm = home_page
+        _page, state, _cm = home_page
 
         # GIVEN: AppState를 통해 narrators 설정
         test_narrators = "GM, KP, DM, Narrator"
@@ -219,7 +218,7 @@ class TestHomePageSaveLoadRoundTrip:
 
     def test_narrators_never_becomes_list(self, home_page):
         """AppState를 거쳐도 narrators가 리스트로 바뀌지 않는다."""
-        page, state, _ = home_page
+        _page, state, _ = home_page
 
         # GIVEN: narrators를 문자열로 설정하고 저장
         state.set("narrators", "GM, KP")
@@ -234,7 +233,7 @@ class TestHomePageSaveLoadRoundTrip:
 
     def test_save_load_preserves_title(self, home_page):
         """AppState를 통한 제목 라운드트립 검증."""
-        page, state, _ = home_page
+        _page, state, _ = home_page
 
         # GIVEN: 제목 설정
         state.set("title", "마이 세션")
@@ -273,7 +272,7 @@ class TestHomePageLanguage:
         """LANGUAGE_MAP의 키에 'ko', 'en', 'ja' 같은 짧은 코드가 없다."""
         from gui.theme import LANGUAGE_MAP
 
-        for key in LANGUAGE_MAP.keys():
+        for key in LANGUAGE_MAP:
             assert len(key) > 3, f"키가 너무 짧음 (코드 직접 사용 의심): {key}"
 
     def test_language_includes_english_and_japanese(self):
@@ -307,7 +306,7 @@ class TestFormatStylePageCreation:
 
     def test_format_style_page_creation(self, qtbot, app_state):
         """FormatStylePage가 에러 없이 생성된다."""
-        state, cm = app_state
+        _state, cm = app_state
 
         # WHEN: FormatStylePage를 생성한다
         from gui.pages.format_style_page import FormatStylePage
@@ -319,9 +318,9 @@ class TestFormatStylePageCreation:
 
     def test_format_style_page_is_base_page(self, qtbot, app_state):
         """FormatStylePage는 BasePage의 서브클래스이다."""
-        state, cm = app_state
-        from gui.pages.format_style_page import FormatStylePage
+        _state, cm = app_state
         from gui.pages.base_page import BasePage
+        from gui.pages.format_style_page import FormatStylePage
 
         page = FormatStylePage(cm)
         qtbot.addWidget(page)
@@ -338,7 +337,7 @@ class TestParsingContentPageCreation:
 
     def test_parsing_content_page_creation(self, qtbot, app_state):
         """ParsingContentPage가 에러 없이 생성된다."""
-        state, cm = app_state
+        _state, cm = app_state
 
         from gui.pages.parsing_content_page import ParsingContentPage
         page = ParsingContentPage(cm)
@@ -348,7 +347,7 @@ class TestParsingContentPageCreation:
 
     def test_parsing_content_page_has_settings_changed(self, qtbot, app_state):
         """ParsingContentPage에 settings_changed 시그널이 있다."""
-        state, cm = app_state
+        _state, cm = app_state
 
         from gui.pages.parsing_content_page import ParsingContentPage
         page = ParsingContentPage(cm)
@@ -366,7 +365,7 @@ class TestAdvancedSettingsPageCreation:
 
     def test_advanced_settings_page_creation(self, qtbot, app_state):
         """AdvancedSettingsPage가 에러 없이 생성된다."""
-        state, cm = app_state
+        _state, cm = app_state
 
         from gui.pages.advanced_settings_page import AdvancedSettingsPage
         page = AdvancedSettingsPage(cm)
@@ -376,7 +375,7 @@ class TestAdvancedSettingsPageCreation:
 
     def test_advanced_settings_page_has_settings_changed(self, qtbot, app_state):
         """AdvancedSettingsPage에 settings_changed 시그널이 있다."""
-        state, cm = app_state
+        _state, cm = app_state
 
         from gui.pages.advanced_settings_page import AdvancedSettingsPage
         page = AdvancedSettingsPage(cm)
@@ -398,10 +397,10 @@ class TestAllPagesShareAppState:
         state, cm = app_state
 
         # GIVEN: 4개 페이지를 모두 생성
-        from gui.pages.home_page import HomePage
-        from gui.pages.format_style_page import FormatStylePage
-        from gui.pages.parsing_content_page import ParsingContentPage
         from gui.pages.advanced_settings_page import AdvancedSettingsPage
+        from gui.pages.format_style_page import FormatStylePage
+        from gui.pages.home_page import HomePage
+        from gui.pages.parsing_content_page import ParsingContentPage
 
         home = HomePage(cm)
         qtbot.addWidget(home)
@@ -420,10 +419,10 @@ class TestAllPagesShareAppState:
 
     def test_state_change_visible_across_pages(self, qtbot, app_state):
         """한 페이지에서 AppState를 변경하면 다른 페이지에서도 보인다."""
-        state, cm = app_state
+        _state, cm = app_state
 
-        from gui.pages.home_page import HomePage
         from gui.pages.format_style_page import FormatStylePage
+        from gui.pages.home_page import HomePage
 
         home = HomePage(cm)
         qtbot.addWidget(home)

@@ -10,7 +10,8 @@ import logging
 import os
 import tempfile
 import uuid
-from typing import Any, Callable, Dict, List, Optional
+from collections.abc import Callable
+from typing import Any
 
 from ebooklib import epub
 
@@ -26,15 +27,15 @@ ProgressCallback = Callable[[int, int, str], None]
 
 
 def entries_to_html(
-    entries: List[Dict[str, Any]],
-    chapter_title: Optional[str] = None,
-    config: Optional[Dict[str, Any]] = None,
+    entries: list[dict[str, Any]],
+    chapter_title: str | None = None,
+    config: dict[str, Any] | None = None,
 ) -> str:
     style = (config or {}).get("style", {})
     narration_prefix = style.get("narration_prefix", "＿")
     images_config = (config or {}).get("images", {})
 
-    html_parts: List[str] = []
+    html_parts: list[str] = []
 
     if chapter_title:
         clean_title = chapter_title.lstrip("■▶ ").strip() or chapter_title
@@ -107,7 +108,7 @@ def entries_to_html(
     return "\n".join(html_parts)
 
 
-def create_cover_html(config: Dict[str, Any], title: str, author: str) -> str:
+def create_cover_html(config: dict[str, Any], title: str, author: str) -> str:
     cover_config = config.get("cover", {})
     bg_color = cover_config.get("background_color", "#1a1a1a")
     title_color = cover_config.get("title_color", "#ffffff")
@@ -127,7 +128,7 @@ def create_cover_html(config: Dict[str, Any], title: str, author: str) -> str:
     return html
 
 
-def create_toc_html(scenes: List[Dict[str, Any]], config: Dict[str, Any]) -> str:
+def create_toc_html(scenes: list[dict[str, Any]], config: dict[str, Any]) -> str:
     from core.renderers.toc_filter import filter_toc_scenes
 
     toc_title = config.get("toc", {}).get("title", "목차")
@@ -144,12 +145,12 @@ def create_toc_html(scenes: List[Dict[str, Any]], config: Dict[str, Any]) -> str
 
 
 def create_epub(
-    entries: List[Dict[str, Any]],
+    entries: list[dict[str, Any]],
     output_path: str,
-    config: Dict[str, Any],
+    config: dict[str, Any],
     title: str = "TRPG 리플레이",
-    author: Optional[str] = None,
-    progress_callback: Optional[ProgressCallback] = None,
+    author: str | None = None,
+    progress_callback: ProgressCallback | None = None,
 ) -> str:
     """Render entries into an EPUB file at ``output_path`` (atomic write)."""
     if progress_callback:
@@ -189,7 +190,7 @@ def create_epub(
     )
     book.add_item(css)
 
-    epub_chapters: List[epub.EpubHtml] = []
+    epub_chapters: list[epub.EpubHtml] = []
 
     cover_config = config.get("cover", {})
     if cover_config.get("include", True):
@@ -279,7 +280,7 @@ def create_epub(
         epub_chapters.append(chapter)
 
     book.toc = epub_chapters
-    book.spine = ["nav"] + epub_chapters
+    book.spine = ["nav", *epub_chapters]
     book.add_item(epub.EpubNcx())
     book.add_item(epub.EpubNav())
 

@@ -3,15 +3,26 @@ TRPG Log Converter Pro - 미리보기 컴포넌트
 InspectorBar, CoverPreview, DocumentPreview 등
 """
 
-from PySide6.QtWidgets import (
-    QFrame, QWidget, QHBoxLayout, QVBoxLayout, QLabel,
-    QPlainTextEdit, QSizePolicy, QScrollArea, QTextEdit,
-    QPushButton, QSpinBox, QComboBox
-)
+from typing import ClassVar
+
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
+from PySide6.QtWidgets import (
+    QComboBox,
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QPlainTextEdit,
+    QPushButton,
+    QScrollArea,
+    QSizePolicy,
+    QSpinBox,
+    QTextEdit,
+    QVBoxLayout,
+    QWidget,
+)
 
-from ..theme import Sizes, Colors, Spacing
+from ..theme import Sizes, Spacing
 
 
 class InspectorBar(QFrame):
@@ -66,7 +77,7 @@ class InspectorBar(QFrame):
 
         return frame
 
-    def update_font_preview(self, font_family: str = None, font_size: int = None, sample_text: str = None):
+    def update_font_preview(self, font_family: str | None = None, font_size: int | None = None, sample_text: str | None = None):
         """폰트 미리보기 업데이트"""
         if sample_text:
             self.font_preview_label.setText(sample_text)
@@ -89,8 +100,8 @@ class InspectorBar(QFrame):
             preview_text += '\n...'
         self.content_preview.setPlainText(preview_text)
 
-    def update_cover_preview(self, title: str = None, author: str = None,
-                             bg_color: str = None, title_color: str = None):
+    def update_cover_preview(self, title: str | None = None, author: str | None = None,
+                             bg_color: str | None = None, title_color: str | None = None):
         """표지 미리보기 업데이트"""
         self.cover_preview.update_preview(title, author, bg_color, title_color)
 
@@ -140,8 +151,8 @@ class CoverPreview(QFrame):
 
         self._update_style()
 
-    def update_preview(self, title: str = None, author: str = None,
-                       bg_color: str = None, title_color: str = None):
+    def update_preview(self, title: str | None = None, author: str | None = None,
+                       bg_color: str | None = None, title_color: str | None = None):
         """미리보기 업데이트"""
         if title is not None:
             self._title = title
@@ -185,7 +196,7 @@ class DocumentPreview(QFrame):
     ENTRIES_PER_PAGE = 30  # 페이지당 항목 수
 
     # 문서 형식별 비율 (너비, 높이) - mm 단위
-    DOCUMENT_FORMATS = {
+    DOCUMENT_FORMATS: ClassVar[dict] = {
         "A4 (210x297mm)": (210, 297),
         "A5 (148x210mm)": (148, 210),
         "B5 (182x257mm)": (182, 257),
@@ -199,7 +210,7 @@ class DocumentPreview(QFrame):
     }
 
     # 줌 프리셋
-    ZOOM_PRESETS = [50, 75, 90, 100, 125, 150, 200]
+    ZOOM_PRESETS: ClassVar[list] = [50, 75, 90, 100, 125, 150, 200]
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -601,7 +612,7 @@ class DocumentPreview(QFrame):
         self.page_label.setText(f"/ {self._total_pages}")
         self._update_nav_buttons()
 
-    def update_preview(self, entries: list = None, settings: dict = None):
+    def update_preview(self, entries: list | None = None, settings: dict | None = None):
         """미리보기 업데이트"""
         if entries is not None:
             self._entries = entries
@@ -658,7 +669,7 @@ class DocumentPreview(QFrame):
             content = entry.get('content', '')
 
             # 장면 전환 감지
-            if content.startswith(scene_marker) or content.startswith('씬') or content.startswith('Scene'):
+            if content.startswith((scene_marker, '씬', 'Scene')):
                 current_scene += 1
                 html_parts.append(f'<p style="font-size: {font_size + 2}pt; font-weight: bold; margin: 16px 0 12px 0; color: #222;">{content}</p>')
                 continue

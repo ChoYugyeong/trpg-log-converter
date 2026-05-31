@@ -12,6 +12,7 @@ No PII collected, no network call. Pure local file write.
 """
 from __future__ import annotations
 
+import contextlib
 import logging
 import platform
 import sys
@@ -19,7 +20,6 @@ import threading
 import traceback
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
 from core.version import __app_name__, __version__
 
@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 
 _INSTALLED = False
-_CRASH_DIR: Optional[Path] = None
+_CRASH_DIR: Path | None = None
 
 
 def install(app_dir: Path) -> None:
@@ -54,11 +54,9 @@ def install(app_dir: Path) -> None:
 
     sys.excepthook = _excepthook
     # Threads spawned by Qt and concurrent.futures need their own hook.
-    try:
-        threading.excepthook = _thread_excepthook  # type: ignore[assignment]
-    except AttributeError:
-        # Python < 3.8 fallback — we target 3.10+ so this is just defensive.
-        pass
+    # AttributeError defense is just in case (we target 3.10+ where this exists).
+    with contextlib.suppress(AttributeError):
+        threading.excepthook = _thread_excepthook
 
     _INSTALLED = True
     logger.info("Crash handler installed (dumps -> %s)", _CRASH_DIR)
@@ -129,7 +127,7 @@ def _read_log_tail(lines: int) -> str:
     if not log_file.exists():
         return "(no log file)"
     try:
-        with open(log_file, "r", encoding="utf-8", errors="replace") as f:
+        with open(log_file, encoding="utf-8", errors="replace") as f:
             return "".join(f.readlines()[-lines:])
     except OSError:
         return "(failed to read log)"

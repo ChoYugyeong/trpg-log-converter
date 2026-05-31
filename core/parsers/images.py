@@ -11,12 +11,12 @@ import logging
 import mimetypes
 import re
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
-def optimize_image(img_path: Path, config: Dict[str, Any]) -> Tuple[bytes, str, str]:
+def optimize_image(img_path: Path, config: dict[str, Any]) -> tuple[bytes, str, str]:
     """이미지를 최적화하여 ``(bytes, mime_type, filename)`` 반환.
 
     - ``images.max_resolution`` 이상이면 비율 유지 리사이즈
@@ -85,7 +85,7 @@ def optimize_image(img_path: Path, config: Dict[str, Any]) -> Tuple[bytes, str, 
     return buf.getvalue(), mime_type, filename
 
 
-def find_image_file(filename: str, config: Dict[str, Any]) -> Optional[Path]:
+def find_image_file(filename: str, config: dict[str, Any]) -> Path | None:
     images_dir = Path(config.get("paths", {}).get("images_dir", "./images"))
     if Path(filename).exists():
         return Path(filename)
@@ -96,7 +96,7 @@ def find_image_file(filename: str, config: Dict[str, Any]) -> Optional[Path]:
     return None
 
 
-def extract_image_markers(text: str, config: Dict[str, Any]) -> Tuple[Optional[str], str]:
+def extract_image_markers(text: str, config: dict[str, Any]) -> tuple[str | None, str]:
     images_config = config.get("images", {})
     if not images_config.get("enable", True):
         return None, text

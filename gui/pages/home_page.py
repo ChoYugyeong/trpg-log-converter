@@ -4,29 +4,48 @@ TRPG Log Converter Pro - 홈 페이지
 ConvertPage와 BasicPage(나레이터/언어)를 병합한 메인 워크플로우 페이지.
 """
 
-from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QListWidget, QListWidgetItem,
-    QFileDialog, QFrame, QButtonGroup
-)
-from PySide6.QtCore import Signal, Qt, QTimer
-from pathlib import Path
-import os
+import contextlib
 import logging
+import os
+from pathlib import Path
 
+from PySide6.QtCore import Qt, QTimer, Signal
+from PySide6.QtWidgets import (
+    QButtonGroup,
+    QFileDialog,
+    QFrame,
+    QHBoxLayout,
+    QListWidget,
+    QListWidgetItem,
+    QVBoxLayout,
+    QWidget,
+)
 from qfluentwidgets import (
-    BodyLabel, PushButton, PrimaryPushButton, LineEdit, ComboBox,
-    RadioButton, ProgressBar, InfoBar, InfoBarPosition,
+    BodyLabel,
+    ComboBox,
+    InfoBar,
+    InfoBarPosition,
+    LineEdit,
+    PrimaryPushButton,
+    ProgressBar,
+    PushButton,
+    RadioButton,
     TransparentPushButton,
+)
+from qfluentwidgets import (
     FluentIcon as FIF,
 )
 
-from .base_page import BasePage
-from ..components import ContentCard, CollapsibleSection, FileDropArea, HelpButton
-from ..components.setting_cards import (
-    HelpableLineEditCard, HelpableComboBoxCard, FluentSettingGroup,
-)
-from ..theme import LANGUAGE_MAP, LANGUAGE_REVERSE_MAP, DEFAULTS, Sizes, Spacing
 from core.services import PresetService
+
+from ..components import CollapsibleSection, ContentCard, FileDropArea, HelpButton
+from ..components.setting_cards import (
+    FluentSettingGroup,
+    HelpableComboBoxCard,
+    HelpableLineEditCard,
+)
+from ..theme import DEFAULTS, LANGUAGE_MAP, LANGUAGE_REVERSE_MAP, Sizes, Spacing
+from .base_page import BasePage
 
 logger = logging.getLogger(__name__)
 
@@ -320,7 +339,13 @@ class HomePage(BasePage):
         조합으로 직접 다이얼로그를 띄우고 텍스트는 monospace 폰트로 정렬 유지.
         """
         from PySide6.QtWidgets import (
-            QDialog, QVBoxLayout, QTextBrowser, QPushButton, QHBoxLayout as _HB,
+            QDialog,
+            QPushButton,
+            QTextBrowser,
+            QVBoxLayout,
+        )
+        from PySide6.QtWidgets import (
+            QHBoxLayout as _HB,
         )
 
         title, content = {
@@ -490,7 +515,7 @@ class HomePage(BasePage):
         # 언어 (BasicPage에서 흡수) - 표시명으로 보여주고 코드로 저장
         lang_code = self.settings.get("language", DEFAULTS["language"])
         lang_display = LANGUAGE_REVERSE_MAP.get(
-            lang_code, list(LANGUAGE_MAP.keys())[0]
+            lang_code, next(iter(LANGUAGE_MAP.keys()))
         )
         self.language_card = HelpableComboBoxCard(
             FIF.LANGUAGE, "언어", "문서 언어 설정",
@@ -867,10 +892,8 @@ class HomePage(BasePage):
             self._set_file_count_state("ready")
             total_size = 0
             for f in self.files:
-                try:
+                with contextlib.suppress(OSError):
                     total_size += os.path.getsize(f)
-                except OSError:
-                    pass
 
             if total_size > 0:
                 if total_size < 1024:
@@ -1194,7 +1217,7 @@ class HomePage(BasePage):
 
         lang_code = state.get("language", DEFAULTS["language"])
         self.language_card.set_value(
-            LANGUAGE_REVERSE_MAP.get(lang_code, list(LANGUAGE_MAP.keys())[0])
+            LANGUAGE_REVERSE_MAP.get(lang_code, next(iter(LANGUAGE_MAP.keys())))
         )
 
         saved_mode = state.get("convert_mode", "single")

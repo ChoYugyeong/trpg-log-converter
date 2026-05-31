@@ -1,6 +1,7 @@
 """Coverage tests for the application logger."""
 from __future__ import annotations
 
+import contextlib
 import json
 import logging
 from pathlib import Path
@@ -17,10 +18,8 @@ def reset_singleton():
     root = logging.getLogger()
     for h in list(root.handlers):
         root.removeHandler(h)
-        try:
+        with contextlib.suppress(Exception):
             h.close()
-        except Exception:  # noqa: BLE001
-            pass
 
 
 def test_setup_logging_creates_log_dir(tmp_path: Path):

@@ -1,12 +1,12 @@
 """CSS stylesheet generation for EPUB / HTML output."""
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 from core.parsers.fonts import get_font_family_name
 
 
-def generate_css(config: Dict[str, Any], embedded_fonts: Optional[Dict[str, Any]] = None) -> str:
+def generate_css(config: dict[str, Any], embedded_fonts: dict[str, Any] | None = None) -> str:
     fonts = config.get("fonts", {})
     style = config.get("style", {})
 

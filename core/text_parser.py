@@ -100,9 +100,7 @@ def is_narration_user(name, config):
 
 def is_dice_roll(text):
     """다이스 롤인지 확인"""
-    if _RE_DICE.search(text) and ('→' in text or '=' in text or '>' in text):
-        return True
-    return False
+    return bool(_RE_DICE.search(text) and ('→' in text or '=' in text or '>' in text))
 
 
 def is_scene_marker(text, patterns):
@@ -262,7 +260,7 @@ def _detect_and_read(path: Path) -> tuple[str, str]:
                     best.encoding, best.chaos, best.coherence, path.name,
                 )
                 return str(best), best.encoding
-        except Exception:  # noqa: BLE001 — detector is best-effort
+        except Exception:
             logger.warning("charset-normalizer 감지 실패: %s", path.name, exc_info=True)
 
     # 3. Last-resort decode with replacement so the user isn't blocked entirely.
@@ -283,7 +281,7 @@ def _detect_and_read(path: Path) -> tuple[str, str]:
         f"지원되지 않는 인코딩: {path.name}",
         context={
             "path": str(path),
-            "tried": list(whitelist) + ["charset-normalizer", "cp949+replace", "latin-1+replace"],
+            "tried": [*list(whitelist), "charset-normalizer", "cp949+replace", "latin-1+replace"],
         },
     )
 

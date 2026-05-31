@@ -43,7 +43,7 @@ class ConverterError(Exception):
         self.user_message = user_message or self.default_user_message
         self.context: dict[str, Any] = context or {}
 
-    def with_context(self, **kwargs: Any) -> "ConverterError":
+    def with_context(self, **kwargs: Any) -> ConverterError:
         self.context.update(kwargs)
         return self
 
@@ -118,17 +118,17 @@ class ConverterFault(ConverterError):
 
 
 __all__ = [
-    "ConverterError",
     "ConfigError",
-    "SchemaMigrationError",
-    "ParseError",
-    "EncodingError",
-    "UnsupportedFormatError",
-    "RenderError",
-    "EpubRenderError",
-    "DocxRenderError",
-    "PdfRenderError",
-    "ResourceError",
-    "FontLoadError",
+    "ConverterError",
     "ConverterFault",
+    "DocxRenderError",
+    "EncodingError",
+    "EpubRenderError",
+    "FontLoadError",
+    "ParseError",
+    "PdfRenderError",
+    "RenderError",
+    "ResourceError",
+    "SchemaMigrationError",
+    "UnsupportedFormatError",
 ]

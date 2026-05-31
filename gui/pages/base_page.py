@@ -3,12 +3,11 @@ TRPG Log Converter Pro - 기본 페이지 클래스
 QFluentWidgets 기반
 """
 
-from PySide6.QtWidgets import QWidget, QVBoxLayout
-from PySide6.QtCore import Signal, Qt
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtWidgets import QVBoxLayout, QWidget
+from qfluentwidgets import ScrollArea, SubtitleLabel, TitleLabel
 
-from qfluentwidgets import ScrollArea, TitleLabel, SubtitleLabel
-
-from ..theme import Sizes, Colors, Spacing
+from ..theme import Colors, Sizes
 
 
 class BasePage(ScrollArea):
@@ -59,7 +58,7 @@ class BasePage(ScrollArea):
         # 콘텐츠 레이아웃 (서브클래스에서 사용)
         self.content_layout = self.main_layout
 
-    def add_header(self, title: str, subtitle: str = None):
+    def add_header(self, title: str, subtitle: str | None = None):
         """페이지 헤더 추가"""
         title_label = TitleLabel(title)
         title_label.setMinimumHeight(Sizes.HEADER_TITLE_H)
@@ -91,7 +90,6 @@ class BasePage(ScrollArea):
 
     def on_page_enter(self):
         """페이지 진입 시 호출"""
-        pass
 
     def on_page_leave(self):
         """페이지 이탈 시 호출"""
@@ -99,11 +97,9 @@ class BasePage(ScrollArea):
 
     def save_settings(self):
         """설정 저장 (서브클래스에서 오버라이드)"""
-        pass
 
     def load_settings(self):
         """설정 로드 (서브클래스에서 오버라이드)"""
-        pass
 
     @staticmethod
     def safe_set_combo(combo, text: str):
