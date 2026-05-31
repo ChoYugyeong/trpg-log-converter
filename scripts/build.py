@@ -243,6 +243,14 @@ def build_app():
         "--noconfirm", # 기존 빌드 덮어쓰기
     ]
 
+    # Runtime hook — PySide6 가 import 되기 전에 shiboken6 DLL 경로를
+    # 명시적으로 박는다. 한국어 폴더명 (예: '새 폴더') 같은 Unicode 경로에서
+    # PySide6 의 자동 path 감지가 실패해 ImportError 가 떨어지는 회귀를 차단.
+    rt_hook = app_dir / "scripts" / "rt_hook_pyside6.py"
+    if rt_hook.exists():
+        cmd.extend(["--runtime-hook", str(rt_hook)])
+        print(f"runtime hook: {rt_hook}")
+
     # 앱 아이콘
     if icon_path.exists():
         cmd.extend(["--icon", str(icon_path)])
