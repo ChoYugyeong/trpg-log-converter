@@ -7,7 +7,6 @@ qfluentwidgets의 SettingCard 생태계를 기반으로 한 커스텀 카드 컴
 OS 네이티브 툴팁(setToolTip)은 사용하지 않는다.
 """
 
-
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QColor, QCursor, QIcon
 from PySide6.QtWidgets import QColorDialog, QHBoxLayout, QWidget
@@ -34,6 +33,7 @@ from ..theme import Sizes, Spacing
 # ---------------------------------------------------------------------------
 # 기본 클래스: 도움말 아이콘이 포함된 SettingCard
 # ---------------------------------------------------------------------------
+
 
 class HelpableSettingCard(SettingCard):
     """도움말 아이콘(?)을 지원하는 SettingCard 기본 클래스.
@@ -77,9 +77,7 @@ class HelpableSettingCard(SettingCard):
         # ToolTipFilter로 호버 시 Fluent 스타일 미리보기 제공
         # 내부적으로 widget.toolTip()을 읽지만, OS 네이티브 이벤트는 필터가 차단
         self._help_icon.setProperty("toolTip_text", help_text)
-        self._help_icon_filter = _HelpToolTipFilter(
-            self._help_icon, help_text, showDelay=400
-        )
+        self._help_icon_filter = _HelpToolTipFilter(self._help_icon, help_text, showDelay=400)
         self._help_icon.installEventFilter(self._help_icon_filter)
 
         # 레이아웃에 추가 (맨 오른쪽)
@@ -137,6 +135,7 @@ class HelpableSettingCard(SettingCard):
 # 내부 헬퍼: ToolTipFilter를 setToolTip() 없이 사용하기 위한 래퍼
 # ---------------------------------------------------------------------------
 
+
 class _HelpToolTipFilter(ToolTipFilter):
     """ToolTipFilter를 setToolTip() 호출 없이 사용하는 래퍼.
 
@@ -156,6 +155,7 @@ class _HelpToolTipFilter(ToolTipFilter):
 # ---------------------------------------------------------------------------
 # 콤보박스 세팅 카드
 # ---------------------------------------------------------------------------
+
 
 class HelpableComboBoxCard(HelpableSettingCard):
     """드롭다운(ComboBox)이 포함된 세팅 카드.
@@ -199,9 +199,7 @@ class HelpableComboBoxCard(HelpableSettingCard):
         self._add_right_widget(self.combo_box)
 
         # 시그널 연결
-        self.combo_box.currentTextChanged.connect(
-            lambda text: self.value_changed.emit(text)
-        )
+        self.combo_box.currentTextChanged.connect(lambda text: self.value_changed.emit(text))
 
     def get_value(self) -> str:
         """현재 선택된 텍스트를 반환한다."""
@@ -215,6 +213,7 @@ class HelpableComboBoxCard(HelpableSettingCard):
 # ---------------------------------------------------------------------------
 # 스위치(토글) 세팅 카드
 # ---------------------------------------------------------------------------
+
 
 class HelpableSwitchCard(HelpableSettingCard):
     """토글 스위치(SwitchButton)가 포함된 세팅 카드.
@@ -245,9 +244,7 @@ class HelpableSwitchCard(HelpableSettingCard):
         self._add_right_widget(self.switch_button)
 
         # 시그널 연결
-        self.switch_button.checkedChanged.connect(
-            lambda checked: self.value_changed.emit(checked)
-        )
+        self.switch_button.checkedChanged.connect(lambda checked: self.value_changed.emit(checked))
 
     def get_value(self) -> bool:
         """현재 체크 상태를 반환한다."""
@@ -261,6 +258,7 @@ class HelpableSwitchCard(HelpableSettingCard):
 # ---------------------------------------------------------------------------
 # 스핀박스 세팅 카드
 # ---------------------------------------------------------------------------
+
 
 class HelpableSpinBoxCard(HelpableSettingCard):
     """숫자 입력(SpinBox)이 포함된 세팅 카드.
@@ -299,9 +297,7 @@ class HelpableSpinBoxCard(HelpableSettingCard):
         self._add_right_widget(self.spin_box)
 
         # 시그널 연결
-        self.spin_box.valueChanged.connect(
-            lambda val: self.value_changed.emit(val)
-        )
+        self.spin_box.valueChanged.connect(lambda val: self.value_changed.emit(val))
 
     def get_value(self) -> int:
         """현재 스핀박스 값을 반환한다."""
@@ -315,6 +311,7 @@ class HelpableSpinBoxCard(HelpableSettingCard):
 # ---------------------------------------------------------------------------
 # 텍스트 입력 세팅 카드
 # ---------------------------------------------------------------------------
+
 
 class HelpableLineEditCard(HelpableSettingCard):
     """텍스트 입력(LineEdit)이 포함된 세팅 카드.
@@ -349,9 +346,7 @@ class HelpableLineEditCard(HelpableSettingCard):
         self._add_right_widget(self.line_edit)
 
         # 시그널 연결 — textChanged로 실시간 값 반영
-        self.line_edit.textChanged.connect(
-            lambda text: self.value_changed.emit(text)
-        )
+        self.line_edit.textChanged.connect(lambda text: self.value_changed.emit(text))
 
     def get_value(self) -> str:
         """현재 텍스트를 반환한다."""
@@ -365,6 +360,7 @@ class HelpableLineEditCard(HelpableSettingCard):
 # ---------------------------------------------------------------------------
 # 색상 선택 세팅 카드
 # ---------------------------------------------------------------------------
+
 
 class HelpableColorCard(HelpableSettingCard):
     """색상 선택기(스와치 + Hex 입력)가 포함된 세팅 카드.
@@ -506,6 +502,7 @@ class _ColorSwatchButton(QWidget):
 # ---------------------------------------------------------------------------
 # 세팅 카드 그룹
 # ---------------------------------------------------------------------------
+
 
 class FluentSettingGroup(SettingCardGroup):
     """세팅 카드들을 묶는 섹션 그룹.

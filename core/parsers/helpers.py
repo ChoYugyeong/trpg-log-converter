@@ -3,6 +3,7 @@
 No I/O, no third-party deps beyond ``python-docx`` (only for :class:`RGBColor`).
 This file should stay leaf — no imports from other ``core.parsers.*`` siblings.
 """
+
 from __future__ import annotations
 
 import logging
@@ -33,8 +34,16 @@ def hex_to_rgb(hex_color: str) -> RGBColor:
 
 def is_narration_user(name: str, config: dict[str, Any]) -> bool:
     default_users = [
-        "GM", "KP", "DM", "System", "시스템", "나레이션",
-        "Narrator", "진행자", "Storyteller", "Keeper",
+        "GM",
+        "KP",
+        "DM",
+        "System",
+        "시스템",
+        "나레이션",
+        "Narrator",
+        "진행자",
+        "Storyteller",
+        "Keeper",
     ]
     config_users = config.get("narration", {}).get("users", [])
     narration_users = list(set(default_users + config_users))
@@ -141,7 +150,7 @@ def strip_channel_prefix(text: str) -> tuple[str, str | None]:
     """
     match = re.match(r"^\s*(\[[^\]:]+\])\s*", text)
     if match:
-        return text[match.end():].strip(), match.group(1)
+        return text[match.end() :].strip(), match.group(1)
     return text, None
 
 
@@ -158,7 +167,7 @@ def smart_split_name_content(text: str, max_name_length: int = 50) -> tuple[str 
             name_part = text[:pos].strip()
             if re.match(r"^\d{1,2}$", name_part):
                 return None, text
-            return name_part, text[pos + 1:].strip()
+            return name_part, text[pos + 1 :].strip()
         return None, text
 
     best_pos: int | None = None
@@ -169,7 +178,7 @@ def smart_split_name_content(text: str, max_name_length: int = 50) -> tuple[str 
             continue
 
         name_part = text[:pos].strip()
-        content_part = text[pos + 1:].strip()
+        content_part = text[pos + 1 :].strip()
 
         score = 0
         if 1 <= len(name_part) <= 30:
@@ -194,10 +203,10 @@ def smart_split_name_content(text: str, max_name_length: int = 50) -> tuple[str 
             best_pos = pos
 
     if best_pos is not None and best_score >= 0:
-        return text[:best_pos].strip(), text[best_pos + 1:].strip()
+        return text[:best_pos].strip(), text[best_pos + 1 :].strip()
 
     pos = colon_positions[0]
     if 0 < pos <= max_name_length:
-        return text[:pos].strip(), text[pos + 1:].strip()
+        return text[:pos].strip(), text[pos + 1 :].strip()
 
     return None, text

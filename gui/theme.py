@@ -7,6 +7,7 @@ UI 전역에서 사용되는 색상, 크기, 간격 등의 중앙 관리
 # ==================== Colors ====================
 class Colors:
     """앱 전역 색상"""
+
     ACCENT = "#0A84FF"
     ACCENT_HOVER = "#3399FF"
     ACCENT_PRESSED = "#005BBB"
@@ -34,8 +35,8 @@ class Colors:
     TEXT_PRIMARY = "palette(text)"
     TEXT_SECONDARY = "palette(dark)"
     TEXT_MUTED = "palette(mid)"
-    TEXT_MUTED_LIGHT = "#6E6E73"   # SubtitleLabel light mode
-    TEXT_MUTED_DARK = "#98989D"    # SubtitleLabel dark mode
+    TEXT_MUTED_LIGHT = "#6E6E73"  # SubtitleLabel light mode
+    TEXT_MUTED_DARK = "#98989D"  # SubtitleLabel dark mode
 
     # 표면
     SURFACE = "palette(base)"
@@ -62,6 +63,7 @@ class Colors:
 # ==================== Sizes ====================
 class Sizes:
     """크기 상수"""
+
     # 페이지 레이아웃
     PAGE_MARGIN_H = 28
     PAGE_MARGIN_V_TOP = 24
@@ -120,6 +122,7 @@ class Spacing:
     MD(12) 는 라벨/버튼 등 미세 조정용으로 유지하지만, 섹션 간격은
     SM(8) → LG(16) → XL(24) → XXL(32) 순서로 일관되게 적용.
     """
+
     XS = 4
     SM = 8
     MD = 12  # 라벨/버튼 inner 조정용
@@ -131,6 +134,7 @@ class Spacing:
 # ==================== Typography ====================
 class Typography:
     """타이포그래피 상수"""
+
     FONT_FAMILY = '"Pretendard", "Malgun Gothic", sans-serif'
     FONT_MONO = '"Consolas", "Monaco", "Menlo", monospace'
 

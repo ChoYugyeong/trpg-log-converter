@@ -8,6 +8,7 @@ exports use, including:
   * ``message desc`` for narration / descriptions
   * ``hidden-message`` rows (skipped)
 """
+
 from __future__ import annotations
 
 import logging
@@ -74,7 +75,7 @@ def parse_roll20(soup, config: dict[str, Any]) -> list[dict[str, Any]]:
                 parent_text = name_tag.parent.get_text(strip=True)
                 name_with_colon = name_tag.get_text(strip=True)
                 if parent_text.startswith(name_with_colon):
-                    content = parent_text[len(name_with_colon):].lstrip(":").strip()
+                    content = parent_text[len(name_with_colon) :].lstrip(":").strip()
         else:
             # avatar/tstamp/spacer 등은 제외
             for child in msg.children:
@@ -122,13 +123,15 @@ def parse_roll20(soup, config: dict[str, Any]) -> list[dict[str, Any]]:
         if entry_type not in ("scene", "system") and name and is_narration_user(name, config):
             entry_type = "narration"
 
-        entries.append({
-            "type": entry_type,
-            "name": name or "",
-            "content": content,
-            "raw": content,
-            "image": None,
-            "channel": None,
-        })
+        entries.append(
+            {
+                "type": entry_type,
+                "name": name or "",
+                "content": content,
+                "raw": content,
+                "image": None,
+                "channel": None,
+            }
+        )
 
     return entries

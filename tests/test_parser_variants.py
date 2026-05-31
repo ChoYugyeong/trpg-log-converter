@@ -15,6 +15,7 @@ Covers (based on Roll20 wiki + Cocofolia docs + community parser inspection):
 These specifically prevent regressions where a future parser change might
 silently break a real-world format.
 """
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -50,6 +51,7 @@ def engine(tmp_path: Path) -> ConversionEngine:
 # Cocofolia variants
 # ---------------------------------------------------------------------------
 
+
 class TestCocofoliaModern:
     """Modern ccfolia.com export uses ``<p class="player pN">``."""
 
@@ -84,6 +86,7 @@ class TestCocofoliaModern:
 # ---------------------------------------------------------------------------
 # Roll20 variants
 # ---------------------------------------------------------------------------
+
 
 class TestRoll20Variants:
     def test_emote_is_recognised(self, engine: ConversionEngine):
@@ -136,6 +139,7 @@ class TestRoll20Variants:
 # Edge cases
 # ---------------------------------------------------------------------------
 
+
 class TestEdgeCases:
     def test_empty_html_returns_empty_list(self, engine: ConversionEngine):
         entries = engine.parse_html(make_empty_html())
@@ -149,6 +153,7 @@ class TestEdgeCases:
     def test_very_long_message_does_not_crash(self, engine: ConversionEngine):
         """~30KB single message — must parse in reasonable time without OOM."""
         import time
+
         start = time.monotonic()
         entries = engine.parse_html(make_very_long_message_html())
         elapsed = time.monotonic() - start
@@ -174,6 +179,7 @@ class TestEdgeCases:
 # ---------------------------------------------------------------------------
 # Security — these are the highest-priority assertions
 # ---------------------------------------------------------------------------
+
 
 class TestSecurity:
     """A converted EPUB/DOCX must NEVER carry executable web content. Even if a

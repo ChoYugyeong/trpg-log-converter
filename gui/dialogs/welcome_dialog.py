@@ -16,6 +16,7 @@ Implementation note (재작성 사유):
 와 중복되어 시각 노이즈. 이번엔 paintEvent 로 직접 원을 그리는 ``_StepBadge``
 + 실제 ``QLabel`` 두 개로 정렬을 픽셀 단위로 통제.
 """
+
 from __future__ import annotations
 
 from PySide6.QtCore import QSize, Qt
@@ -37,6 +38,7 @@ from core.version import __app_name__, __version__
 # ---------------------------------------------------------------------------
 # Step rendering
 # ---------------------------------------------------------------------------
+
 
 class _StepBadge(QWidget):
     """Circular numeric badge — 32×32 painted via QPainter for true round shape.
@@ -110,8 +112,7 @@ class _StepCard(QFrame):
 
         heading_label = QLabel(heading)
         heading_label.setStyleSheet(
-            "font-size: 14px; font-weight: 600; color: palette(text); "
-            "margin: 0; padding: 0;"
+            "font-size: 14px; font-weight: 600; color: palette(text); margin: 0; padding: 0;"
         )
         # Match line-height to badge top so they baseline up.
         heading_label.setMinimumHeight(_StepBadge._SIZE)
@@ -121,8 +122,7 @@ class _StepCard(QFrame):
         body_label = QLabel(body)
         body_label.setWordWrap(True)
         body_label.setStyleSheet(
-            "font-size: 12px; color: palette(mid); line-height: 1.6; "
-            "margin: 0; padding: 0;"
+            "font-size: 12px; color: palette(mid); line-height: 1.6; margin: 0; padding: 0;"
         )
         body_label.setAlignment(Qt.AlignLeft | Qt.AlignTop)
         body_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)

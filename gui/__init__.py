@@ -6,6 +6,7 @@ without dragging in PySide6.
 
 ``from gui import MainWindow`` still works via PEP 562 ``__getattr__``.
 """
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -19,5 +20,6 @@ __all__ = ["MainWindow"]
 def __getattr__(name: str):
     if name == "MainWindow":
         from .main_window import MainWindow as _MainWindow
+
         return _MainWindow
     raise AttributeError(f"module 'gui' has no attribute {name!r}")

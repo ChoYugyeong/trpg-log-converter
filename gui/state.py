@@ -60,7 +60,6 @@ _KEY_GROUP_MAP: dict[str, str] = {
     "language": "basic",
     "convert_mode": "basic",
     "output_format": "basic",
-
     # ── style (서식 - 비주얼 스타일) ──
     "style_body_bg": "style",
     "style_body_text": "style",
@@ -72,10 +71,8 @@ _KEY_GROUP_MAP: dict[str, str] = {
     "custom_separator_text": "style",
     "character_colors": "style",
     "custom_theme_presets": "style",
-
     # ── style - colors (요소별 색상 팔레트) ──
     "colors": "style",
-
     # ── font (폰트) ──
     "epub_body_font": "font",
     "epub_name_font": "font",
@@ -89,7 +86,6 @@ _KEY_GROUP_MAP: dict[str, str] = {
     "dialogue_line_height": "font",
     "narration_line_height": "font",
     "base_font_size": "font",
-
     # ── cover (표지) ──
     "include_cover": "cover",
     "title_on_cover": "cover",
@@ -100,7 +96,6 @@ _KEY_GROUP_MAP: dict[str, str] = {
     "cover_image": "cover",
     "include_toc": "cover",
     "toc_title": "cover",
-
     # ── decoration (장식) ──
     "divider_type": "decoration",
     "divider_text": "decoration",
@@ -131,7 +126,6 @@ _KEY_GROUP_MAP: dict[str, str] = {
     "dice_style": "decoration",
     "dice_icon": "decoration",
     "dice_color": "decoration",
-
     # ── content (콘텐츠 필터) ──
     "include_dice": "content",
     "include_effects": "content",
@@ -141,14 +135,12 @@ _KEY_GROUP_MAP: dict[str, str] = {
     "merge_separator": "content",
     "merge_max": "content",
     "empty_dialogue": "content",
-
     # ── scene (장면 분할) ──
     "split_mode": "scene",
     "scene_patterns": "scene",
     "entries_per_chapter": "scene",
     "min_scene_entries": "scene",
     "title_format": "scene",
-
     # ── parsing (파싱 규칙) ──
     "custom_separator_type": "parsing",
     "custom_name_position": "parsing",
@@ -157,14 +149,12 @@ _KEY_GROUP_MAP: dict[str, str] = {
     "scene_separator_pattern": "parsing",
     "dice_keywords": "parsing",
     "system_prefix": "parsing",
-
     # ── output (출력 레이아웃) ──
     "epub_page_format": "output",
     "page_format": "output",
     "custom_page_width": "output",
     "custom_page_height": "output",
     "margins": "output",
-
     # ── advanced (고급 옵션) ──
     "name_max_length": "advanced",
     "skip_channels": "advanced",
@@ -186,9 +176,7 @@ _KEY_GROUP_MAP: dict[str, str] = {
 }
 
 # 미리보기 갱신이 필요한 그룹 목록
-_PREVIEW_GROUPS: frozenset[str] = frozenset(
-    {"style", "font", "decoration", "cover", "basic"}
-)
+_PREVIEW_GROUPS: frozenset[str] = frozenset({"style", "font", "decoration", "cover", "basic"})
 
 
 class AppState(QObject):
@@ -437,28 +425,22 @@ class AppState(QObject):
             # 텍스트/배경 색상
             "dialogue_color": f.get("style_body_text", colors.get("text_color", "#1a1a1a")),
             "narration_color": colors.get("system_color", "#555555"),
-
             # 폰트
             "font_family": self._extract_font_family(
                 f.get("epub_body_font", "'Nanum Myeongjo', 'Batang', serif")
             ),
             "font_size": f.get("style_font_size", 14),
             "line_height": f.get("style_line_height", 1.6),
-
             # 장식/마커
             "scene_marker": f.get("scene_marker", "■"),
             "narration_prefix": f.get("narration_prefix", "＿"),
-
             # 나레이터 목록
             "narrators": f.get("narrators", "GM, KP, DM"),
-
             # 배경색 (DocumentPreview 스타일에 사용 가능)
             "body_bg": f.get("style_body_bg", "#ffffff"),
-
             # 이름 스타일
             "name_color": f.get("style_name_color", colors.get("name_color", "#2d2d2d")),
             "name_bold": f.get("style_name_bold", True),
-
             # 대사 구분자
             "separator": f.get("style_separator", "「 」 (꺾쇠)"),
         }

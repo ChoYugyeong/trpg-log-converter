@@ -13,6 +13,7 @@ UI/UX Pro Max:
   - §8 empty-states        : helpful placeholder when no records
   - §5 visual-hierarchy    : search → table → stats → actions
 """
+
 from __future__ import annotations
 
 import os
@@ -42,13 +43,13 @@ from core.services.history import ConversionRecord, HistoryManager
 
 # Columns shown in the table (header label, attribute, width)
 _COLUMNS = [
-    ("일시",      "_display_time",     150),
-    ("입력 파일",   "input_filename",    220),
-    ("제목",       "title",             180),
-    ("형식",       "output_format",     80),
-    ("항목 수",    "entry_count",       70),
-    ("장면",       "scene_count",       60),
-    ("상태",       "_status_text",      70),
+    ("일시", "_display_time", 150),
+    ("입력 파일", "input_filename", 220),
+    ("제목", "title", 180),
+    ("형식", "output_format", 80),
+    ("항목 수", "entry_count", 70),
+    ("장면", "scene_count", 60),
+    ("상태", "_status_text", 70),
 ]
 
 
@@ -80,8 +81,7 @@ class HistoryDialog(QDialog):
     def _build_header(self, parent_layout: QVBoxLayout) -> None:
         title = QLabel("변환 이력")
         title.setStyleSheet(
-            "font-size: 18px; font-weight: 700; color: palette(text); "
-            "letter-spacing: -0.4px;"
+            "font-size: 18px; font-weight: 700; color: palette(text); letter-spacing: -0.4px;"
         )
         parent_layout.addWidget(title)
 
@@ -126,8 +126,7 @@ class HistoryDialog(QDialog):
         )
         self._empty_state.setAlignment(Qt.AlignCenter)
         self._empty_state.setStyleSheet(
-            "color: palette(mid); font-size: 12px; line-height: 1.6; "
-            "background: transparent;"
+            "color: palette(mid); font-size: 12px; line-height: 1.6; background: transparent;"
         )
         self._empty_state.setParent(self._table.viewport())
         self._empty_state.setAttribute(Qt.WA_TransparentForMouseEvents, True)
@@ -137,9 +136,7 @@ class HistoryDialog(QDialog):
 
     def _build_stats(self, parent_layout: QVBoxLayout) -> None:
         self._stats = QLabel("")
-        self._stats.setStyleSheet(
-            "color: palette(mid); font-size: 11px; padding: 4px 2px;"
-        )
+        self._stats.setStyleSheet("color: palette(mid); font-size: 11px; padding: 4px 2px;")
         parent_layout.addWidget(self._stats)
 
     def _build_actions(self, parent_layout: QVBoxLayout) -> None:
@@ -215,9 +212,7 @@ class HistoryDialog(QDialog):
         if stats["total_conversions"] == 0:
             self._stats.setText("")
             return
-        formats = " · ".join(
-            f"{fmt}({n})" for fmt, n in sorted(stats["formats_used"].items())
-        )
+        formats = " · ".join(f"{fmt}({n})" for fmt, n in sorted(stats["formats_used"].items()))
         self._stats.setText(
             f"총 {stats['total_conversions']}건 · 성공 {stats['success_count']} · "
             f"실패 {stats['failure_count']} · "
@@ -272,9 +267,11 @@ class HistoryDialog(QDialog):
         if not self._records:
             return
         reply = QMessageBox.question(
-            self, "모든 이력 삭제",
+            self,
+            "모든 이력 삭제",
             f"기록 {len(self._records)}건을 모두 삭제할까요?\n이 작업은 되돌릴 수 없습니다.",
-            QMessageBox.Yes | QMessageBox.No, QMessageBox.No,
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
         )
         if reply == QMessageBox.Yes:
             self._history.clear()
@@ -312,6 +309,7 @@ class HistoryDialog(QDialog):
 
     def _copy_to_clipboard(self, text: str) -> None:
         from PySide6.QtWidgets import QApplication
+
         cb = QApplication.clipboard()
         if cb is not None:
             cb.setText(text)
@@ -323,6 +321,7 @@ class HistoryDialog(QDialog):
 
     def eventFilter(self, obj, event) -> bool:
         from PySide6.QtCore import QEvent
+
         if (
             obj is self._table.viewport()
             and event.type() == QEvent.Resize

@@ -27,6 +27,7 @@ Config keys (``config["toc"]`` 아래)
 
 기본값 (모두 OFF) 으로 두면 기존 동작 100% 보존.
 """
+
 from __future__ import annotations
 
 import logging

@@ -10,6 +10,7 @@ rendering packages together. The heavy code lives in:
 All previously top-level symbols (``parse_log``, ``create_epub``, ``escape_html``,
 ``optimize_image``, etc.) are re-exported here for backwards compatibility.
 """
+
 from __future__ import annotations
 
 import logging
@@ -93,6 +94,7 @@ class ConversionEngine:
 
     def parse_file(self, file_path: str) -> list[dict[str, Any]]:
         from core.text_parser import parse_file as text_parse_file
+
         result: list[dict[str, Any]] = text_parse_file(file_path, self.config)
         return result
 
@@ -118,7 +120,11 @@ class ConversionEngine:
         progress_callback: ProgressCallback | None = None,
     ) -> str:
         return create_epub(
-            entries, output_path, self.config, title, author,
+            entries,
+            output_path,
+            self.config,
+            title,
+            author,
             progress_callback=progress_callback,
         )
 
@@ -131,7 +137,11 @@ class ConversionEngine:
         progress_callback: ProgressCallback | None = None,
     ) -> str:
         result: str = create_docx(
-            entries, output_path, self.config, title, author,
+            entries,
+            output_path,
+            self.config,
+            title,
+            author,
             progress_callback=progress_callback,
         )
         return result
@@ -146,6 +156,7 @@ class ConversionEngine:
         try:
             from core.pdf_generator import PDF_AVAILABLE
             from core.pdf_generator import create_pdf as pdf_create
+
             if PDF_AVAILABLE:
                 return pdf_create(entries, output_path, self.config, title, author)
             return None
@@ -163,7 +174,12 @@ class ConversionEngine:
         progress_callback: ProgressCallback | None = None,
     ) -> list[str]:
         return convert(
-            input_path, output_path, title, author, self.config, format,
+            input_path,
+            output_path,
+            title,
+            author,
+            self.config,
+            format,
             progress_callback=progress_callback,
         )
 
@@ -187,7 +203,12 @@ class ConversionEngine:
                 if progress_callback:
                     progress_callback(i - 1, len(input_files), f"변환 중: {base}")
                 output_paths = convert(
-                    file_path, None, title, author, self.config, format,
+                    file_path,
+                    None,
+                    title,
+                    author,
+                    self.config,
+                    format,
                     progress_callback=progress_callback,
                 )
                 results.append({"file": file_path, "success": True, "outputs": output_paths})
@@ -225,6 +246,7 @@ def convert(
     # 통해 처리한다. 과거에는 여기서 직접 ``open()`` 인코딩 루프를 돌렸지만
     # 동일한 안전성을 양쪽에서 유지하기 어려워 단일 경로로 통일.
     from core.text_parser import parse_file as text_parse_file
+
     logger.info("Input: %s", input_path)
 
     if progress_callback:
@@ -264,6 +286,7 @@ def convert(
     if output_format in ("pdf", "all"):
         try:
             from core.pdf_generator import PDF_AVAILABLE, create_pdf
+
             if PDF_AVAILABLE:
                 pdf_path = os.path.join(output_dir, f"{base}.pdf")
                 result = create_pdf(entries, pdf_path, config, title, author)

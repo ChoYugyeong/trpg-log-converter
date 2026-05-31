@@ -4,6 +4,7 @@
 parsing fixtures may run without Pillow installed, in which case the function
 returns the raw bytes untouched.
 """
+
 from __future__ import annotations
 
 import io

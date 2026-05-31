@@ -1,4 +1,5 @@
 """Coverage tests for the application logger."""
+
 from __future__ import annotations
 
 import contextlib

@@ -14,6 +14,7 @@ Naming convention
 * ``*_S`` suffix for seconds (used by ``urllib`` / ``socket`` APIs).
 * ``Final[…]`` annotations advertise immutability to mypy / IDE.
 """
+
 from __future__ import annotations
 
 from typing import Final

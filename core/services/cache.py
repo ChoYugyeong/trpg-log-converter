@@ -16,6 +16,7 @@ from typing import Any
 @dataclass
 class CacheEntry:
     """캐시 엔트리"""
+
     file_hash: str
     file_path: str
     file_size: int
@@ -232,10 +233,7 @@ class CacheService:
 
             # 메모리 캐시에서 제거
             with self._lock:
-                keys_to_remove = [
-                    k for k in self._memory_cache
-                    if k.startswith(file_hash)
-                ]
+                keys_to_remove = [k for k in self._memory_cache if k.startswith(file_hash)]
                 for key in keys_to_remove:
                     del self._memory_cache[key]
 
@@ -284,10 +282,7 @@ class CacheService:
                     deleted += 1
 
             # 크기 초과 시 오래된 것부터 삭제
-            cache_files = [
-                (p, m, s) for p, m, s in cache_files
-                if p.exists()
-            ]
+            cache_files = [(p, m, s) for p, m, s in cache_files if p.exists()]
             cache_files.sort(key=lambda x: x[1])  # 수정 시간순 정렬
 
             total_size = sum(s for _, _, s in cache_files)

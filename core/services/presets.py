@@ -11,6 +11,7 @@ from typing import Any, ClassVar
 @dataclass
 class Preset:
     """프리셋 데이터 클래스"""
+
     name: str
     display_name: str
     description: str
@@ -40,7 +41,17 @@ class PresetService:
                         "player": ".player",
                         "name": ".player b",
                         "dice": ".diceroll",
-                        "tabs": ["メイン", "main", "情報", "info", "雑談", "other", "메인", "정보", "잡담"]
+                        "tabs": [
+                            "メイン",
+                            "main",
+                            "情報",
+                            "info",
+                            "雑談",
+                            "other",
+                            "메인",
+                            "정보",
+                            "잡담",
+                        ],
                     },
                     "skip_channels": ["雑談", "other", "잡담"],  # OOC 채널 제외
                     "normalize_punctuation": True,
@@ -69,7 +80,6 @@ class PresetService:
             },
             tags=["korean", "japanese", "trpg", "ccfolia", "coc"],
         ),
-
         "ccfolia_coc": Preset(
             name="ccfolia_coc",
             display_name="코코포리아 CoC",
@@ -105,7 +115,6 @@ class PresetService:
             },
             tags=["korean", "japanese", "coc", "ccfolia", "horror"],
         ),
-
         "ccfolia_novel": Preset(
             name="ccfolia_novel",
             display_name="코코포리아 소설풍",
@@ -138,7 +147,6 @@ class PresetService:
             },
             tags=["korean", "trpg", "novel", "ccfolia"],
         ),
-
         "ccfolia_minimal": Preset(
             name="ccfolia_minimal",
             display_name="코코포리아 미니멀",
@@ -161,7 +169,6 @@ class PresetService:
             },
             tags=["korean", "minimal", "ccfolia"],
         ),
-
         "ccfolia_insane": Preset(
             name="ccfolia_insane",
             display_name="코코포리아 인세인",
@@ -174,10 +181,10 @@ class PresetService:
                     "skip_channels": ["雑談", "other", "잡담", "ooc"],
                     "normalize_punctuation": True,
                     "dice_patterns": [
-                        r"2D6",           # 기본 판정
-                        r"\d+D6",         # 변형 판정
-                        r"ST判定",        # 공포 판정 (일본어)
-                        r"공포\s*판정",   # 공포 판정 (한국어)
+                        r"2D6",  # 기본 판정
+                        r"\d+D6",  # 변형 판정
+                        r"ST判定",  # 공포 판정 (일본어)
+                        r"공포\s*판정",  # 공포 판정 (한국어)
                     ],
                 },
                 "narration": {
@@ -193,10 +200,18 @@ class PresetService:
                 "chapter": {
                     "split_mode": "scene",
                     "scene_patterns": [
-                        r"^■", r"^씬\s*\d+", r"^シーン\s*\d+",
-                        r"^장면\s*\d+", r"^사이클\s*\d+", r"^サイクル\s*\d+",
-                        r"^클라이맥스", r"^クライマックス",
-                        r"^도입", r"^導入", r"^엔딩", r"^エンディング",
+                        r"^■",
+                        r"^씬\s*\d+",
+                        r"^シーン\s*\d+",
+                        r"^장면\s*\d+",
+                        r"^사이클\s*\d+",
+                        r"^サイクル\s*\d+",
+                        r"^클라이맥스",
+                        r"^クライマックス",
+                        r"^도입",
+                        r"^導入",
+                        r"^엔딩",
+                        r"^エンディング",
                     ],
                     "extract_scene_title": True,
                     "title_format": "씬 {n}",
@@ -209,7 +224,6 @@ class PresetService:
             },
             tags=["korean", "japanese", "insane", "ccfolia", "horror", "2d6"],
         ),
-
         "ccfolia_dx3": Preset(
             name="ccfolia_dx3",
             display_name="코코포리아 더블크로스",
@@ -222,11 +236,11 @@ class PresetService:
                     "skip_channels": ["雑談", "other", "잡담", "ooc"],
                     "normalize_punctuation": True,
                     "dice_patterns": [
-                        r"\d+DX",          # DX 다이스풀 (10면체)
-                        r"\d+D10",         # 10면체 판정
-                        r"C\(\d+\)",       # 크리티컬 값
-                        r"侵蝕率",         # 침식률 (일본어)
-                        r"침식률",         # 침식률 (한국어)
+                        r"\d+DX",  # DX 다이스풀 (10면체)
+                        r"\d+D10",  # 10면체 판정
+                        r"C\(\d+\)",  # 크리티컬 값
+                        r"侵蝕率",  # 침식률 (일본어)
+                        r"침식률",  # 침식률 (한국어)
                     ],
                 },
                 "narration": {
@@ -242,11 +256,21 @@ class PresetService:
                 "chapter": {
                     "split_mode": "scene",
                     "scene_patterns": [
-                        r"^■", r"^씬\s*\d+", r"^シーン\s*\d+",
-                        r"^오프닝", r"^オープニング", r"^OP",
-                        r"^미들", r"^ミドル", r"^MD",
-                        r"^클라이맥스", r"^クライマックス", r"^CL",
-                        r"^엔딩", r"^エンディング", r"^ED",
+                        r"^■",
+                        r"^씬\s*\d+",
+                        r"^シーン\s*\d+",
+                        r"^오프닝",
+                        r"^オープニング",
+                        r"^OP",
+                        r"^미들",
+                        r"^ミドル",
+                        r"^MD",
+                        r"^클라이맥스",
+                        r"^クライマックス",
+                        r"^CL",
+                        r"^엔딩",
+                        r"^エンディング",
+                        r"^ED",
                     ],
                     "extract_scene_title": True,
                     "title_format": "씬 {n}",
@@ -259,7 +283,6 @@ class PresetService:
             },
             tags=["korean", "japanese", "doublecross", "dx3", "ccfolia", "superhero"],
         ),
-
         # ============ Roll20 프리셋 ============
         "roll20_default": Preset(
             name="roll20_default",
@@ -275,7 +298,7 @@ class PresetService:
                         "entry": "div.message",
                         "avatar": "div.avatar",
                         "content": "div.content",
-                        "timestamp": "span.tstamp"
+                        "timestamp": "span.tstamp",
                     },
                     "skip_channels": [],
                     "include_whisper": False,  # 귓속말 기본 제외
@@ -304,7 +327,6 @@ class PresetService:
             },
             tags=["english", "trpg", "roll20"],
         ),
-
         "roll20_dnd5e": Preset(
             name="roll20_dnd5e",
             display_name="Roll20 D&D 5e",
@@ -323,12 +345,16 @@ class PresetService:
                 },
                 "chapter": {
                     "title_format": "Chapter {n}",
-                    "scene_patterns": [r"^Chapter", r"^Session\s*\d+", r"^Long Rest", r"^Short Rest"],
+                    "scene_patterns": [
+                        r"^Chapter",
+                        r"^Session\s*\d+",
+                        r"^Long Rest",
+                        r"^Short Rest",
+                    ],
                 },
             },
             tags=["english", "dnd", "5e", "roll20"],
         ),
-
         "roll20_coc": Preset(
             name="roll20_coc",
             display_name="Roll20 크툴루의 부름",
@@ -341,13 +367,13 @@ class PresetService:
                     "include_whisper": False,
                     "normalize_punctuation": True,
                     "dice_patterns": [
-                        r"1[dD]100",        # 퍼센타일 판정
-                        r"[dD]100",         # 축약형
-                        r"CCB",             # CoC 판정 매크로
-                        r"1[dD]20",         # 행운/POW 대항
-                        r"SAN\s*체크",      # SAN 체크 (한국어)
-                        r"SAN\s*Check",     # SAN Check (영어)
-                        r"Sanity",          # Sanity roll
+                        r"1[dD]100",  # 퍼센타일 판정
+                        r"[dD]100",  # 축약형
+                        r"CCB",  # CoC 판정 매크로
+                        r"1[dD]20",  # 행운/POW 대항
+                        r"SAN\s*체크",  # SAN 체크 (한국어)
+                        r"SAN\s*Check",  # SAN Check (영어)
+                        r"Sanity",  # Sanity roll
                     ],
                 },
                 "narration": {
@@ -363,11 +389,16 @@ class PresetService:
                 "chapter": {
                     "split_mode": "scene",
                     "scene_patterns": [
-                        r"^---", r"^###",
-                        r"^Scene\s*\d+", r"^장면\s*\d+",
-                        r"^Introduction", r"^도입",
-                        r"^Climax", r"^클라이맥스",
-                        r"^Ending", r"^엔딩",
+                        r"^---",
+                        r"^###",
+                        r"^Scene\s*\d+",
+                        r"^장면\s*\d+",
+                        r"^Introduction",
+                        r"^도입",
+                        r"^Climax",
+                        r"^클라이맥스",
+                        r"^Ending",
+                        r"^엔딩",
                     ],
                     "title_format": "Scene {n}",
                 },
@@ -380,7 +411,6 @@ class PresetService:
             },
             tags=["english", "korean", "coc", "roll20", "horror", "d100"],
         ),
-
         "roll20_insane": Preset(
             name="roll20_insane",
             display_name="Roll20 인세인",
@@ -393,11 +423,11 @@ class PresetService:
                     "include_whisper": False,
                     "normalize_punctuation": True,
                     "dice_patterns": [
-                        r"2[dD]6",          # 기본 판정
-                        r"\d+[dD]6",        # 변형 판정
-                        r"ST判定",          # 공포 판정 (일본어)
-                        r"공포\s*판정",     # 공포 판정 (한국어)
-                        r"Fear\s*Check",    # Fear Check (영어)
+                        r"2[dD]6",  # 기본 판정
+                        r"\d+[dD]6",  # 변형 판정
+                        r"ST判定",  # 공포 판정 (일본어)
+                        r"공포\s*판정",  # 공포 판정 (한국어)
+                        r"Fear\s*Check",  # Fear Check (영어)
                     ],
                 },
                 "narration": {
@@ -413,12 +443,23 @@ class PresetService:
                 "chapter": {
                     "split_mode": "scene",
                     "scene_patterns": [
-                        r"^---", r"^###",
-                        r"^Scene\s*\d+", r"^씬\s*\d+", r"^シーン\s*\d+",
-                        r"^Cycle\s*\d+", r"^사이클\s*\d+", r"^サイクル\s*\d+",
-                        r"^Climax", r"^클라이맥스", r"^クライマックス",
-                        r"^Introduction", r"^도입", r"^導入",
-                        r"^Ending", r"^엔딩", r"^エンディング",
+                        r"^---",
+                        r"^###",
+                        r"^Scene\s*\d+",
+                        r"^씬\s*\d+",
+                        r"^シーン\s*\d+",
+                        r"^Cycle\s*\d+",
+                        r"^사이클\s*\d+",
+                        r"^サイクル\s*\d+",
+                        r"^Climax",
+                        r"^클라이맥스",
+                        r"^クライマックス",
+                        r"^Introduction",
+                        r"^도입",
+                        r"^導入",
+                        r"^Ending",
+                        r"^엔딩",
+                        r"^エンディング",
                     ],
                     "extract_scene_title": True,
                     "title_format": "Scene {n}",
@@ -432,7 +473,6 @@ class PresetService:
             },
             tags=["english", "korean", "japanese", "insane", "roll20", "horror", "2d6"],
         ),
-
         "roll20_pf2e": Preset(
             name="roll20_pf2e",
             display_name="Roll20 Pathfinder 2e",
@@ -455,7 +495,6 @@ class PresetService:
             },
             tags=["english", "pathfinder", "pf2e", "roll20"],
         ),
-
         # ============ Discord 프리셋 ============
         "discord_default": Preset(
             name="discord_default",
@@ -469,7 +508,7 @@ class PresetService:
                     "skip_channels": [],
                     # 봇 메시지 처리
                     "bot_handlers": {
-                        "avrae": True,   # Avrae 다이스 봇
+                        "avrae": True,  # Avrae 다이스 봇
                         "tupperbox": True,  # Tupperbox 캐릭터 봇
                     },
                 },
@@ -484,7 +523,6 @@ class PresetService:
             },
             tags=["discord", "chat", "avrae"],
         ),
-
         "discord_pbp": Preset(
             name="discord_pbp",
             display_name="Discord PBP (Play-by-Post)",
@@ -514,7 +552,6 @@ class PresetService:
             },
             tags=["discord", "pbp", "play-by-post"],
         ),
-
         # ============ 일반 텍스트 프리셋 ============
         "text_simple": Preset(
             name="text_simple",
@@ -536,7 +573,6 @@ class PresetService:
             },
             tags=["text", "simple"],
         ),
-
         "text_screenplay": Preset(
             name="text_screenplay",
             display_name="시나리오/대본",
@@ -559,7 +595,6 @@ class PresetService:
             },
             tags=["text", "screenplay", "script"],
         ),
-
         # ============ 출판용 프리셋 ============
         "publish_ebook": Preset(
             name="publish_ebook",
@@ -589,7 +624,6 @@ class PresetService:
             },
             tags=["publish", "ebook", "epub"],
         ),
-
         "publish_print": Preset(
             name="publish_print",
             display_name="종이책 출판용",

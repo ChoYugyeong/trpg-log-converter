@@ -10,6 +10,7 @@ User-stated expected behavior (이 테스트가 그것을 코드로 박제):
 
 If any of these regress, this test fails and blocks the build.
 """
+
 from __future__ import annotations
 
 import inspect
@@ -69,6 +70,7 @@ class _FakeMainWindow:
 # Step 1: first launch — 404 must auto-disable startup checks
 # ---------------------------------------------------------------------------
 
+
 class TestFirstLaunchPrivateAutoDisable:
     def test_silent_404_disables_startup_check(self):
         cm = _FakeConfigManager({"updates_check_on_startup": True})
@@ -114,6 +116,7 @@ class TestFirstLaunchPrivateAutoDisable:
 # Step 2: subsequent boots — no network call
 # ---------------------------------------------------------------------------
 
+
 class TestSubsequentBootsAreSilent:
     def test_disabled_flag_means_check_is_skipped(self):
         """main_window 시작 시 gui_settings.updates_check_on_startup=False 면
@@ -138,6 +141,7 @@ class TestSubsequentBootsAreSilent:
 # Step 3: [정보] → [새 버전 받기 (Releases)] — direct browser open
 # ---------------------------------------------------------------------------
 
+
 class TestReleasesPageEscapeHatch:
     def test_about_dialog_exposes_releases_button(self):
         """About 다이얼로그는 'Releases' 직링크 버튼을 항상 노출해야 한다 —
@@ -145,6 +149,7 @@ class TestReleasesPageEscapeHatch:
         import inspect
 
         from gui.dialogs.about_dialog import AboutDialog
+
         src = inspect.getsource(AboutDialog)
         # Button label + URL fragment that opens the releases page
         assert "새 버전 받기" in src
@@ -154,6 +159,7 @@ class TestReleasesPageEscapeHatch:
     def test_main_window_exposes_open_releases_helper(self):
         """사이드바 InfoBar 액션 / 직접 호출 가능한 helper."""
         from gui import main_window as mw_module
+
         src = inspect.getsource(mw_module)
         assert "_open_releases_page" in src
         assert "/releases/latest" in src
@@ -162,6 +168,7 @@ class TestReleasesPageEscapeHatch:
 # ---------------------------------------------------------------------------
 # Step 4: private → public 마이그레이션 자동 복구
 # ---------------------------------------------------------------------------
+
 
 class TestRepoChangeAutoRestore:
     """``__update_repo__`` 가 (예: private → public) 바뀌면, 이전에 자동으로
@@ -173,26 +180,25 @@ class TestRepoChangeAutoRestore:
 
     def test_main_window_has_repo_change_restore_block(self):
         from gui import main_window as mw_module
+
         with open(mw_module.__file__, encoding="utf-8") as f:
             source = f.read()
         # 마커 키 비교
-        assert "_updates_repo_seen" in source, (
-            "main_window 에서 repo-change restore 마커가 사라짐"
-        )
+        assert "_updates_repo_seen" in source, "main_window 에서 repo-change restore 마커가 사라짐"
         # 새 repo 와 비교 후 차이 있으면 updates_check_on_startup=True
-        assert "last_seen_repo != __update_repo__" in source, (
-            "repo URL 비교 조건이 사라짐"
-        )
+        assert "last_seen_repo != __update_repo__" in source, "repo URL 비교 조건이 사라짐"
 
     def test_simulated_repo_change_restores_disabled_flag(self):
         """이전에 private 에서 꺼졌던 사용자가 public 빌드로 처음 올라왔을 때:
         설정의 ``_updates_repo_seen`` 이 옛 repo 거나 None 이고, current
         ``__update_repo__`` 와 다르면, ``updates_check_on_startup`` 가 True 로
         복구돼야 한다."""
-        cm = _FakeConfigManager({
-            "updates_check_on_startup": False,             # 이전에 꺼짐
-            "_updates_repo_seen": "ChoYugyeong/old-private",  # 옛 repo
-        })
+        cm = _FakeConfigManager(
+            {
+                "updates_check_on_startup": False,  # 이전에 꺼짐
+                "_updates_repo_seen": "ChoYugyeong/old-private",  # 옛 repo
+            }
+        )
 
         # 해당 블록을 main_window 와 동일한 로직으로 재현 (테스트가 진실의
         # 출처가 되지 않도록, 코드 자체는 변경되지 않으면 같이 깨지게).
@@ -201,7 +207,8 @@ class TestRepoChangeAutoRestore:
         last_seen = settings.get("_updates_repo_seen")
         if last_seen != new_repo:
             if last_seen is not None and not settings.get(
-                "updates_check_on_startup", True,
+                "updates_check_on_startup",
+                True,
             ):
                 settings["updates_check_on_startup"] = True
             settings["_updates_repo_seen"] = new_repo
@@ -221,7 +228,8 @@ class TestRepoChangeAutoRestore:
         last_seen = settings.get("_updates_repo_seen")
         if last_seen != new_repo:
             if last_seen is not None and not settings.get(
-                "updates_check_on_startup", True,
+                "updates_check_on_startup",
+                True,
             ):
                 settings["updates_check_on_startup"] = True
             settings["_updates_repo_seen"] = new_repo

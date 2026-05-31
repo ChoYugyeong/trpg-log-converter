@@ -2,6 +2,7 @@
 
 두 렌더러의 출력이 동일한 판형과 여백을 갖도록 하나의 진실 소스를 제공한다.
 """
+
 from __future__ import annotations
 
 import re
@@ -53,11 +54,7 @@ def get_page_format(config: dict, *, for_epub: bool = False) -> str:
     ``config['epub_page_format']`` (EPUB 전용) 이다. 둘 다 없으면 fallback.
     """
     if for_epub:
-        return (
-            config.get("epub_page_format")
-            or config.get("page_format")
-            or "EPUB (6x9)"
-        )
+        return config.get("epub_page_format") or config.get("page_format") or "EPUB (6x9)"
     return config.get("page_format") or "A5 (148x210mm)"
 
 
@@ -69,6 +66,7 @@ def get_page_margins_inch(config: dict) -> dict[str, float]:
       2. ``config['page']['margins']`` (구 PDF 경로)
       3. 기본값 1.0 inch
     """
+
     def to_float(value, default: float) -> float:
         try:
             return float(value)

@@ -23,6 +23,7 @@ Migration policy:
   and ``<user_data>/gui_settings.json`` does not, copy the legacy file over.
   This preserves all the user's settings across the move.
 """
+
 from __future__ import annotations
 
 import logging
@@ -40,17 +41,21 @@ APP_FOLDER_NAME = "TRPG_Converter_Pro"
 # Resolution
 # ---------------------------------------------------------------------------
 
+# Indirected platform check so mypy doesn't strict-narrow ``sys.platform``
+# branches as unreachable on the current build host. The runtime value can
+# differ from the typing assumption (e.g. PyInstaller cross-build, frozen exe
+# from a different OS), so all three branches must compile on every platform.
+_PLATFORM: str = sys.platform
+
+
 def user_data_dir() -> Path:
     """Per-user writable directory for settings, presets, history."""
-    # mypy 는 ``sys.platform`` 비교를 strict 하게 narrow 해서 첫 분기가 True 면
-    # 이후 분기를 unreachable 로 보지만, 이 함수는 빌드 host (지금) 와 실행 host
-    # 가 다를 수 있는 cross-platform 모듈이라 모든 분기가 의도된 경로. type: ignore.
-    if sys.platform == "win32":
+    if _PLATFORM == "win32":
         base = os.environ.get("APPDATA")
         if base:
             return Path(base) / APP_FOLDER_NAME
         return Path.home() / "AppData" / "Roaming" / APP_FOLDER_NAME
-    if sys.platform == "darwin":  # type: ignore[unreachable]
+    if _PLATFORM == "darwin":
         return Path.home() / "Library" / "Application Support" / APP_FOLDER_NAME
     # Linux / *BSD — follow XDG Base Directory Specification.
     xdg = os.environ.get("XDG_CONFIG_HOME")
@@ -61,12 +66,12 @@ def user_data_dir() -> Path:
 
 def user_cache_dir() -> Path:
     """Per-user discardable cache (downloads, optimised images, etc.)."""
-    if sys.platform == "win32":
+    if _PLATFORM == "win32":
         base = os.environ.get("LOCALAPPDATA")
         if base:
             return Path(base) / APP_FOLDER_NAME / "Cache"
         return Path.home() / "AppData" / "Local" / APP_FOLDER_NAME / "Cache"
-    if sys.platform == "darwin":  # type: ignore[unreachable]
+    if _PLATFORM == "darwin":
         return Path.home() / "Library" / "Caches" / APP_FOLDER_NAME
     xdg = os.environ.get("XDG_CACHE_HOME")
     if xdg:
@@ -85,6 +90,7 @@ def user_logs_dir() -> Path:
 # ---------------------------------------------------------------------------
 # Files within the user data dir
 # ---------------------------------------------------------------------------
+
 
 def gui_settings_path() -> Path:
     return user_data_dir() / "gui_settings.json"
@@ -110,6 +116,7 @@ def ensure_dirs() -> None:
 # ---------------------------------------------------------------------------
 # Migration from legacy install-dir location
 # ---------------------------------------------------------------------------
+
 
 def migrate_from_install_dir(install_dir: Path) -> None:
     """If the legacy install-dir gui_settings.json exists, copy it to %APPDATA%.

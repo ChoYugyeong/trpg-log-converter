@@ -1,4 +1,5 @@
 """Tests for the version comparison logic used by the updater."""
+
 from __future__ import annotations
 
 import pytest

@@ -4,6 +4,7 @@ Cocofolia exports messages as ``<p>`` / ``<div>`` blocks where each speaker is
 identified by ``class="firing_name_<name>"`` and the content by
 ``class="firing_firing"`` (often on the same span).
 """
+
 from __future__ import annotations
 
 import logging
@@ -42,9 +43,7 @@ def parse_cocofolia(soup, config: dict[str, Any]) -> list[dict[str, Any]]:
         content_from_spans = None
         for span in element.find_all("span"):
             class_attr = span.get("class", [])
-            class_str = (
-                " ".join(class_attr) if isinstance(class_attr, list) else str(class_attr)
-            )
+            class_str = " ".join(class_attr) if isinstance(class_attr, list) else str(class_attr)
 
             name_match = re.search(r"firing_name_(\S+)", class_str)
             if name_match:

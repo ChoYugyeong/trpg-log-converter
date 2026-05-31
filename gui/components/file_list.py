@@ -66,7 +66,11 @@ class FileItemDelegate(QStyledItemDelegate):
 
         # 텍스트 영역
         text_x = icon_rect.right() + 12
-        text_color = QColor("white") if is_selected else QColor(Qt.black if not self._is_dark_mode() else Qt.white)
+        text_color = (
+            QColor("white")
+            if is_selected
+            else QColor(Qt.black if not self._is_dark_mode() else Qt.white)
+        )
 
         # 파일명
         painter.setPen(text_color)
@@ -133,9 +137,9 @@ class FileItemDelegate(QStyledItemDelegate):
         ext = Path(file_path).suffix.lower() if file_path else ""
         icon_text = ext[1:3].upper() if ext else "FL"
 
-        if ext in ['.html', '.htm']:
+        if ext in [".html", ".htm"]:
             icon_text = "HT"
-        elif ext == '.txt':
+        elif ext == ".txt":
             icon_text = "TX"
 
         painter.setPen(QColor("white") if (is_selected or status != "ready") else QColor("#666"))
@@ -272,13 +276,17 @@ class EnterpriseFileList(QFrame):
 
         title = QLabel("파일을 추가하세요")
         title.setAlignment(Qt.AlignCenter)
-        title.setStyleSheet(f"font-size: {Typography.SIZE_XL}px; font-weight: 600; color: palette(text);")
+        title.setStyleSheet(
+            f"font-size: {Typography.SIZE_XL}px; font-weight: 600; color: palette(text);"
+        )
         layout.addWidget(title)
 
         desc = QLabel("드래그 앤 드롭하거나\n상단의 버튼으로 파일을 추가할 수 있습니다")
         desc.setAlignment(Qt.AlignCenter)
         desc.setWordWrap(True)
-        desc.setStyleSheet(f"font-size: {Typography.SIZE_MD}px; color: palette(mid); line-height: 1.5;")
+        desc.setStyleSheet(
+            f"font-size: {Typography.SIZE_MD}px; color: palette(mid); line-height: 1.5;"
+        )
         layout.addWidget(desc)
 
         return widget
@@ -413,12 +421,12 @@ class EnterpriseFileList(QFrame):
         import subprocess
         import sys
 
-        if sys.platform == 'darwin':
-            subprocess.run(['open', '-R', file_path])
-        elif sys.platform == 'win32':
-            subprocess.run(['explorer', '/select,', file_path])
+        if sys.platform == "darwin":
+            subprocess.run(["open", "-R", file_path])
+        elif sys.platform == "win32":
+            subprocess.run(["explorer", "/select,", file_path])
         else:
-            subprocess.run(['xdg-open', str(Path(file_path).parent)])
+            subprocess.run(["xdg-open", str(Path(file_path).parent)])
 
     def _move_item(self, item, direction):
         """아이템 이동"""

@@ -21,6 +21,7 @@ The framework guarantees:
 * ``_schema_version`` is stamped at the end of each step so partial upgrades
   are recoverable.
 """
+
 from __future__ import annotations
 
 import logging
@@ -90,6 +91,7 @@ def migrate_gui_settings(settings: dict) -> dict:
 # ---------------------------------------------------------------------------
 # Migrations
 # ---------------------------------------------------------------------------
+
 
 @migration(from_version=1)
 def _v1_to_v2(settings: dict) -> dict:

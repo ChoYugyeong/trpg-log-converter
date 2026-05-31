@@ -28,6 +28,7 @@ from gui.config_models import (
 # 1. 기본값 유효성
 # ===================================================================
 
+
 class TestDefaultValues:
     """AppSettings() 기본 생성 시 유효한 기본값을 갖는지 검증"""
 
@@ -86,6 +87,7 @@ class TestDefaultValues:
 # 2. flatten / unflatten 라운드트립
 # ===================================================================
 
+
 class TestFlattenRoundTrip:
     """flatten → unflatten → flatten 이 동일한 결과를 산출하는지 검증"""
 
@@ -141,6 +143,7 @@ class TestFlattenRoundTrip:
 # 3. narrators 필드 타입 검증
 # ===================================================================
 
+
 class TestNarratorsField:
     """narrators 필드가 항상 문자열 타입인지 검증"""
 
@@ -179,6 +182,7 @@ class TestNarratorsField:
 # 4. CoverSettings 색상 검증
 # ===================================================================
 
+
 class TestColorValidation:
     """CoverSettings의 hex 색상 검증 (field_validator)"""
 
@@ -216,6 +220,7 @@ class TestColorValidation:
 # 5. extra 필드 보존
 # ===================================================================
 
+
 class TestExtraFieldsPreserved:
     """AppSettings(extra="allow")로 알려지지 않은 필드가 보존되는지 검증"""
 
@@ -251,6 +256,7 @@ class TestExtraFieldsPreserved:
 # ===================================================================
 # 6. flatten 키 개수
 # ===================================================================
+
 
 class TestFlattenKeyCount:
     """flatten된 dict의 키 개수가 기대 범위에 있는지 검증"""

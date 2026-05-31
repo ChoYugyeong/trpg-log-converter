@@ -292,7 +292,7 @@ class WorkflowSteps(QFrame):
 
         for i, step in enumerate(self._steps):
             # 단계 버튼
-            btn = QPushButton(f"{i+1}. {step}")
+            btn = QPushButton(f"{i + 1}. {step}")
             btn.setCursor(Qt.PointingHandCursor)
             btn.setCheckable(True)
             btn.clicked.connect(lambda checked, idx=i: self.step_clicked.emit(idx))

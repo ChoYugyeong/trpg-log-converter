@@ -1,4 +1,5 @@
 """Single source of truth for engine config defaults & schema versioning."""
+
 from core.config.defaults import (
     CONFIG_SCHEMA_VERSION,
     DEFAULT_ENGINE_CONFIG,

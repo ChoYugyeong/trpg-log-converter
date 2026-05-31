@@ -5,4 +5,4 @@ macOS Human Interface Guidelines 기반
 
 from .theme import MacOSPalette, Theme
 
-__all__ = ['MacOSPalette', 'Theme']
+__all__ = ["MacOSPalette", "Theme"]

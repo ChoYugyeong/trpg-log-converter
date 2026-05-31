@@ -15,6 +15,7 @@ Style:
   * Pass structured fields via ``extra={...}`` when emitting events worth grepping
     in production (e.g. ``extra={"event": "conversion.start", "file_count": 3}``).
 """
+
 from __future__ import annotations
 
 import contextlib
@@ -43,15 +44,32 @@ class _JsonFormatter(logging.Formatter):
     """One JSON object per line. Suitable for ingest into Loki / Datadog / CloudWatch."""
 
     _RESERVED: ClassVar[dict] = {
-        "name", "msg", "args", "levelname", "levelno", "pathname", "filename",
-        "module", "exc_info", "exc_text", "stack_info", "lineno", "funcName",
-        "created", "msecs", "relativeCreated", "thread", "threadName",
-        "processName", "process",
+        "name",
+        "msg",
+        "args",
+        "levelname",
+        "levelno",
+        "pathname",
+        "filename",
+        "module",
+        "exc_info",
+        "exc_text",
+        "stack_info",
+        "lineno",
+        "funcName",
+        "created",
+        "msecs",
+        "relativeCreated",
+        "thread",
+        "threadName",
+        "processName",
+        "process",
     }
 
     def format(self, record: logging.LogRecord) -> str:
         payload: dict = {
-            "ts": datetime.utcfromtimestamp(record.created).isoformat(timespec="milliseconds") + "Z",
+            "ts": datetime.utcfromtimestamp(record.created).isoformat(timespec="milliseconds")
+            + "Z",
             "level": record.levelname,
             "logger": record.name,
             "message": record.getMessage(),
@@ -106,6 +124,7 @@ class AppLogger:
         # the caller passes an explicit app_dir (typically a tmp dir) and we
         # keep ``<app_dir>/logs`` so test isolation works.
         from core.paths import user_logs_dir
+
         if getattr(sys, "frozen", False):
             self._log_dir = user_logs_dir()
         else:
@@ -140,11 +159,14 @@ class AppLogger:
             self._console_handler.setLevel(log_level)
             # Console stays human-readable even when LOG_JSON is set, unless
             # the operator forces JSON via LOG_JSON_CONSOLE=1.
-            console_is_json = (
-                json_output
-                and os.environ.get("LOG_JSON_CONSOLE", "").lower() in {"1", "true", "yes"}
+            console_is_json = json_output and os.environ.get("LOG_JSON_CONSOLE", "").lower() in {
+                "1",
+                "true",
+                "yes",
+            }
+            self._console_handler.setFormatter(
+                json_formatter if console_is_json else text_formatter
             )
-            self._console_handler.setFormatter(json_formatter if console_is_json else text_formatter)
             root_logger.addHandler(self._console_handler)
 
         if file_output and self._log_dir is not None:

@@ -24,6 +24,7 @@ from ..theme import Colors, Sizes, Spacing, Typography
 
 class ColorPicker(QWidget):
     """macOS 스타일 컬러 피커"""
+
     color_changed = Signal(str)
 
     def __init__(self, initial_color: str | None = None, parent=None):
@@ -71,17 +72,14 @@ class ColorPicker(QWidget):
     def _open_picker(self):
         """시스템 컬러 피커 열기"""
         color = QColorDialog.getColor(
-            QColor(self._color),
-            self,
-            "색상 선택",
-            QColorDialog.ShowAlphaChannel
+            QColor(self._color), self, "색상 선택", QColorDialog.ShowAlphaChannel
         )
         if color.isValid():
             self.set_color(color.name())
 
     def _on_hex_change(self, text: str):
         """Hex 입력 변경 시"""
-        if len(text) == 7 and text.startswith('#'):
+        if len(text) == 7 and text.startswith("#"):
             color = QColor(text)
             if color.isValid():
                 self._color = text
@@ -122,6 +120,7 @@ class ColorPicker(QWidget):
 
 class TagInput(QWidget):
     """태그 입력 컴포넌트 (키워드 추가/삭제)"""
+
     tags_changed = Signal(list)
 
     def __init__(self, parent=None):
@@ -262,10 +261,11 @@ class TagInput(QWidget):
 
 class FileDropArea(QFrame):
     """파일 드래그 앤 드롭 영역 - 유효성 검사 포함"""
+
     files_dropped = Signal(list)
     invalid_files_dropped = Signal(list)  # 잘못된 파일 드롭 시
 
-    SUPPORTED_EXTENSIONS: ClassVar[dict] = {'.html', '.htm', '.txt', '.log'}
+    SUPPORTED_EXTENSIONS: ClassVar[dict] = {".html", ".htm", ".txt", ".log"}
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -285,14 +285,18 @@ class FileDropArea(QFrame):
         self.icon = QLabel("+")
         self.icon.setObjectName("DropIcon")
         self.icon.setAlignment(Qt.AlignCenter)
-        self.icon.setStyleSheet(f"font-size: 24px; font-weight: 300; color: {Colors.ACCENT}; padding: 0; margin: 0;")
+        self.icon.setStyleSheet(
+            f"font-size: 24px; font-weight: 300; color: {Colors.ACCENT}; padding: 0; margin: 0;"
+        )
         layout.addWidget(self.icon)
 
         self.text = QLabel("파일을 드래그하거나 클릭하여 추가")
         self.text.setObjectName("HintLabel")
         self.text.setAlignment(Qt.AlignCenter)
         self.text.setWordWrap(True)
-        self.text.setStyleSheet(f"font-size: {Typography.SIZE_MD}px; color: {Colors.ACCENT}; font-weight: 500; padding: 0; margin: 0;")
+        self.text.setStyleSheet(
+            f"font-size: {Typography.SIZE_MD}px; color: {Colors.ACCENT}; font-weight: 500; padding: 0; margin: 0;"
+        )
         layout.addWidget(self.text)
 
         self._files = []
@@ -303,6 +307,7 @@ class FileDropArea(QFrame):
     def _is_valid_file(self, path: str) -> bool:
         """파일 확장자 유효성 검사"""
         import os
+
         _, ext = os.path.splitext(path.lower())
         return ext in self.SUPPORTED_EXTENSIONS
 
@@ -327,8 +332,12 @@ class FileDropArea(QFrame):
         names = ", ".join(rejected_names[:3])
         suffix = f" 외 {len(rejected_names) - 3}개" if len(rejected_names) > 3 else ""
         self.text.setText(f"지원하지 않는 파일: {names}{suffix}")
-        self.text.setStyleSheet(f"font-size: {Typography.SIZE_SM}px; color: {Colors.ERROR}; font-weight: 500; padding: 0; margin: 0;")
-        self.icon.setStyleSheet(f"font-size: 24px; font-weight: 300; color: {Colors.ERROR}; padding: 0; margin: 0;")
+        self.text.setStyleSheet(
+            f"font-size: {Typography.SIZE_SM}px; color: {Colors.ERROR}; font-weight: 500; padding: 0; margin: 0;"
+        )
+        self.icon.setStyleSheet(
+            f"font-size: 24px; font-weight: 300; color: {Colors.ERROR}; padding: 0; margin: 0;"
+        )
         self.icon.setText("!")
         # 2초 후 원래 상태로 복원
         self._reset_timer.start(2500)
@@ -336,8 +345,12 @@ class FileDropArea(QFrame):
     def _show_success_feedback(self, count: int):
         """성공적으로 파일 추가 시 시각 피드백"""
         self.text.setText(f"{count}개 파일 추가됨")
-        self.text.setStyleSheet(f"font-size: {Typography.SIZE_MD}px; color: {Colors.SUCCESS}; font-weight: 600; padding: 0; margin: 0;")
-        self.icon.setStyleSheet(f"font-size: 24px; font-weight: 300; color: {Colors.SUCCESS}; padding: 0; margin: 0;")
+        self.text.setStyleSheet(
+            f"font-size: {Typography.SIZE_MD}px; color: {Colors.SUCCESS}; font-weight: 600; padding: 0; margin: 0;"
+        )
+        self.icon.setStyleSheet(
+            f"font-size: 24px; font-weight: 300; color: {Colors.SUCCESS}; padding: 0; margin: 0;"
+        )
         self.icon.setText("✓")
         self._reset_timer.start(2000)
 
@@ -348,9 +361,13 @@ class FileDropArea(QFrame):
         self.style().unpolish(self)
         self.style().polish(self)
         self.icon.setText("+")
-        self.icon.setStyleSheet(f"font-size: 24px; font-weight: 300; color: {Colors.ACCENT}; padding: 0; margin: 0;")
+        self.icon.setStyleSheet(
+            f"font-size: 24px; font-weight: 300; color: {Colors.ACCENT}; padding: 0; margin: 0;"
+        )
         self.text.setText("파일을 드래그하거나 클릭하여 추가")
-        self.text.setStyleSheet(f"font-size: {Typography.SIZE_MD}px; color: {Colors.ACCENT}; font-weight: 500; padding: 0; margin: 0;")
+        self.text.setStyleSheet(
+            f"font-size: {Typography.SIZE_MD}px; color: {Colors.ACCENT}; font-weight: 500; padding: 0; margin: 0;"
+        )
 
     def dragEnterEvent(self, event: QDragEnterEvent):
         if event.mimeData().hasUrls():
@@ -379,6 +396,7 @@ class FileDropArea(QFrame):
 
     def dropEvent(self, event: QDropEvent):
         import os
+
         valid_files = []
         invalid_names = []
 
@@ -403,7 +421,9 @@ class FileDropArea(QFrame):
             # 일부만 유효한 경우 - 성공 피드백 후 경고
             self._reset_timer.stop()
             self.text.setText(f"{len(valid_files)}개 추가 / {len(invalid_names)}개 지원 안 됨")
-            self.text.setStyleSheet(f"font-size: {Typography.SIZE_MD}px; color: {Colors.WARNING}; font-weight: 500;")
+            self.text.setStyleSheet(
+                f"font-size: {Typography.SIZE_MD}px; color: {Colors.WARNING}; font-weight: 500;"
+            )
             self._reset_timer.start(3000)
 
         self._update_style(False)
@@ -414,7 +434,7 @@ class FileDropArea(QFrame):
             self,
             "파일 선택",
             "",
-            "지원 파일 (*.html *.htm *.txt *.log);;HTML (*.html *.htm);;텍스트 (*.txt *.log);;모든 파일 (*.*)"
+            "지원 파일 (*.html *.htm *.txt *.log);;HTML (*.html *.htm);;텍스트 (*.txt *.log);;모든 파일 (*.*)",
         )
         new_files = [f for f in files if f not in self._files]
         if new_files:

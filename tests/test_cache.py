@@ -23,7 +23,7 @@ def temp_cache_dir():
 @pytest.fixture
 def sample_file():
     """테스트용 샘플 파일 생성"""
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
         f.write("테스트 파일 내용\n캐릭터A: 안녕하세요\n캐릭터B: 반갑습니다")
         return f.name
 
@@ -76,7 +76,7 @@ class TestCacheService:
 
         # 파일 수정
         time.sleep(0.1)  # 수정 시간 차이를 위해
-        with open(sample_file, 'a') as f:
+        with open(sample_file, "a") as f:
             f.write("\n추가 내용")
 
         # 캐시 미스
@@ -151,12 +151,12 @@ class TestCacheService:
 
         service = CacheService(
             cache_dir=temp_cache_dir,
-            max_age_days=0  # 즉시 만료
+            max_age_days=0,  # 즉시 만료
         )
 
         # 수동으로 오래된 캐시 파일 생성
         old_cache = Path(temp_cache_dir) / "old_cache.json"
-        with open(old_cache, 'w') as f:
+        with open(old_cache, "w") as f:
             json.dump({"cached_at": 0}, f)
 
         # 파일 수정 시간을 과거로 설정 (1일 전)
@@ -207,9 +207,7 @@ class TestCacheServiceIntegration:
 
         files = []
         for i in range(3):
-            with tempfile.NamedTemporaryFile(
-                mode='w', suffix='.txt', delete=False
-            ) as f:
+            with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
                 f.write(f"파일 {i} 내용")
                 files.append(f.name)
 

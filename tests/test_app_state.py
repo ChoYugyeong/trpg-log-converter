@@ -15,6 +15,7 @@ from PySide6.QtCore import QObject
 # 공통 fixture
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture
 def app_state(tmp_path):
     """AppState + ConfigManager 를 생성하고 BasePage에 주입한다."""
@@ -31,6 +32,7 @@ def app_state(tmp_path):
 # ===================================================================
 # 1. get / set 기본 동작
 # ===================================================================
+
 
 class TestGetSet:
     """AppState.get / set 기본 동작 검증"""
@@ -72,6 +74,7 @@ class TestGetSet:
 # 2. Signal 방출
 # ===================================================================
 
+
 class TestSignalEmission:
     """changed / group_changed Signal 방출 검증"""
 
@@ -107,6 +110,7 @@ class TestSignalEmission:
 # ===================================================================
 # 3. 배치 업데이트
 # ===================================================================
+
 
 class TestBatchUpdate:
     """batch_update 컨텍스트 매니저 검증"""
@@ -167,6 +171,7 @@ class TestBatchUpdate:
 # 4. 미리보기 설정
 # ===================================================================
 
+
 class TestPreviewSettings:
     """get_preview_settings() 반환값 검증"""
 
@@ -179,10 +184,18 @@ class TestPreviewSettings:
 
         # THEN: 필수 키가 모두 존재한다
         expected_keys = {
-            "dialogue_color", "narration_color", "font_family",
-            "font_size", "line_height", "scene_marker",
-            "narration_prefix", "narrators", "body_bg",
-            "name_color", "name_bold", "separator",
+            "dialogue_color",
+            "narration_color",
+            "font_family",
+            "font_size",
+            "line_height",
+            "scene_marker",
+            "narration_prefix",
+            "narrators",
+            "body_bg",
+            "name_color",
+            "name_bold",
+            "separator",
         }
         assert expected_keys.issubset(set(preview.keys())), (
             f"누락된 키: {expected_keys - set(preview.keys())}"
@@ -203,6 +216,7 @@ class TestPreviewSettings:
 # ===================================================================
 # 5. save / load 영속화
 # ===================================================================
+
 
 class TestSaveLoad:
     """save() → load() 영속화 검증"""
@@ -233,6 +247,7 @@ class TestSaveLoad:
 
         # THEN: JSON 파일이 존재하고 올바른 값을 포함한다
         import json
+
         settings_path = tmp_path / "gui_settings.json"
         assert settings_path.exists()
         with open(settings_path, encoding="utf-8") as f:
@@ -243,6 +258,7 @@ class TestSaveLoad:
 # ===================================================================
 # 6. reset_to_defaults
 # ===================================================================
+
 
 class TestResetToDefaults:
     """reset_to_defaults() 검증"""
@@ -268,6 +284,7 @@ class TestResetToDefaults:
 # 7. is_preview_group
 # ===================================================================
 
+
 class TestIsPreviewGroup:
     """is_preview_group() 그룹 분류 검증"""
 
@@ -292,23 +309,27 @@ class TestIsPreviewGroup:
 # 8. get_group_for_key
 # ===================================================================
 
+
 class TestGetGroupForKey:
     """get_group_for_key() 키-그룹 매핑 검증"""
 
-    @pytest.mark.parametrize("key,expected_group", [
-        ("style_font_size", "style"),
-        ("style_line_height", "style"),
-        ("epub_body_font", "font"),
-        ("include_cover", "cover"),
-        ("divider_type", "decoration"),
-        ("include_dice", "content"),
-        ("split_mode", "scene"),
-        ("name_max_length", "advanced"),
-        ("platform", "basic"),
-        ("title", "basic"),
-        ("epub_page_format", "output"),
-        ("custom_separator_type", "parsing"),
-    ])
+    @pytest.mark.parametrize(
+        "key,expected_group",
+        [
+            ("style_font_size", "style"),
+            ("style_line_height", "style"),
+            ("epub_body_font", "font"),
+            ("include_cover", "cover"),
+            ("divider_type", "decoration"),
+            ("include_dice", "content"),
+            ("split_mode", "scene"),
+            ("name_max_length", "advanced"),
+            ("platform", "basic"),
+            ("title", "basic"),
+            ("epub_page_format", "output"),
+            ("custom_separator_type", "parsing"),
+        ],
+    )
     def test_get_group_for_key(self, key, expected_group):
         """각 키가 올바른 그룹에 매핑된다."""
         from gui.state import AppState

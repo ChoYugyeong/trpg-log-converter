@@ -28,6 +28,7 @@ class CollapsibleSection(QWidget):
     헤더 클릭으로 본문을 펼치거나 접을 수 있다.
     QSS: #CollapsibleHeader, #CollapsibleBody
     """
+
     toggled = Signal(bool)
 
     def __init__(self, title: str, expanded: bool = False, parent=None):
@@ -102,27 +103,30 @@ class HelpButton(QPushButton):
 
     def _show_help(self):
         """도움말 팝업 표시"""
-        view = FlyoutView(
-            title="도움말",
-            content=self.help_text,
-            isClosable=True
-        )
+        view = FlyoutView(title="도움말", content=self.help_text, isClosable=True)
         Flyout.make(view, self, self.window(), isDeleteOnClose=True)
 
 
 class ContentCard(CardWidget):
     """Fluent 스타일 설정 카드"""
 
-    def __init__(self, title: str | None = None, subtitle: str | None = None,
-                 help_text: str | None = None, parent=None):
+    def __init__(
+        self,
+        title: str | None = None,
+        subtitle: str | None = None,
+        help_text: str | None = None,
+        parent=None,
+    ):
         super().__init__(parent)
         self._fields = {}
 
         # 메인 레이아웃
         self._layout = QVBoxLayout(self)
         self._layout.setContentsMargins(
-            Sizes.CARD_PADDING_H, Sizes.CARD_PADDING_V_TOP,
-            Sizes.CARD_PADDING_H, Sizes.CARD_PADDING_V_BOTTOM
+            Sizes.CARD_PADDING_H,
+            Sizes.CARD_PADDING_V_TOP,
+            Sizes.CARD_PADDING_H,
+            Sizes.CARD_PADDING_V_BOTTOM,
         )
         self._layout.setSpacing(Sizes.CARD_SPACING)
 
@@ -157,8 +161,14 @@ class ContentCard(CardWidget):
         self._content_layout.setContentsMargins(0, 10, 0, 0)
         self._layout.addLayout(self._content_layout)
 
-    def add_field(self, label: str, widget: QWidget, key: str | None = None,
-                  stretch: int = 1, help_text: str | None = None) -> QWidget:
+    def add_field(
+        self,
+        label: str,
+        widget: QWidget,
+        key: str | None = None,
+        stretch: int = 1,
+        help_text: str | None = None,
+    ) -> QWidget:
         """라벨 + 위젯 행 추가"""
         row = QHBoxLayout()
         row.setSpacing(Sizes.FIELD_SPACING)
@@ -187,9 +197,15 @@ class ContentCard(CardWidget):
         self._content_layout.addLayout(row)
         return widget
 
-    def add_text_field(self, label: str, key: str, placeholder: str = "",
-                       default: str = "", help_text: str | None = None,
-                       clear_button: bool = True) -> LineEdit:
+    def add_text_field(
+        self,
+        label: str,
+        key: str,
+        placeholder: str = "",
+        default: str = "",
+        help_text: str | None = None,
+        clear_button: bool = True,
+    ) -> LineEdit:
         """텍스트 입력 필드 추가"""
         entry = LineEdit()
         entry.setPlaceholderText(placeholder)
@@ -199,8 +215,14 @@ class ContentCard(CardWidget):
             entry.setText(default)
         return self.add_field(label, entry, key, help_text=help_text)
 
-    def add_dropdown(self, label: str, key: str, options: list,
-                     default: str | None = None, help_text: str | None = None) -> ComboBox:
+    def add_dropdown(
+        self,
+        label: str,
+        key: str,
+        options: list,
+        default: str | None = None,
+        help_text: str | None = None,
+    ) -> ComboBox:
         """드롭다운 추가"""
         combo = ComboBox()
         combo.addItems(options)
@@ -212,7 +234,7 @@ class ContentCard(CardWidget):
             min_w = max(180, max_text_width + 80)  # 80px = 화살표+패딩+여백
             combo.setMinimumWidth(min_w)
             # 팝업 리스트도 충분한 너비 확보
-            if hasattr(combo, 'view') and callable(combo.view):
+            if hasattr(combo, "view") and callable(combo.view):
                 combo.view().setMinimumWidth(max(min_w, max_text_width + 40))
         else:
             combo.setMinimumWidth(180)
@@ -220,8 +242,9 @@ class ContentCard(CardWidget):
             combo.setCurrentText(default)
         return self.add_field(label, combo, key, help_text=help_text)
 
-    def add_checkbox(self, label: str, key: str, checked: bool = False,
-                     help_text: str | None = None) -> CheckBox:
+    def add_checkbox(
+        self, label: str, key: str, checked: bool = False, help_text: str | None = None
+    ) -> CheckBox:
         """체크박스 추가"""
         checkbox = CheckBox(label)
         checkbox.setChecked(checked)

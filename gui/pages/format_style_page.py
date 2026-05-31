@@ -45,6 +45,7 @@ from .base_page import BasePage
 # Helper widgets (from decoration_page)
 # ---------------------------------------------------------------------------
 
+
 class ImagePreview(QFrame):
     """Image preview widget for divider images."""
 
@@ -73,8 +74,8 @@ class ImagePreview(QFrame):
                 scaled = pixmap.scaledToHeight(80, Qt.SmoothTransformation)
                 self.image_label.setPixmap(scaled)
                 self.image_label.setText("")
-                with open(path, 'rb') as f:
-                    self._image_data = base64.b64encode(f.read()).decode('utf-8')
+                with open(path, "rb") as f:
+                    self._image_data = base64.b64encode(f.read()).decode("utf-8")
                 return True
         elif data:
             self._image_data = data
@@ -205,6 +206,7 @@ class DecorationPreview(QFrame):
 # Main page
 # ===========================================================================
 
+
 class FormatStylePage(BasePage):
     """
     서식 및 스타일 통합 페이지
@@ -213,9 +215,7 @@ class FormatStylePage(BasePage):
 
     def __init__(self, config_manager, inspector=None, parent=None):
         super().__init__(config_manager, inspector, parent)
-        self.color_service = CharacterColorService(
-            self.settings.get('character_colors', {})
-        )
+        self.color_service = CharacterColorService(self.settings.get("character_colors", {}))
         self.character_color_widgets = {}
         self._system_fonts = self._get_system_fonts()
         self._setup_page()
@@ -230,11 +230,20 @@ class FormatStylePage(BasePage):
         korean_fonts = []
         other_fonts = []
         for font in fonts:
-            if any(0xAC00 <= ord(c) <= 0xD7A3 for c in font) or \
-               any(kw in font.lower() for kw in [
-                   'nanum', 'malgun', 'batang', 'gulim', 'dotum',
-                   'gungsuh', 'pretendard', 'noto sans kr', 'noto serif kr'
-               ]):
+            if any(0xAC00 <= ord(c) <= 0xD7A3 for c in font) or any(
+                kw in font.lower()
+                for kw in [
+                    "nanum",
+                    "malgun",
+                    "batang",
+                    "gulim",
+                    "dotum",
+                    "gungsuh",
+                    "pretendard",
+                    "noto sans kr",
+                    "noto serif kr",
+                ]
+            ):
                 korean_fonts.append(font)
             else:
                 other_fonts.append(font)
@@ -250,30 +259,22 @@ class FormatStylePage(BasePage):
         self.add_header("서식 및 스타일", "스타일, 폰트, 표지, 장식 요소를 설정합니다")
 
         # --- Section 1: 스타일 설정 (expanded) ---
-        self.style_section = CollapsibleSection(
-            "스타일 설정", expanded=True
-        )
+        self.style_section = CollapsibleSection("스타일 설정", expanded=True)
         self._build_style_section(self.style_section)
         self.content_layout.addWidget(self.style_section)
 
         # --- Section 2: 폰트 설정 (collapsed) ---
-        self.font_section = CollapsibleSection(
-            "폰트 설정", expanded=False
-        )
+        self.font_section = CollapsibleSection("폰트 설정", expanded=False)
         self._build_font_section(self.font_section)
         self.content_layout.addWidget(self.font_section)
 
         # --- Section 3: 표지 설정 (collapsed) ---
-        self.cover_section = CollapsibleSection(
-            "표지 설정", expanded=False
-        )
+        self.cover_section = CollapsibleSection("표지 설정", expanded=False)
         self._build_cover_section(self.cover_section)
         self.content_layout.addWidget(self.cover_section)
 
         # --- Section 4: 장식 요소 (collapsed) ---
-        self.deco_section = CollapsibleSection(
-            "장식 요소", expanded=False
-        )
+        self.deco_section = CollapsibleSection("장식 요소", expanded=False)
         self._build_decoration_section(self.deco_section)
         self.content_layout.addWidget(self.deco_section)
 
@@ -285,16 +286,19 @@ class FormatStylePage(BasePage):
 
     def _build_style_section(self, section: CollapsibleSection):
         # ---- 테마 프리셋 카드 ----
-        preset_card = ContentCard("테마 프리셋", "미리 정의된 스타일 조합을 선택하거나 직접 만들 수 있습니다")
+        preset_card = ContentCard(
+            "테마 프리셋", "미리 정의된 스타일 조합을 선택하거나 직접 만들 수 있습니다"
+        )
 
-        self._custom_theme_presets = self.settings.get('custom_theme_presets', {})
+        self._custom_theme_presets = self.settings.get("custom_theme_presets", {})
         preset_options = list(Theme.PRESETS.keys()) + list(self._custom_theme_presets.keys())
 
         self.preset_combo = preset_card.add_dropdown(
-            "프리셋", "preset",
+            "프리셋",
+            "preset",
             options=preset_options if preset_options else ["Classic Light"],
             default="Classic Light",
-            help_text="미리 정의된 색상/스타일 조합. 선택 후 개별 설정 수정 가능."
+            help_text="미리 정의된 색상/스타일 조합. 선택 후 개별 설정 수정 가능.",
         )
         self.preset_combo.currentTextChanged.connect(self._apply_preset)
 
@@ -352,16 +356,24 @@ class FormatStylePage(BasePage):
         body_card = ContentCard("본문 스타일")
 
         # Background color
-        self.style_bg_picker = ColorPicker(self.settings.get('style_body_bg', '#ffffff'))
+        self.style_bg_picker = ColorPicker(self.settings.get("style_body_bg", "#ffffff"))
         self.style_bg_picker.color_changed.connect(self._on_style_changed)
-        body_card.add_field("배경색", self.style_bg_picker, "style_body_bg",
-                           help_text="EPUB 본문의 배경색입니다. 흰색(#ffffff) 또는 세피아(#f4ecd8) 권장.")
+        body_card.add_field(
+            "배경색",
+            self.style_bg_picker,
+            "style_body_bg",
+            help_text="EPUB 본문의 배경색입니다. 흰색(#ffffff) 또는 세피아(#f4ecd8) 권장.",
+        )
 
         # Text color
-        self.style_text_picker = ColorPicker(self.settings.get('style_body_text', '#1a1a1a'))
+        self.style_text_picker = ColorPicker(self.settings.get("style_body_text", "#1a1a1a"))
         self.style_text_picker.color_changed.connect(self._on_style_changed)
-        body_card.add_field("텍스트", self.style_text_picker, "style_body_text",
-                           help_text="본문 텍스트 색상입니다. 배경색과 대비가 좋은 색상을 선택하세요.")
+        body_card.add_field(
+            "텍스트",
+            self.style_text_picker,
+            "style_body_text",
+            help_text="본문 텍스트 색상입니다. 배경색과 대비가 좋은 색상을 선택하세요.",
+        )
 
         # Font size slider + spinbox
         size_widget = QWidget()
@@ -372,7 +384,7 @@ class FormatStylePage(BasePage):
         self.size_slider = Slider(Qt.Horizontal)
         self.size_slider.setRange(10, 24)
         try:
-            _font_size = int(self.settings.get('style_font_size', 14))
+            _font_size = int(self.settings.get("style_font_size", 14))
         except (ValueError, TypeError):
             _font_size = 14
         self.size_slider.setValue(_font_size)
@@ -389,8 +401,12 @@ class FormatStylePage(BasePage):
         self.size_slider.valueChanged.connect(self._on_font_size_changed)
         self.size_spin.valueChanged.connect(self._on_font_size_spin_changed)
 
-        body_card.add_field("폰트 크기", size_widget, "style_font_size",
-                           help_text="EPUB 본문의 기본 폰트 크기입니다. 14-16px 권장.")
+        body_card.add_field(
+            "폰트 크기",
+            size_widget,
+            "style_font_size",
+            help_text="EPUB 본문의 기본 폰트 크기입니다. 14-16px 권장.",
+        )
 
         # Line height slider + spinbox
         height_widget = QWidget()
@@ -401,7 +417,7 @@ class FormatStylePage(BasePage):
         self.height_slider = Slider(Qt.Horizontal)
         self.height_slider.setRange(12, 24)
         try:
-            _line_height = int(float(self.settings.get('style_line_height', 1.6)) * 10)
+            _line_height = int(float(self.settings.get("style_line_height", 1.6)) * 10)
         except (ValueError, TypeError):
             _line_height = 16
         self.height_slider.setValue(_line_height)
@@ -419,31 +435,41 @@ class FormatStylePage(BasePage):
         self.height_slider.valueChanged.connect(self._on_line_height_changed)
         self.height_spin.valueChanged.connect(self._on_line_height_spin_changed)
 
-        body_card.add_field("줄 간격", height_widget, "style_line_height",
-                           help_text="줄과 줄 사이의 간격입니다. 1.6~1.8 권장.")
+        body_card.add_field(
+            "줄 간격",
+            height_widget,
+            "style_line_height",
+            help_text="줄과 줄 사이의 간격입니다. 1.6~1.8 권장.",
+        )
 
         section.add_widget(body_card)
 
         # ---- 캐릭터 이름 스타일 카드 ----
         char_card = ContentCard("캐릭터 이름 스타일")
 
-        self.name_picker = ColorPicker(self.settings.get('style_name_color', '#2d2d2d'))
+        self.name_picker = ColorPicker(self.settings.get("style_name_color", "#2d2d2d"))
         self.name_picker.color_changed.connect(self._on_style_changed)
-        char_card.add_field("이름 색상", self.name_picker, "style_name_color",
-                           help_text="캐릭터 이름의 기본 색상입니다. 캐릭터별 색상이 우선 적용됩니다.")
+        char_card.add_field(
+            "이름 색상",
+            self.name_picker,
+            "style_name_color",
+            help_text="캐릭터 이름의 기본 색상입니다. 캐릭터별 색상이 우선 적용됩니다.",
+        )
 
         self.name_bold = char_card.add_checkbox(
-            "이름을 굵게 표시", "style_name_bold",
-            checked=self.settings.get('style_name_bold', True),
-            help_text="캐릭터 이름을 굵은 글씨로 표시합니다."
+            "이름을 굵게 표시",
+            "style_name_bold",
+            checked=self.settings.get("style_name_bold", True),
+            help_text="캐릭터 이름을 굵은 글씨로 표시합니다.",
         )
         self.name_bold.stateChanged.connect(self._on_style_changed)
 
         self.separator_combo = char_card.add_dropdown(
-            "대사 구분자", "style_separator",
-            options=["「 」 (꺾쇠)", "\" \" (따옴표)", "' ' (작은따옴표)", "없음", "직접 입력"],
-            default=self.settings.get('style_separator', '「 」 (꺾쇠)'),
-            help_text="대사를 감싸는 기호입니다. 일본식 꺾쇠「」가 가장 많이 사용됩니다."
+            "대사 구분자",
+            "style_separator",
+            options=["「 」 (꺾쇠)", '" " (따옴표)', "' ' (작은따옴표)", "없음", "직접 입력"],
+            default=self.settings.get("style_separator", "「 」 (꺾쇠)"),
+            help_text="대사를 감싸는 기호입니다. 일본식 꺾쇠「」가 가장 많이 사용됩니다.",
         )
         self.separator_combo.currentTextChanged.connect(self._on_separator_changed)
 
@@ -452,13 +478,14 @@ class FormatStylePage(BasePage):
         self.custom_separator.setMinimumHeight(36)
         self.custom_separator.setVisible(False)
         self.custom_separator.textChanged.connect(self._on_style_changed)
-        char_card.add_field("", self.custom_separator,
-                           help_text="열림/닫힘 기호를 공백으로 구분하여 입력 (예: [ ])")
+        char_card.add_field(
+            "", self.custom_separator, help_text="열림/닫힘 기호를 공백으로 구분하여 입력 (예: [ ])"
+        )
 
-        saved_sep = self.settings.get('style_separator', '「 」 (꺾쇠)')
-        if saved_sep == '직접 입력':
+        saved_sep = self.settings.get("style_separator", "「 」 (꺾쇠)")
+        if saved_sep == "직접 입력":
             self.custom_separator.setVisible(True)
-            self.custom_separator.setText(self.settings.get('custom_separator_text', ''))
+            self.custom_separator.setText(self.settings.get("custom_separator_text", ""))
 
         section.add_widget(char_card)
 
@@ -484,7 +511,7 @@ class FormatStylePage(BasePage):
         self.char_color_layout.setContentsMargins(0, 8, 0, 0)
         self.char_color_layout.setSpacing(Spacing.SM)
 
-        char_colors = self.settings.get('character_colors', {})
+        char_colors = self.settings.get("character_colors", {})
         for name, color in char_colors.items():
             self._add_character_color_row(name, color)
 
@@ -501,18 +528,18 @@ class FormatStylePage(BasePage):
         # ---- 색상 팔레트 카드 ----
         palette_card = ContentCard("색상 팔레트", "요소별 색상 설정")
 
-        colors = self.settings.get('colors', {})
+        colors = self.settings.get("colors", {})
         color_grid = QGridLayout()
         color_grid.setSpacing(Spacing.LG)
 
         self.color_pickers = {}
         color_items = [
-            ('text_color', '본문 텍스트', '#1a1a1a'),
-            ('name_color', '캐릭터 이름', '#2d2d2d'),
-            ('dice_color', '주사위', '#888888'),
-            ('system_color', '시스템 메시지', '#666666'),
-            ('effect_bg', '효과 배경', '#f5f5f5'),
-            ('effect_border', '효과 테두리', '#cccccc'),
+            ("text_color", "본문 텍스트", "#1a1a1a"),
+            ("name_color", "캐릭터 이름", "#2d2d2d"),
+            ("dice_color", "주사위", "#888888"),
+            ("system_color", "시스템 메시지", "#666666"),
+            ("effect_bg", "효과 배경", "#f5f5f5"),
+            ("effect_border", "효과 테두리", "#cccccc"),
         ]
 
         for i, (key, label, default) in enumerate(color_items):
@@ -556,18 +583,22 @@ class FormatStylePage(BasePage):
         self.epub_body_combo = ComboBox()
         self.epub_body_combo.addItems(self._system_fonts)
         self.epub_body_combo.setMinimumWidth(220)
-        _ensure_font(self.epub_body_combo, self.settings.get('epub_body_font', '나눔명조'))
+        _ensure_font(self.epub_body_combo, self.settings.get("epub_body_font", "나눔명조"))
         self.epub_body_combo.currentTextChanged.connect(self._on_font_changed)
-        epub_card.add_field("본문 폰트", self.epub_body_combo,
-                           help_text="EPUB 본문에 사용할 폰트를 선택하세요.")
+        epub_card.add_field(
+            "본문 폰트", self.epub_body_combo, help_text="EPUB 본문에 사용할 폰트를 선택하세요."
+        )
 
         self.epub_name_combo = ComboBox()
         self.epub_name_combo.addItems(self._system_fonts)
         self.epub_name_combo.setMinimumWidth(220)
-        _ensure_font(self.epub_name_combo, self.settings.get('epub_name_font', 'Pretendard'))
+        _ensure_font(self.epub_name_combo, self.settings.get("epub_name_font", "Pretendard"))
         self.epub_name_combo.currentTextChanged.connect(self._on_font_changed)
-        epub_card.add_field("이름 폰트", self.epub_name_combo,
-                           help_text="캐릭터 이름에 사용할 폰트. 산세리프 계열 권장.")
+        epub_card.add_field(
+            "이름 폰트",
+            self.epub_name_combo,
+            help_text="캐릭터 이름에 사용할 폰트. 산세리프 계열 권장.",
+        )
 
         epub_card.add_spacing(8)
 
@@ -580,11 +611,11 @@ class FormatStylePage(BasePage):
 
         self.embed_body_entry = LineEdit()
         self.embed_body_entry.setPlaceholderText("본문 폰트 파일 (.ttf, .otf)")
-        self.embed_body_entry.setText(self.settings.get('embed_body_font', ''))
+        self.embed_body_entry.setText(self.settings.get("embed_body_font", ""))
         body_embed_row.addWidget(self.embed_body_entry, 1)
 
         body_browse = PushButton("찾기")
-        body_browse.clicked.connect(lambda: self._browse_font('body'))
+        body_browse.clicked.connect(lambda: self._browse_font("body"))
         body_embed_row.addWidget(body_browse)
 
         epub_card.add_field("본문 파일", QWidget())
@@ -596,11 +627,11 @@ class FormatStylePage(BasePage):
 
         self.embed_name_entry = LineEdit()
         self.embed_name_entry.setPlaceholderText("이름 폰트 파일 (.ttf, .otf)")
-        self.embed_name_entry.setText(self.settings.get('embed_name_font', ''))
+        self.embed_name_entry.setText(self.settings.get("embed_name_font", ""))
         name_embed_row.addWidget(self.embed_name_entry, 1)
 
         name_browse = PushButton("찾기")
-        name_browse.clicked.connect(lambda: self._browse_font('name'))
+        name_browse.clicked.connect(lambda: self._browse_font("name"))
         name_embed_row.addWidget(name_browse)
 
         epub_card.add_field("이름 파일", QWidget())
@@ -614,18 +645,18 @@ class FormatStylePage(BasePage):
         self.docx_body_combo = ComboBox()
         self.docx_body_combo.addItems(self._system_fonts)
         self.docx_body_combo.setMinimumWidth(220)
-        _ensure_font(self.docx_body_combo, self.settings.get('docx_body_font', '맑은 고딕'))
+        _ensure_font(self.docx_body_combo, self.settings.get("docx_body_font", "맑은 고딕"))
         self.docx_body_combo.currentTextChanged.connect(self._on_font_changed)
-        docx_card.add_field("본문 폰트", self.docx_body_combo,
-                           help_text="시스템에 설치된 폰트를 선택하세요.")
+        docx_card.add_field(
+            "본문 폰트", self.docx_body_combo, help_text="시스템에 설치된 폰트를 선택하세요."
+        )
 
         self.docx_name_combo = ComboBox()
         self.docx_name_combo.addItems(self._system_fonts)
         self.docx_name_combo.setMinimumWidth(220)
-        _ensure_font(self.docx_name_combo, self.settings.get('docx_name_font', '맑은 고딕'))
+        _ensure_font(self.docx_name_combo, self.settings.get("docx_name_font", "맑은 고딕"))
         self.docx_name_combo.currentTextChanged.connect(self._on_font_changed)
-        docx_card.add_field("이름 폰트", self.docx_name_combo,
-                           help_text="캐릭터 이름 표시용 폰트.")
+        docx_card.add_field("이름 폰트", self.docx_name_combo, help_text="캐릭터 이름 표시용 폰트.")
 
         docx_card.add_spacing(8)
 
@@ -642,11 +673,11 @@ class FormatStylePage(BasePage):
 
         self.docx_embed_body = LineEdit()
         self.docx_embed_body.setPlaceholderText("본문 폰트 파일 (.ttf, .otf)")
-        self.docx_embed_body.setText(self.settings.get('docx_embed_body', ''))
+        self.docx_embed_body.setText(self.settings.get("docx_embed_body", ""))
         docx_body_row.addWidget(self.docx_embed_body, 1)
 
         docx_body_browse = PushButton("찾기")
-        docx_body_browse.clicked.connect(lambda: self._browse_docx_font('body'))
+        docx_body_browse.clicked.connect(lambda: self._browse_docx_font("body"))
         docx_body_row.addWidget(docx_body_browse)
 
         docx_card.add_field("본문 파일", QWidget())
@@ -658,11 +689,11 @@ class FormatStylePage(BasePage):
 
         self.docx_embed_name = LineEdit()
         self.docx_embed_name.setPlaceholderText("이름 폰트 파일 (.ttf, .otf)")
-        self.docx_embed_name.setText(self.settings.get('docx_embed_name', ''))
+        self.docx_embed_name.setText(self.settings.get("docx_embed_name", ""))
         docx_name_row.addWidget(self.docx_embed_name, 1)
 
         docx_name_browse = PushButton("찾기")
-        docx_name_browse.clicked.connect(lambda: self._browse_docx_font('name'))
+        docx_name_browse.clicked.connect(lambda: self._browse_docx_font("name"))
         docx_name_row.addWidget(docx_name_browse)
 
         docx_card.add_field("이름 파일", QWidget())
@@ -674,31 +705,35 @@ class FormatStylePage(BasePage):
         typo_card = ContentCard("타이포그래피 설정")
 
         self.body_height_input = typo_card.add_text_field(
-            "본문 줄 간격", "body_line_height",
+            "본문 줄 간격",
+            "body_line_height",
             placeholder="1.6",
-            default=self.settings.get('body_line_height', '1.6'),
-            help_text="일반 본문의 line-height. 1.5~1.8 권장."
+            default=self.settings.get("body_line_height", "1.6"),
+            help_text="일반 본문의 line-height. 1.5~1.8 권장.",
         )
 
         self.dialogue_height_input = typo_card.add_text_field(
-            "대사 줄 간격", "dialogue_line_height",
+            "대사 줄 간격",
+            "dialogue_line_height",
             placeholder="1.5",
-            default=self.settings.get('dialogue_line_height', '1.5'),
-            help_text="캐릭터 대사 부분의 line-height. 본문보다 약간 좁게 설정."
+            default=self.settings.get("dialogue_line_height", "1.5"),
+            help_text="캐릭터 대사 부분의 line-height. 본문보다 약간 좁게 설정.",
         )
 
         self.narration_height_input = typo_card.add_text_field(
-            "나레이션 줄 간격", "narration_line_height",
+            "나레이션 줄 간격",
+            "narration_line_height",
             placeholder="1.7",
-            default=self.settings.get('narration_line_height', '1.7'),
-            help_text="GM 나레이션의 line-height. 본문보다 넓게 설정하면 구분됨."
+            default=self.settings.get("narration_line_height", "1.7"),
+            help_text="GM 나레이션의 line-height. 본문보다 넓게 설정하면 구분됨.",
         )
 
         self.base_font_size_input = typo_card.add_text_field(
-            "기본 폰트 배율", "base_font_size",
+            "기본 폰트 배율",
+            "base_font_size",
             placeholder="1.0",
-            default=self.settings.get('base_font_size', '1.0'),
-            help_text="전체 폰트 크기 배율. 1.0=100%, 1.2=120%"
+            default=self.settings.get("base_font_size", "1.0"),
+            help_text="전체 폰트 크기 배율. 1.0=100%, 1.2=120%",
         )
 
         section.add_widget(typo_card)
@@ -712,23 +747,26 @@ class FormatStylePage(BasePage):
         include_card = ContentCard("표지 옵션")
 
         self.include_cover = include_card.add_checkbox(
-            "표지 페이지 포함", "include_cover",
-            checked=self.settings.get('include_cover', True),
-            help_text="EPUB 시작 부분에 표지 페이지를 추가합니다."
+            "표지 페이지 포함",
+            "include_cover",
+            checked=self.settings.get("include_cover", True),
+            help_text="EPUB 시작 부분에 표지 페이지를 추가합니다.",
         )
         self.include_cover.stateChanged.connect(self._on_cover_toggle)
 
         self.title_on_cover = include_card.add_checkbox(
-            "표지에 제목 표시", "title_on_cover",
-            checked=self.settings.get('title_on_cover', True),
-            help_text="표지 페이지에 작품 제목을 표시합니다."
+            "표지에 제목 표시",
+            "title_on_cover",
+            checked=self.settings.get("title_on_cover", True),
+            help_text="표지 페이지에 작품 제목을 표시합니다.",
         )
         self.title_on_cover.stateChanged.connect(self._update_cover_preview)
 
         self.author_on_cover = include_card.add_checkbox(
-            "표지에 저자 표시", "author_on_cover",
-            checked=self.settings.get('author_on_cover', True),
-            help_text="표지 페이지에 저자(GM) 이름을 표시합니다."
+            "표지에 저자 표시",
+            "author_on_cover",
+            checked=self.settings.get("author_on_cover", True),
+            help_text="표지 페이지에 저자(GM) 이름을 표시합니다.",
         )
         self.author_on_cover.stateChanged.connect(self._update_cover_preview)
 
@@ -738,10 +776,11 @@ class FormatStylePage(BasePage):
         text_card = ContentCard("표지 텍스트")
 
         self.cover_subtitle = text_card.add_text_field(
-            "부제목", "cover_subtitle",
+            "부제목",
+            "cover_subtitle",
             placeholder="선택사항",
-            default=self.settings.get('cover_subtitle', ''),
-            help_text="제목 아래에 표시될 부제목입니다. 시나리오 이름 등을 넣을 수 있습니다."
+            default=self.settings.get("cover_subtitle", ""),
+            help_text="제목 아래에 표시될 부제목입니다. 시나리오 이름 등을 넣을 수 있습니다.",
         )
         self.cover_subtitle.textChanged.connect(self._update_cover_preview)
 
@@ -750,15 +789,25 @@ class FormatStylePage(BasePage):
         # ---- 표지 색상 카드 ----
         color_card = ContentCard("표지 색상")
 
-        self.cover_bg_picker = ColorPicker(self.settings.get('cover_bg', '#1a1a1a'))
+        self.cover_bg_picker = ColorPicker(self.settings.get("cover_bg", "#1a1a1a"))
         self.cover_bg_picker.color_changed.connect(self._on_cover_bg_color_changed)
-        color_card.add_field("배경색", self.cover_bg_picker, "cover_bg",
-                            help_text="표지 배경색. 어두운 색상이 세련된 느낌을 줍니다.")
+        color_card.add_field(
+            "배경색",
+            self.cover_bg_picker,
+            "cover_bg",
+            help_text="표지 배경색. 어두운 색상이 세련된 느낌을 줍니다.",
+        )
 
-        self.cover_title_color_picker = ColorPicker(self.settings.get('cover_title_color', '#ffffff'))
+        self.cover_title_color_picker = ColorPicker(
+            self.settings.get("cover_title_color", "#ffffff")
+        )
         self.cover_title_color_picker.color_changed.connect(self._on_cover_title_color_changed)
-        color_card.add_field("제목 색상", self.cover_title_color_picker, "cover_title_color",
-                            help_text="표지 제목 글씨 색상. 배경색과 대비되는 색상 권장.")
+        color_card.add_field(
+            "제목 색상",
+            self.cover_title_color_picker,
+            "cover_title_color",
+            help_text="표지 제목 글씨 색상. 배경색과 대비되는 색상 권장.",
+        )
 
         section.add_widget(color_card)
 
@@ -781,9 +830,10 @@ class FormatStylePage(BasePage):
 
         # Image path + buttons
         self.cover_image_entry = image_card.add_text_field(
-            "", "cover_image",
+            "",
+            "cover_image",
             placeholder="이미지 파일 경로",
-            default=self.settings.get('cover_image', '')
+            default=self.settings.get("cover_image", ""),
         )
         self.cover_image_entry.textChanged.connect(self._on_cover_image_path_changed)
 
@@ -808,23 +858,26 @@ class FormatStylePage(BasePage):
         toc_card = ContentCard("목차 설정")
 
         self.include_toc = toc_card.add_checkbox(
-            "목차 포함", "include_toc",
-            checked=self.settings.get('include_toc', True),
-            help_text="EPUB에 목차(Table of Contents) 페이지를 추가합니다."
+            "목차 포함",
+            "include_toc",
+            checked=self.settings.get("include_toc", True),
+            help_text="EPUB에 목차(Table of Contents) 페이지를 추가합니다.",
         )
 
         self.toc_title = toc_card.add_text_field(
-            "목차 제목", "toc_title",
+            "목차 제목",
+            "toc_title",
             placeholder="목차",
-            default=self.settings.get('toc_title', '목차'),
-            help_text="목차 페이지의 제목입니다. 기본값은 '목차'입니다."
+            default=self.settings.get("toc_title", "목차"),
+            help_text="목차 페이지의 제목입니다. 기본값은 '목차'입니다.",
         )
 
         # 사용자 명시 씬 제목만 목차에 포함. 기본 OFF — 기존 동작 보존.
         # ON 으로 두면 "장면 1" 같은 자동 생성 제목과 system noise 제외.
         self.toc_scene_only = toc_card.add_checkbox(
-            "명시적 씬 제목만 목차에 포함", "toc_scene_only",
-            checked=self.settings.get('toc_scene_only', False),
+            "명시적 씬 제목만 목차에 포함",
+            "toc_scene_only",
+            checked=self.settings.get("toc_scene_only", False),
             help_text=(
                 "ON: 본문에 직접 적힌 씬 제목만 목차에 표시 (예: 'Scene 1 — 숲의 입구'). "
                 "자동 생성된 '장면 N', 시스템 노이즈 등은 목차에서 제외됩니다."
@@ -832,9 +885,10 @@ class FormatStylePage(BasePage):
         )
 
         self.toc_exclude_patterns = toc_card.add_text_field(
-            "목차 제외 패턴 (쉼표 구분)", "toc_exclude_patterns",
+            "목차 제외 패턴 (쉼표 구분)",
+            "toc_exclude_patterns",
             placeholder="main\\s*process, system, ^debug",
-            default=self.settings.get('toc_exclude_patterns', ''),
+            default=self.settings.get("toc_exclude_patterns", ""),
             help_text=(
                 "정규식 패턴을 쉼표로 구분해 입력. 매칭되는 씬 제목은 목차에서 숨김. "
                 "예: 'main\\s*process, system' → 'Main Process started' / 'System Load' 등 제외."
@@ -852,10 +906,11 @@ class FormatStylePage(BasePage):
         divider_type_card = ContentCard("장면 구분선")
 
         self.divider_type = divider_type_card.add_dropdown(
-            "유형", "divider_type",
+            "유형",
+            "divider_type",
             options=["텍스트/기호", "이미지", "선 스타일", "사용 안 함"],
             default="텍스트/기호",
-            help_text="장면 전환 시 표시되는 구분선의 유형을 선택합니다."
+            help_text="장면 전환 시 표시되는 구분선의 유형을 선택합니다.",
         )
         self.divider_type.currentTextChanged.connect(self._on_divider_type_changed)
 
@@ -865,15 +920,16 @@ class FormatStylePage(BasePage):
         self.text_card = ContentCard("텍스트/기호 설정")
 
         self.divider_text = self.text_card.add_text_field(
-            "구분 기호", "divider_text",
+            "구분 기호",
+            "divider_text",
             placeholder="* * *",
             default="* * *",
             help_text="장면 구분에 사용할 텍스트나 기호입니다. 예: * * *, ───, ◆◆◆",
-            clear_button=False
+            clear_button=False,
         )
         self.divider_text.textChanged.connect(self._update_deco_preview)
 
-        self.divider_color = ColorPicker(self.settings.get('divider_color', '#888888'))
+        self.divider_color = ColorPicker(self.settings.get("divider_color", "#888888"))
         self.divider_color.color_changed.connect(self._update_deco_preview)
         self.text_card.add_field("색상", self.divider_color, "divider_color")
 
@@ -911,8 +967,9 @@ class FormatStylePage(BasePage):
         size_layout.addWidget(self.divider_img_height)
         size_layout.addStretch()
 
-        self.image_card.add_field("이미지 높이", size_widget,
-                                 help_text="구분선 이미지의 높이를 설정합니다.")
+        self.image_card.add_field(
+            "이미지 높이", size_widget, help_text="구분선 이미지의 높이를 설정합니다."
+        )
 
         section.add_widget(self.image_card)
 
@@ -921,10 +978,11 @@ class FormatStylePage(BasePage):
         self.line_card.setVisible(False)
 
         self.line_style = self.line_card.add_dropdown(
-            "선 종류", "line_style",
+            "선 종류",
+            "line_style",
             options=["실선", "점선", "파선", "이중선"],
             default="실선",
-            help_text="구분선의 선 스타일입니다."
+            help_text="구분선의 선 스타일입니다.",
         )
         self.line_style.currentTextChanged.connect(self._update_deco_preview)
 
@@ -964,17 +1022,21 @@ class FormatStylePage(BasePage):
         self.line_width_spin.setSuffix("%")
         self.line_width_spin.setFixedWidth(70)
         self.line_width_spin.setFixedHeight(32)
-        self.line_width_spin.valueChanged.connect(lambda v: (
-            self.line_width.blockSignals(True),
-            self.line_width.setValue(v),
-            self.line_width.blockSignals(False),
-            self._update_deco_preview(),
-        ))
-        self.line_width.valueChanged.connect(lambda v: (
-            self.line_width_spin.blockSignals(True),
-            self.line_width_spin.setValue(v),
-            self.line_width_spin.blockSignals(False),
-        ))
+        self.line_width_spin.valueChanged.connect(
+            lambda v: (
+                self.line_width.blockSignals(True),
+                self.line_width.setValue(v),
+                self.line_width.blockSignals(False),
+                self._update_deco_preview(),
+            )
+        )
+        self.line_width.valueChanged.connect(
+            lambda v: (
+                self.line_width_spin.blockSignals(True),
+                self.line_width_spin.setValue(v),
+                self.line_width_spin.blockSignals(False),
+            )
+        )
         width_layout.addWidget(self.line_width_spin)
 
         self.line_card.add_field("선 너비", width_widget)
@@ -985,10 +1047,11 @@ class FormatStylePage(BasePage):
         header_card = ContentCard("챕터 헤더 스타일")
 
         self.header_style = header_card.add_dropdown(
-            "스타일", "header_style",
+            "스타일",
+            "header_style",
             options=["기본", "중앙 정렬", "장식 포함", "이미지 헤더", "사용 안 함"],
             default="기본",
-            help_text="챕터/씬 제목의 표시 스타일입니다."
+            help_text="챕터/씬 제목의 표시 스타일입니다.",
         )
 
         # Header font size slider + spinbox
@@ -1010,25 +1073,27 @@ class FormatStylePage(BasePage):
         self.header_size_spin.setFixedHeight(32)
         hdr_size_layout.addWidget(self.header_size_spin)
 
-        self.header_size.valueChanged.connect(lambda v: (
-            self.header_size_spin.blockSignals(True),
-            self.header_size_spin.setValue(v),
-            self.header_size_spin.blockSignals(False),
-        ))
-        self.header_size_spin.valueChanged.connect(lambda v: (
-            self.header_size.blockSignals(True),
-            self.header_size.setValue(v),
-            self.header_size.blockSignals(False),
-        ))
+        self.header_size.valueChanged.connect(
+            lambda v: (
+                self.header_size_spin.blockSignals(True),
+                self.header_size_spin.setValue(v),
+                self.header_size_spin.blockSignals(False),
+            )
+        )
+        self.header_size_spin.valueChanged.connect(
+            lambda v: (
+                self.header_size.blockSignals(True),
+                self.header_size.setValue(v),
+                self.header_size.blockSignals(False),
+            )
+        )
 
         header_card.add_field("폰트 크기", hdr_size_widget)
 
         self.header_color = ColorPicker("#1a1a1a")
         header_card.add_field("헤더 색상", self.header_color)
 
-        self.header_bold = header_card.add_checkbox(
-            "굵게 표시", "header_bold", checked=True
-        )
+        self.header_bold = header_card.add_checkbox("굵게 표시", "header_bold", checked=True)
 
         section.add_widget(header_card)
 
@@ -1036,29 +1101,35 @@ class FormatStylePage(BasePage):
         deco_card = ContentCard("헤더 장식")
 
         self.header_prefix = deco_card.add_text_field(
-            "앞 장식", "header_prefix",
+            "앞 장식",
+            "header_prefix",
             placeholder="【",
             default="",
             help_text="챕터 제목 앞에 붙는 장식 기호",
-            clear_button=False
+            clear_button=False,
         )
 
         self.header_suffix = deco_card.add_text_field(
-            "뒤 장식", "header_suffix",
+            "뒤 장식",
+            "header_suffix",
             placeholder="】",
             default="",
             help_text="챕터 제목 뒤에 붙는 장식 기호",
-            clear_button=False
+            clear_button=False,
         )
 
         self.header_underline = deco_card.add_checkbox(
-            "밑줄 표시", "header_underline", checked=False,
-            help_text="챕터 제목 아래에 밑줄을 표시합니다."
+            "밑줄 표시",
+            "header_underline",
+            checked=False,
+            help_text="챕터 제목 아래에 밑줄을 표시합니다.",
         )
 
         self.header_box = deco_card.add_checkbox(
-            "배경 박스", "header_box", checked=False,
-            help_text="챕터 제목에 배경 박스를 표시합니다."
+            "배경 박스",
+            "header_box",
+            checked=False,
+            help_text="챕터 제목에 배경 박스를 표시합니다.",
         )
 
         self.header_box_color = ColorPicker("#f5f5f5")
@@ -1106,7 +1177,12 @@ class FormatStylePage(BasePage):
         preset_row.addWidget(preset_label)
 
         css_preset_options = [
-            "선택...", "기본 스타일", "소설풍", "시나리오풍", "미니멀", "다크 테마"
+            "선택...",
+            "기본 스타일",
+            "소설풍",
+            "시나리오풍",
+            "미니멀",
+            "다크 테마",
         ]
         self.css_preset_combo = ComboBox()
         self.css_preset_combo.addItems(css_preset_options)
@@ -1150,10 +1226,11 @@ class FormatStylePage(BasePage):
         quote_card = ContentCard("인용/효과 박스")
 
         self.quote_style = quote_card.add_dropdown(
-            "스타일", "quote_style",
+            "스타일",
+            "quote_style",
             options=["없음", "왼쪽 테두리", "둥근 박스", "그림자 박스", "인용 기호"],
             default="왼쪽 테두리",
-            help_text="특수 효과나 인용문 표시 스타일"
+            help_text="특수 효과나 인용문 표시 스타일",
         )
 
         self.quote_bg = ColorPicker("#f9f9f9")
@@ -1168,16 +1245,19 @@ class FormatStylePage(BasePage):
         dice_card = ContentCard("주사위 굴림 표시")
 
         self.dice_style = dice_card.add_dropdown(
-            "스타일", "dice_style",
+            "스타일",
+            "dice_style",
             options=["인라인", "별도 블록", "하이라이트", "숨김"],
             default="인라인",
-            help_text="주사위 굴림 결과 표시 방식"
+            help_text="주사위 굴림 결과 표시 방식",
         )
         self.dice_style.currentTextChanged.connect(self._update_dice_preview)
 
         self.dice_icon = dice_card.add_checkbox(
-            "주사위 아이콘 표시", "dice_icon", checked=True,
-            help_text="주사위 굴림 앞에 \U0001f3b2 아이콘을 표시합니다."
+            "주사위 아이콘 표시",
+            "dice_icon",
+            checked=True,
+            help_text="주사위 굴림 앞에 \U0001f3b2 아이콘을 표시합니다.",
         )
         self.dice_icon.stateChanged.connect(self._update_dice_preview)
 
@@ -1229,13 +1309,17 @@ class FormatStylePage(BasePage):
         effect_card = ContentCard("특수 효과")
 
         self.first_letter = effect_card.add_checkbox(
-            "드롭캡 (첫 글자 크게)", "first_letter", checked=False,
-            help_text="각 챕터의 첫 글자를 크게 표시합니다."
+            "드롭캡 (첫 글자 크게)",
+            "first_letter",
+            checked=False,
+            help_text="각 챕터의 첫 글자를 크게 표시합니다.",
         )
 
         self.page_break = effect_card.add_checkbox(
-            "챕터마다 페이지 나눔", "page_break", checked=True,
-            help_text="각 챕터가 새 페이지에서 시작됩니다."
+            "챕터마다 페이지 나눔",
+            "page_break",
+            checked=True,
+            help_text="각 챕터가 새 페이지에서 시작됩니다.",
         )
 
         section.add_widget(effect_card)
@@ -1258,9 +1342,9 @@ class FormatStylePage(BasePage):
         else:
             return
 
-        bg = preset.get('body_bg', '#ffffff')
-        text = preset.get('body_text', '#1a1a1a')
-        name_c = preset.get('name_color', '#2d2d2d')
+        bg = preset.get("body_bg", "#ffffff")
+        text = preset.get("body_text", "#1a1a1a")
+        name_c = preset.get("name_color", "#2d2d2d")
 
         self.style_bg_picker.set_color(bg)
         self.style_text_picker.set_color(text)
@@ -1294,58 +1378,75 @@ class FormatStylePage(BasePage):
             name = name.strip()
             if not name:
                 InfoBar.warning(
-                    title="입력 오류", content="프리셋 이름을 입력하세요.",
-                    parent=self, position=InfoBarPosition.TOP, duration=3000
+                    title="입력 오류",
+                    content="프리셋 이름을 입력하세요.",
+                    parent=self,
+                    position=InfoBarPosition.TOP,
+                    duration=3000,
                 )
                 return
             if name in Theme.PRESETS:
                 InfoBar.warning(
                     title="중복",
                     content="내장 프리셋 이름과 동일합니다. 다른 이름을 사용하세요.",
-                    parent=self, position=InfoBarPosition.TOP, duration=3000
+                    parent=self,
+                    position=InfoBarPosition.TOP,
+                    duration=3000,
                 )
                 return
 
             self._custom_theme_presets[name] = {
-                'body_bg': self.style_bg_picker.get_color(),
-                'body_text': self.style_text_picker.get_color(),
-                'name_color': self.name_picker.get_color(),
+                "body_bg": self.style_bg_picker.get_color(),
+                "body_text": self.style_text_picker.get_color(),
+                "name_color": self.name_picker.get_color(),
             }
-            self.settings['custom_theme_presets'] = self._custom_theme_presets
+            self.settings["custom_theme_presets"] = self._custom_theme_presets
             self.config_manager.save_gui_settings(self.settings)
 
             self._refresh_preset_combo()
             self.preset_combo.setCurrentText(name)
 
             InfoBar.success(
-                title="저장 완료", content=f"'{name}' 프리셋이 저장되었습니다.",
-                parent=self, position=InfoBarPosition.TOP, duration=3000
+                title="저장 완료",
+                content=f"'{name}' 프리셋이 저장되었습니다.",
+                parent=self,
+                position=InfoBarPosition.TOP,
+                duration=3000,
             )
 
     def _delete_preset(self):
         name = self.preset_combo.currentText()
         if name in Theme.PRESETS:
             InfoBar.warning(
-                title="삭제 불가", content="내장 프리셋은 삭제할 수 없습니다.",
-                parent=self, position=InfoBarPosition.TOP, duration=3000
+                title="삭제 불가",
+                content="내장 프리셋은 삭제할 수 없습니다.",
+                parent=self,
+                position=InfoBarPosition.TOP,
+                duration=3000,
             )
             return
         if name not in self._custom_theme_presets:
             InfoBar.warning(
-                title="알림", content="삭제할 사용자 프리셋을 선택하세요.",
-                parent=self, position=InfoBarPosition.TOP, duration=3000
+                title="알림",
+                content="삭제할 사용자 프리셋을 선택하세요.",
+                parent=self,
+                position=InfoBarPosition.TOP,
+                duration=3000,
             )
             return
 
         w = MessageBox("프리셋 삭제", f"'{name}' 프리셋을 삭제하시겠습니까?", self.window())
         if w.exec():
             del self._custom_theme_presets[name]
-            self.settings['custom_theme_presets'] = self._custom_theme_presets
+            self.settings["custom_theme_presets"] = self._custom_theme_presets
             self.config_manager.save_gui_settings(self.settings)
             self._refresh_preset_combo()
             InfoBar.success(
-                title="삭제 완료", content="프리셋이 삭제되었습니다.",
-                parent=self, position=InfoBarPosition.TOP, duration=3000
+                title="삭제 완료",
+                content="프리셋이 삭제되었습니다.",
+                parent=self,
+                position=InfoBarPosition.TOP,
+                duration=3000,
             )
 
     def _refresh_preset_combo(self):
@@ -1359,7 +1460,7 @@ class FormatStylePage(BasePage):
             self.preset_combo.setCurrentText("Classic Light")
 
     def _on_separator_changed(self, text: str):
-        self.custom_separator.setVisible(text == '직접 입력')
+        self.custom_separator.setVisible(text == "직접 입력")
         self._on_style_changed()
 
     def _on_style_changed(self, *args):
@@ -1397,9 +1498,9 @@ class FormatStylePage(BasePage):
         self.settings_changed.emit()
 
     def _on_palette_color_changed(self, key: str, color: str):
-        if 'colors' not in self.settings:
-            self.settings['colors'] = {}
-        self.settings['colors'][key] = color
+        if "colors" not in self.settings:
+            self.settings["colors"] = {}
+        self.settings["colors"][key] = color
         self.config_manager.save_gui_settings(self.settings)
         self.settings_changed.emit()
 
@@ -1429,7 +1530,7 @@ class FormatStylePage(BasePage):
         self._save_character_colors()
 
     def _save_character_colors(self):
-        self.settings['character_colors'] = self.color_service.get_all_colors()
+        self.settings["character_colors"] = self.color_service.get_all_colors()
         self.config_manager.save_gui_settings(self.settings)
 
     def _auto_assign_colors(self):
@@ -1439,8 +1540,10 @@ class FormatStylePage(BasePage):
         from core.text_parser import parse_file
 
         files, _ = _QFD.getOpenFileNames(
-            self, "캐릭터 추출용 로그 파일 선택", "",
-            "지원 형식 (*.html *.htm *.txt);;모든 파일 (*.*)"
+            self,
+            "캐릭터 추출용 로그 파일 선택",
+            "",
+            "지원 형식 (*.html *.htm *.txt);;모든 파일 (*.*)",
         )
         if not files:
             return
@@ -1454,8 +1557,11 @@ class FormatStylePage(BasePage):
 
             if not all_entries:
                 InfoBar.warning(
-                    title='알림', content='파일에서 캐릭터를 찾을 수 없습니다.',
-                    parent=self, position=InfoBarPosition.TOP, duration=3000
+                    title="알림",
+                    content="파일에서 캐릭터를 찾을 수 없습니다.",
+                    parent=self,
+                    position=InfoBarPosition.TOP,
+                    duration=3000,
                 )
                 return
 
@@ -1467,14 +1573,19 @@ class FormatStylePage(BasePage):
 
             self._save_character_colors()
             InfoBar.success(
-                title='완료',
-                content=f'{len(char_colors)}명의 캐릭터에 색상이 할당되었습니다.',
-                parent=self, position=InfoBarPosition.TOP, duration=3000
+                title="완료",
+                content=f"{len(char_colors)}명의 캐릭터에 색상이 할당되었습니다.",
+                parent=self,
+                position=InfoBarPosition.TOP,
+                duration=3000,
             )
         except Exception as e:
             InfoBar.error(
-                title='오류', content=f'캐릭터 추출 실패: {e!s}',
-                parent=self, position=InfoBarPosition.TOP, duration=5000
+                title="오류",
+                content=f"캐릭터 추출 실패: {e!s}",
+                parent=self,
+                position=InfoBarPosition.TOP,
+                duration=5000,
             )
 
     def _reset_character_colors(self):
@@ -1482,7 +1593,7 @@ class FormatStylePage(BasePage):
         if w.exec():
             self.color_service.reset()
             self._clear_character_color_ui()
-            self.settings['character_colors'] = {}
+            self.settings["character_colors"] = {}
             self.config_manager.save_gui_settings(self.settings)
 
             no_char_label = BodyLabel(
@@ -1507,11 +1618,10 @@ class FormatStylePage(BasePage):
 
     def _browse_font(self, font_type: str):
         file_path, _ = QFileDialog.getOpenFileName(
-            self, "폰트 파일 선택", "",
-            "폰트 파일 (*.ttf *.otf *.woff *.woff2);;모든 파일 (*.*)"
+            self, "폰트 파일 선택", "", "폰트 파일 (*.ttf *.otf *.woff *.woff2);;모든 파일 (*.*)"
         )
         if file_path:
-            if font_type == 'body':
+            if font_type == "body":
                 self.embed_body_entry.setText(file_path)
             else:
                 self.embed_name_entry.setText(file_path)
@@ -1519,15 +1629,14 @@ class FormatStylePage(BasePage):
 
     def _browse_docx_font(self, font_type: str):
         file_path, _ = QFileDialog.getOpenFileName(
-            self, "폰트 파일 선택", "",
-            "폰트 파일 (*.ttf *.otf);;모든 파일 (*.*)"
+            self, "폰트 파일 선택", "", "폰트 파일 (*.ttf *.otf);;모든 파일 (*.*)"
         )
         if file_path:
             font_name = Path(file_path).stem
-            for suffix in ['-Regular', '-Bold', '-Light', '-Medium', '-SemiBold', '_Regular']:
-                font_name = font_name.replace(suffix, '')
+            for suffix in ["-Regular", "-Bold", "-Light", "-Medium", "-SemiBold", "_Regular"]:
+                font_name = font_name.replace(suffix, "")
 
-            if font_type == 'body':
+            if font_type == "body":
                 self.docx_embed_body.setText(file_path)
                 if font_name in self._system_fonts:
                     self.docx_body_combo.setCurrentText(font_name)
@@ -1566,13 +1675,12 @@ class FormatStylePage(BasePage):
             cover_title="TRPG 리플레이",
             cover_author="GM",
             cover_bg_color=self.cover_bg_picker.get_color(),
-            cover_title_color=self.cover_title_color_picker.get_color()
+            cover_title_color=self.cover_title_color_picker.get_color(),
         )
 
     def _browse_cover_image(self):
         file_path, _ = QFileDialog.getOpenFileName(
-            self, "표지 이미지 선택", "",
-            "이미지 파일 (*.png *.jpg *.jpeg *.webp);;모든 파일 (*.*)"
+            self, "표지 이미지 선택", "", "이미지 파일 (*.png *.jpg *.jpeg *.webp);;모든 파일 (*.*)"
         )
         if file_path:
             self.cover_image_entry.setText(file_path)
@@ -1593,9 +1701,7 @@ class FormatStylePage(BasePage):
         if path and Path(path).exists():
             pixmap = QPixmap(path)
             if not pixmap.isNull():
-                scaled = pixmap.scaled(
-                    180, 260, Qt.KeepAspectRatio, Qt.SmoothTransformation
-                )
+                scaled = pixmap.scaled(180, 260, Qt.KeepAspectRatio, Qt.SmoothTransformation)
                 self.cover_image_preview_label.setPixmap(scaled)
                 self.cover_image_preview_label.setText("")
                 return
@@ -1614,20 +1720,25 @@ class FormatStylePage(BasePage):
 
     def _upload_divider_image(self):
         file_path, _ = QFileDialog.getOpenFileName(
-            self, "이미지 선택", "",
-            "이미지 (*.png *.jpg *.jpeg *.gif *.svg);;모든 파일 (*.*)"
+            self, "이미지 선택", "", "이미지 (*.png *.jpg *.jpeg *.gif *.svg);;모든 파일 (*.*)"
         )
         if file_path:
             if self.divider_image_preview.set_image(path=file_path):
                 self._update_deco_preview()
                 InfoBar.success(
-                    title='완료', content='이미지가 업로드되었습니다.',
-                    parent=self, position=InfoBarPosition.TOP, duration=2000
+                    title="완료",
+                    content="이미지가 업로드되었습니다.",
+                    parent=self,
+                    position=InfoBarPosition.TOP,
+                    duration=2000,
                 )
             else:
                 InfoBar.error(
-                    title='오류', content='이미지를 로드할 수 없습니다.',
-                    parent=self, position=InfoBarPosition.TOP, duration=3000
+                    title="오류",
+                    content="이미지를 로드할 수 없습니다.",
+                    parent=self,
+                    position=InfoBarPosition.TOP,
+                    duration=3000,
                 )
 
     def _clear_divider_image(self):
@@ -1638,24 +1749,20 @@ class FormatStylePage(BasePage):
         divider_type = self.divider_type.currentText()
         if divider_type == "텍스트/기호":
             self.preview_panel.update_divider(
-                text=self.divider_text.text() or "* * *",
-                color=self.divider_color.get_color()
+                text=self.divider_text.text() or "* * *", color=self.divider_color.get_color()
             )
         elif divider_type == "이미지":
             self.preview_panel.update_divider(
                 image_data=self.divider_image_preview.get_image_data()
             )
         elif divider_type == "선 스타일":
-            style_map = {
-                "실선": "solid", "점선": "dotted",
-                "파선": "dashed", "이중선": "double"
-            }
+            style_map = {"실선": "solid", "점선": "dotted", "파선": "dashed", "이중선": "double"}
             width = self.line_width.value()
             line_char = "\u2500" * (width // 10)
             self.preview_panel.update_divider(
                 text=line_char,
                 color=self.line_color.get_color(),
-                style=style_map.get(self.line_style.currentText(), "solid")
+                style=style_map.get(self.line_style.currentText(), "solid"),
             )
         else:
             self.preview_panel.update_divider(text="")
@@ -1669,7 +1776,7 @@ class FormatStylePage(BasePage):
         self.preview_panel.update_dice(
             show_icon=self.dice_icon.isChecked(),
             color=self.dice_color.get_color(),
-            style=self.dice_style.currentText()
+            style=self.dice_style.currentText(),
         )
         self.settings_changed.emit()
 
@@ -1811,88 +1918,88 @@ class FormatStylePage(BasePage):
         _s = state.set
 
         # Style
-        _s('style_body_bg', self.style_bg_picker.get_color())
-        _s('style_body_text', self.style_text_picker.get_color())
-        _s('style_font_size', self.size_slider.value())
-        _s('style_line_height', self.height_slider.value() / 10)
-        _s('style_name_color', self.name_picker.get_color())
-        _s('style_name_bold', self.name_bold.isChecked())
-        _s('style_separator', self.separator_combo.currentText())
-        if self.separator_combo.currentText() == '직접 입력':
-            _s('custom_separator_text', self.custom_separator.text())
+        _s("style_body_bg", self.style_bg_picker.get_color())
+        _s("style_body_text", self.style_text_picker.get_color())
+        _s("style_font_size", self.size_slider.value())
+        _s("style_line_height", self.height_slider.value() / 10)
+        _s("style_name_color", self.name_picker.get_color())
+        _s("style_name_bold", self.name_bold.isChecked())
+        _s("style_separator", self.separator_combo.currentText())
+        if self.separator_combo.currentText() == "직접 입력":
+            _s("custom_separator_text", self.custom_separator.text())
 
         # Color palette
-        _s('colors', {key: picker.get_color() for key, picker in self.color_pickers.items()})
+        _s("colors", {key: picker.get_color() for key, picker in self.color_pickers.items()})
 
         # Font
-        _s('epub_body_font', self.epub_body_combo.currentText())
-        _s('epub_name_font', self.epub_name_combo.currentText())
-        _s('embed_body_font', self.embed_body_entry.text())
-        _s('embed_name_font', self.embed_name_entry.text())
-        _s('docx_body_font', self.docx_body_combo.currentText())
-        _s('docx_name_font', self.docx_name_combo.currentText())
-        _s('docx_embed_body', self.docx_embed_body.text())
-        _s('docx_embed_name', self.docx_embed_name.text())
-        _s('body_line_height', self.body_height_input.text())
-        _s('dialogue_line_height', self.dialogue_height_input.text())
-        _s('narration_line_height', self.narration_height_input.text())
-        _s('base_font_size', self.base_font_size_input.text())
+        _s("epub_body_font", self.epub_body_combo.currentText())
+        _s("epub_name_font", self.epub_name_combo.currentText())
+        _s("embed_body_font", self.embed_body_entry.text())
+        _s("embed_name_font", self.embed_name_entry.text())
+        _s("docx_body_font", self.docx_body_combo.currentText())
+        _s("docx_name_font", self.docx_name_combo.currentText())
+        _s("docx_embed_body", self.docx_embed_body.text())
+        _s("docx_embed_name", self.docx_embed_name.text())
+        _s("body_line_height", self.body_height_input.text())
+        _s("dialogue_line_height", self.dialogue_height_input.text())
+        _s("narration_line_height", self.narration_height_input.text())
+        _s("base_font_size", self.base_font_size_input.text())
 
         # Cover
-        _s('include_cover', self.include_cover.isChecked())
-        _s('title_on_cover', self.title_on_cover.isChecked())
-        _s('author_on_cover', self.author_on_cover.isChecked())
-        _s('cover_subtitle', self.cover_subtitle.text())
-        _s('cover_bg', self.cover_bg_picker.get_color())
-        _s('cover_title_color', self.cover_title_color_picker.get_color())
-        _s('cover_image', self.cover_image_entry.text())
-        _s('include_toc', self.include_toc.isChecked())
-        _s('toc_title', self.toc_title.text())
+        _s("include_cover", self.include_cover.isChecked())
+        _s("title_on_cover", self.title_on_cover.isChecked())
+        _s("author_on_cover", self.author_on_cover.isChecked())
+        _s("cover_subtitle", self.cover_subtitle.text())
+        _s("cover_bg", self.cover_bg_picker.get_color())
+        _s("cover_title_color", self.cover_title_color_picker.get_color())
+        _s("cover_image", self.cover_image_entry.text())
+        _s("include_toc", self.include_toc.isChecked())
+        _s("toc_title", self.toc_title.text())
 
         # Decoration - Divider
-        _s('divider_type', self.divider_type.currentText())
-        _s('divider_text', self.divider_text.text())
-        _s('divider_color', self.divider_color.get_color())
-        _s('divider_image', self.divider_image_preview.get_image_data())
-        _s('divider_img_height', self.divider_img_height.value())
+        _s("divider_type", self.divider_type.currentText())
+        _s("divider_text", self.divider_text.text())
+        _s("divider_color", self.divider_color.get_color())
+        _s("divider_image", self.divider_image_preview.get_image_data())
+        _s("divider_img_height", self.divider_img_height.value())
 
         # Line style
-        _s('line_style', self.line_style.currentText())
-        _s('line_thickness', self.line_thickness.value())
-        _s('line_color', self.line_color.get_color())
-        _s('line_width', self.line_width.value())
+        _s("line_style", self.line_style.currentText())
+        _s("line_thickness", self.line_thickness.value())
+        _s("line_color", self.line_color.get_color())
+        _s("line_width", self.line_width.value())
 
         # Chapter header
-        _s('header_style', self.header_style.currentText())
-        _s('header_size', self.header_size.value())
-        _s('header_color', self.header_color.get_color())
-        _s('header_bold', self.header_bold.isChecked())
-        _s('header_prefix', self.header_prefix.text())
-        _s('header_suffix', self.header_suffix.text())
-        _s('header_underline', self.header_underline.isChecked())
-        _s('header_box', self.header_box.isChecked())
-        _s('header_box_color', self.header_box_color.get_color())
+        _s("header_style", self.header_style.currentText())
+        _s("header_size", self.header_size.value())
+        _s("header_color", self.header_color.get_color())
+        _s("header_bold", self.header_bold.isChecked())
+        _s("header_prefix", self.header_prefix.text())
+        _s("header_suffix", self.header_suffix.text())
+        _s("header_underline", self.header_underline.isChecked())
+        _s("header_box", self.header_box.isChecked())
+        _s("header_box_color", self.header_box_color.get_color())
 
         # CSS
-        _s('custom_css', self.css_editor.toPlainText())
+        _s("custom_css", self.css_editor.toPlainText())
 
         # Misc decoration
-        _s('quote_style', self.quote_style.currentText())
-        _s('quote_bg', self.quote_bg.get_color())
-        _s('quote_border', self.quote_border.get_color())
-        _s('dice_style', self.dice_style.currentText())
-        _s('dice_icon', self.dice_icon.isChecked())
-        _s('dice_color', self.dice_color.get_color())
+        _s("quote_style", self.quote_style.currentText())
+        _s("quote_bg", self.quote_bg.get_color())
+        _s("quote_border", self.quote_border.get_color())
+        _s("dice_style", self.dice_style.currentText())
+        _s("dice_icon", self.dice_icon.isChecked())
+        _s("dice_color", self.dice_color.get_color())
 
         # Margins
-        _s('margin_top', self.margin_top.value())
-        _s('margin_bottom', self.margin_bottom.value())
-        _s('margin_left', self.margin_left.value())
-        _s('margin_right', self.margin_right.value())
+        _s("margin_top", self.margin_top.value())
+        _s("margin_bottom", self.margin_bottom.value())
+        _s("margin_left", self.margin_left.value())
+        _s("margin_right", self.margin_right.value())
 
         # Effects
-        _s('first_letter', self.first_letter.isChecked())
-        _s('page_break', self.page_break.isChecked())
+        _s("first_letter", self.first_letter.isChecked())
+        _s("page_break", self.page_break.isChecked())
 
         state.save()
 
@@ -1902,19 +2009,42 @@ class FormatStylePage(BasePage):
         # Block signals during bulk load
         # ----------------------------------------------------------
         signal_widgets = [
-            self.size_slider, self.size_spin, self.height_slider, self.height_spin,
-            self.separator_combo, self.name_bold,
-            self.epub_body_combo, self.epub_name_combo,
-            self.docx_body_combo, self.docx_name_combo,
-            self.include_cover, self.title_on_cover, self.author_on_cover,
+            self.size_slider,
+            self.size_spin,
+            self.height_slider,
+            self.height_spin,
+            self.separator_combo,
+            self.name_bold,
+            self.epub_body_combo,
+            self.epub_name_combo,
+            self.docx_body_combo,
+            self.docx_name_combo,
+            self.include_cover,
+            self.title_on_cover,
+            self.author_on_cover,
             self.include_toc,
-            self.divider_type, self.divider_text, self.line_style,
-            self.line_thickness, self.line_width, self.line_width_spin,
-            self.header_size, self.header_size_spin, self.header_style,
-            self.header_bold, self.header_underline, self.header_box,
-            self.quote_style, self.dice_style, self.dice_icon,
-            self.margin_top, self.margin_bottom, self.margin_left, self.margin_right,
-            self.first_letter, self.page_break, self.divider_img_height,
+            self.divider_type,
+            self.divider_text,
+            self.line_style,
+            self.line_thickness,
+            self.line_width,
+            self.line_width_spin,
+            self.header_size,
+            self.header_size_spin,
+            self.header_style,
+            self.header_bold,
+            self.header_underline,
+            self.header_box,
+            self.quote_style,
+            self.dice_style,
+            self.dice_icon,
+            self.margin_top,
+            self.margin_bottom,
+            self.margin_left,
+            self.margin_right,
+            self.first_letter,
+            self.page_break,
+            self.divider_img_height,
         ]
         for w in signal_widgets:
             w.blockSignals(True)
@@ -1922,49 +2052,52 @@ class FormatStylePage(BasePage):
         _g = self.app_state.get
 
         # === Style ===
-        bg = _g('style_body_bg', '#ffffff')
-        text = _g('style_body_text', '#1a1a1a')
-        name_c = _g('style_name_color', '#2d2d2d')
+        bg = _g("style_body_bg", "#ffffff")
+        text = _g("style_body_text", "#1a1a1a")
+        name_c = _g("style_name_color", "#2d2d2d")
 
         self.style_bg_picker.set_color(bg)
         self.style_text_picker.set_color(text)
         self.name_picker.set_color(name_c)
 
         try:
-            font_size = int(_g('style_font_size', 14))
+            font_size = int(_g("style_font_size", 14))
         except (ValueError, TypeError):
             font_size = 14
         self.size_slider.setValue(font_size)
         self.size_spin.setValue(font_size)
 
         try:
-            line_height = float(_g('style_line_height', 1.6))
+            line_height = float(_g("style_line_height", 1.6))
         except (ValueError, TypeError):
             line_height = 1.6
         self.height_slider.setValue(int(line_height * 10))
         self.height_spin.setValue(line_height)
 
-        self.name_bold.setChecked(_g('style_name_bold', True))
-        self.safe_set_combo(self.separator_combo, _g('style_separator', '「 」 (꺾쇠)'))
+        self.name_bold.setChecked(_g("style_name_bold", True))
+        self.safe_set_combo(self.separator_combo, _g("style_separator", "「 」 (꺾쇠)"))
 
-        saved_sep = _g('style_separator', '「 」 (꺾쇠)')
-        if saved_sep == '직접 입력':
+        saved_sep = _g("style_separator", "「 」 (꺾쇠)")
+        if saved_sep == "직접 입력":
             self.custom_separator.setVisible(True)
-            self.custom_separator.setText(_g('custom_separator_text', ''))
+            self.custom_separator.setText(_g("custom_separator_text", ""))
 
         current_preset = self.preset_combo.currentText()
         self._update_preset_swatch(bg, text, name_c, current_preset)
 
         # Color palette
-        colors = _g('colors', {})
+        colors = _g("colors", {})
         default_colors = {
-            'text_color': '#1a1a1a', 'name_color': '#2d2d2d',
-            'dice_color': '#888888', 'system_color': '#666666',
-            'effect_bg': '#f5f5f5', 'effect_border': '#cccccc'
+            "text_color": "#1a1a1a",
+            "name_color": "#2d2d2d",
+            "dice_color": "#888888",
+            "system_color": "#666666",
+            "effect_bg": "#f5f5f5",
+            "effect_border": "#cccccc",
         }
         if isinstance(colors, dict):
             for key, picker in self.color_pickers.items():
-                picker.set_color(colors.get(key, default_colors.get(key, '#000000')))
+                picker.set_color(colors.get(key, default_colors.get(key, "#000000")))
 
         # === Font ===
         # 콤보에 없는 값(예: CSS 체인 "'본명조', 'Source Han Serif K', serif")도
@@ -1977,85 +2110,85 @@ class FormatStylePage(BasePage):
                 combo.insertItem(0, value)
             combo.setCurrentText(value)
 
-        _set_font_combo(self.epub_body_combo, _g('epub_body_font', '나눔명조'))
-        _set_font_combo(self.epub_name_combo, _g('epub_name_font', 'Pretendard'))
+        _set_font_combo(self.epub_body_combo, _g("epub_body_font", "나눔명조"))
+        _set_font_combo(self.epub_name_combo, _g("epub_name_font", "Pretendard"))
 
-        self.embed_body_entry.setText(_g('embed_body_font', ''))
-        self.embed_name_entry.setText(_g('embed_name_font', ''))
+        self.embed_body_entry.setText(_g("embed_body_font", ""))
+        self.embed_name_entry.setText(_g("embed_name_font", ""))
 
-        _set_font_combo(self.docx_body_combo, _g('docx_body_font', '맑은 고딕'))
-        _set_font_combo(self.docx_name_combo, _g('docx_name_font', '맑은 고딕'))
+        _set_font_combo(self.docx_body_combo, _g("docx_body_font", "맑은 고딕"))
+        _set_font_combo(self.docx_name_combo, _g("docx_name_font", "맑은 고딕"))
 
-        self.docx_embed_body.setText(_g('docx_embed_body', ''))
-        self.docx_embed_name.setText(_g('docx_embed_name', ''))
-        self.body_height_input.setText(str(_g('body_line_height', '1.6')))
-        self.dialogue_height_input.setText(str(_g('dialogue_line_height', '1.5')))
-        self.narration_height_input.setText(str(_g('narration_line_height', '1.7')))
-        self.base_font_size_input.setText(str(_g('base_font_size', '1.0')))
+        self.docx_embed_body.setText(_g("docx_embed_body", ""))
+        self.docx_embed_name.setText(_g("docx_embed_name", ""))
+        self.body_height_input.setText(str(_g("body_line_height", "1.6")))
+        self.dialogue_height_input.setText(str(_g("dialogue_line_height", "1.5")))
+        self.narration_height_input.setText(str(_g("narration_line_height", "1.7")))
+        self.base_font_size_input.setText(str(_g("base_font_size", "1.0")))
 
         # === Cover ===
-        self.include_cover.setChecked(_g('include_cover', True))
-        self.title_on_cover.setChecked(_g('title_on_cover', True))
-        self.author_on_cover.setChecked(_g('author_on_cover', True))
-        self.cover_subtitle.setText(str(_g('cover_subtitle', '')))
-        self.cover_bg_picker.set_color(_g('cover_bg', '#1a1a1a'))
-        self.cover_title_color_picker.set_color(_g('cover_title_color', '#ffffff'))
-        self.cover_image_entry.setText(str(_g('cover_image', '')))
-        self.include_toc.setChecked(_g('include_toc', True))
-        self.toc_title.setText(str(_g('toc_title', '목차')))
+        self.include_cover.setChecked(_g("include_cover", True))
+        self.title_on_cover.setChecked(_g("title_on_cover", True))
+        self.author_on_cover.setChecked(_g("author_on_cover", True))
+        self.cover_subtitle.setText(str(_g("cover_subtitle", "")))
+        self.cover_bg_picker.set_color(_g("cover_bg", "#1a1a1a"))
+        self.cover_title_color_picker.set_color(_g("cover_title_color", "#ffffff"))
+        self.cover_image_entry.setText(str(_g("cover_image", "")))
+        self.include_toc.setChecked(_g("include_toc", True))
+        self.toc_title.setText(str(_g("toc_title", "목차")))
 
         # === Decoration ===
-        self.safe_set_combo(self.divider_type, _g('divider_type', '텍스트/기호'))
-        self.divider_text.setText(str(_g('divider_text', '* * *')))
-        self.divider_color.set_color(_g('divider_color', '#888888'))
+        self.safe_set_combo(self.divider_type, _g("divider_type", "텍스트/기호"))
+        self.divider_text.setText(str(_g("divider_text", "* * *")))
+        self.divider_color.set_color(_g("divider_color", "#888888"))
 
-        divider_img = _g('divider_image', '')
+        divider_img = _g("divider_image", "")
         if divider_img:
             self.divider_image_preview.set_image(data=divider_img)
 
-        self.divider_img_height.setValue(_g('divider_img_height', 40))
+        self.divider_img_height.setValue(_g("divider_img_height", 40))
 
         # Line style
-        self.safe_set_combo(self.line_style, _g('line_style', '실선'))
-        self.line_thickness.setValue(_g('line_thickness', 1))
-        self.line_color.set_color(_g('line_color', '#cccccc'))
-        lw = _g('line_width', 60)
+        self.safe_set_combo(self.line_style, _g("line_style", "실선"))
+        self.line_thickness.setValue(_g("line_thickness", 1))
+        self.line_color.set_color(_g("line_color", "#cccccc"))
+        lw = _g("line_width", 60)
         self.line_width.setValue(lw)
         self.line_width_spin.setValue(lw)
 
         # Chapter header
-        self.safe_set_combo(self.header_style, _g('header_style', '기본'))
-        header_sz = _g('header_size', 20)
+        self.safe_set_combo(self.header_style, _g("header_style", "기본"))
+        header_sz = _g("header_size", 20)
         self.header_size.setValue(header_sz)
         self.header_size_spin.setValue(header_sz)
-        self.header_color.set_color(_g('header_color', '#1a1a1a'))
-        self.header_bold.setChecked(_g('header_bold', True))
-        self.header_prefix.setText(str(_g('header_prefix', '')))
-        self.header_suffix.setText(str(_g('header_suffix', '')))
-        self.header_underline.setChecked(_g('header_underline', False))
-        self.header_box.setChecked(_g('header_box', False))
-        self.header_box_color.set_color(_g('header_box_color', '#f5f5f5'))
+        self.header_color.set_color(_g("header_color", "#1a1a1a"))
+        self.header_bold.setChecked(_g("header_bold", True))
+        self.header_prefix.setText(str(_g("header_prefix", "")))
+        self.header_suffix.setText(str(_g("header_suffix", "")))
+        self.header_underline.setChecked(_g("header_underline", False))
+        self.header_box.setChecked(_g("header_box", False))
+        self.header_box_color.set_color(_g("header_box_color", "#f5f5f5"))
 
         # CSS
-        self.css_editor.setPlainText(str(_g('custom_css', '')))
+        self.css_editor.setPlainText(str(_g("custom_css", "")))
 
         # Misc decoration
-        self.safe_set_combo(self.quote_style, _g('quote_style', '왼쪽 테두리'))
-        self.quote_bg.set_color(_g('quote_bg', '#f9f9f9'))
-        self.quote_border.set_color(_g('quote_border', '#e0e0e0'))
-        self.safe_set_combo(self.dice_style, _g('dice_style', '인라인'))
-        self.dice_icon.setChecked(_g('dice_icon', True))
-        self.dice_color.set_color(_g('dice_color', '#0066cc'))
+        self.safe_set_combo(self.quote_style, _g("quote_style", "왼쪽 테두리"))
+        self.quote_bg.set_color(_g("quote_bg", "#f9f9f9"))
+        self.quote_border.set_color(_g("quote_border", "#e0e0e0"))
+        self.safe_set_combo(self.dice_style, _g("dice_style", "인라인"))
+        self.dice_icon.setChecked(_g("dice_icon", True))
+        self.dice_color.set_color(_g("dice_color", "#0066cc"))
 
         # Margins
-        self.margin_top.setValue(_g('margin_top', 20))
-        self.margin_bottom.setValue(_g('margin_bottom', 20))
-        self.margin_left.setValue(_g('margin_left', 15))
-        self.margin_right.setValue(_g('margin_right', 15))
+        self.margin_top.setValue(_g("margin_top", 20))
+        self.margin_bottom.setValue(_g("margin_bottom", 20))
+        self.margin_left.setValue(_g("margin_left", 15))
+        self.margin_right.setValue(_g("margin_right", 15))
 
         # Effects
-        self.first_letter.setChecked(_g('first_letter', False))
-        self.page_break.setChecked(_g('page_break', True))
+        self.first_letter.setChecked(_g("first_letter", False))
+        self.page_break.setChecked(_g("page_break", True))
 
         # ----------------------------------------------------------
         # Unblock signals

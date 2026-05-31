@@ -22,6 +22,7 @@ from PySide6.QtWidgets import QLabel, QWidget
 # 공통 fixture
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture
 def section_collapsed(qtbot):
     """접힌 상태의 CollapsibleSection을 생성한다."""
@@ -46,6 +47,7 @@ def section_expanded(qtbot):
 # 1. 기본 접힌 상태
 # ===================================================================
 
+
 class TestDefaultCollapsed:
     """expanded=False로 생성된 CollapsibleSection 검증"""
 
@@ -67,6 +69,7 @@ class TestDefaultCollapsed:
 # 2. 기본 펼쳐진 상태
 # ===================================================================
 
+
 class TestDefaultExpanded:
     """expanded=True로 생성된 CollapsibleSection 검증"""
 
@@ -87,6 +90,7 @@ class TestDefaultExpanded:
 # ===================================================================
 # 3. 토글 동작
 # ===================================================================
+
 
 class TestToggle:
     """헤더 클릭으로 펼침/접힘 토글 검증"""
@@ -163,6 +167,7 @@ class TestToggle:
 # 4. add_card
 # ===================================================================
 
+
 class TestAddCard:
     """add_card()로 위젯을 본문에 추가하는 기능 검증"""
 
@@ -201,6 +206,7 @@ class TestAddCard:
 # ===================================================================
 # 5. toggled 시그널
 # ===================================================================
+
 
 class TestSignalEmitted:
     """toggled(bool) 시그널 방출 검증"""

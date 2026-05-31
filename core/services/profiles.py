@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class Profile:
     """설정 프로필"""
+
     id: str
     name: str
     description: str
@@ -30,96 +31,96 @@ class Profile:
         return asdict(self)
 
     @classmethod
-    def from_dict(cls, data: dict) -> 'Profile':
+    def from_dict(cls, data: dict) -> "Profile":
         return cls(**data)
 
 
 # 기본 제공 프로필들
 BUILTIN_PROFILES = [
     {
-        'id': 'default',
-        'name': '기본',
-        'description': '기본 설정',
-        'settings': {},
-        'is_default': True,
-        'is_builtin': True,
+        "id": "default",
+        "name": "기본",
+        "description": "기본 설정",
+        "settings": {},
+        "is_default": True,
+        "is_builtin": True,
     },
     {
-        'id': 'novel_style',
-        'name': '소설 스타일',
-        'description': '소설처럼 읽히는 스타일 (나레이션 강조)',
-        'settings': {
-            'style': {
-                'narration_prefix': '　',
-                'scene_marker': '◆',
+        "id": "novel_style",
+        "name": "소설 스타일",
+        "description": "소설처럼 읽히는 스타일 (나레이션 강조)",
+        "settings": {
+            "style": {
+                "narration_prefix": "　",
+                "scene_marker": "◆",
             },
-            'dialogue': {
-                'merge_consecutive': True,
-                'merge_separator': '\n',
+            "dialogue": {
+                "merge_consecutive": True,
+                "merge_separator": "\n",
             },
-            'content': {
-                'include_dice': False,
-                'include_system': False,
+            "content": {
+                "include_dice": False,
+                "include_system": False,
             },
         },
-        'is_builtin': True,
+        "is_builtin": True,
     },
     {
-        'id': 'replay_style',
-        'name': '리플레이 스타일',
-        'description': 'TRPG 리플레이 형식 (주사위 포함)',
-        'settings': {
-            'style': {
-                'narration_prefix': '＿',
-                'scene_marker': '■',
+        "id": "replay_style",
+        "name": "리플레이 스타일",
+        "description": "TRPG 리플레이 형식 (주사위 포함)",
+        "settings": {
+            "style": {
+                "narration_prefix": "＿",
+                "scene_marker": "■",
             },
-            'content': {
-                'include_dice': True,
-                'include_system': True,
-                'include_effects': True,
+            "content": {
+                "include_dice": True,
+                "include_system": True,
+                "include_effects": True,
             },
         },
-        'is_builtin': True,
+        "is_builtin": True,
     },
     {
-        'id': 'minimal',
-        'name': '미니멀',
-        'description': '대사만 포함 (시스템 메시지 제외)',
-        'settings': {
-            'content': {
-                'include_dice': False,
-                'include_system': False,
-                'include_effects': False,
+        "id": "minimal",
+        "name": "미니멀",
+        "description": "대사만 포함 (시스템 메시지 제외)",
+        "settings": {
+            "content": {
+                "include_dice": False,
+                "include_system": False,
+                "include_effects": False,
             },
-            'cover': {
-                'include': False,
+            "cover": {
+                "include": False,
             },
-            'toc': {
-                'include': False,
+            "toc": {
+                "include": False,
             },
         },
-        'is_builtin': True,
+        "is_builtin": True,
     },
     {
-        'id': 'print_ready',
-        'name': '인쇄용',
-        'description': '인쇄에 최적화된 설정 (A5, 넓은 여백)',
-        'settings': {
-            'page': {
-                'format': 'A5',
-                'margins': {
-                    'left': 20,
-                    'right': 15,
-                    'top': 25,
-                    'bottom': 25,
+        "id": "print_ready",
+        "name": "인쇄용",
+        "description": "인쇄에 최적화된 설정 (A5, 넓은 여백)",
+        "settings": {
+            "page": {
+                "format": "A5",
+                "margins": {
+                    "left": 20,
+                    "right": 15,
+                    "top": 25,
+                    "bottom": 25,
                 },
             },
-            'style': {
-                'body_font_size': 11,
-                'visual_line_height': 1.8,
+            "style": {
+                "body_font_size": 11,
+                "visual_line_height": 1.8,
             },
         },
-        'is_builtin': True,
+        "is_builtin": True,
     },
 ]
 
@@ -129,9 +130,9 @@ class ProfileManager:
 
     def __init__(self, app_dir: Path):
         self._app_dir = app_dir
-        self._profiles_file = app_dir / 'data' / 'profiles.json'
+        self._profiles_file = app_dir / "data" / "profiles.json"
         self._profiles: dict[str, Profile] = {}
-        self._active_profile_id: str = 'default'
+        self._active_profile_id: str = "default"
         self._load()
 
     def _load(self):
@@ -139,26 +140,26 @@ class ProfileManager:
         # 기본 프로필 로드
         for builtin in BUILTIN_PROFILES:
             profile = Profile(
-                id=builtin['id'],
-                name=builtin['name'],
-                description=builtin['description'],
+                id=builtin["id"],
+                name=builtin["name"],
+                description=builtin["description"],
                 created=datetime.now().isoformat(),
                 modified=datetime.now().isoformat(),
-                settings=builtin['settings'],
-                is_default=builtin.get('is_default', False),
-                is_builtin=builtin.get('is_builtin', False),
+                settings=builtin["settings"],
+                is_default=builtin.get("is_default", False),
+                is_builtin=builtin.get("is_builtin", False),
             )
             self._profiles[profile.id] = profile
 
         # 사용자 프로필 로드
         try:
             if self._profiles_file.exists():
-                with open(self._profiles_file, encoding='utf-8') as f:
+                with open(self._profiles_file, encoding="utf-8") as f:
                     data = json.load(f)
-                    self._active_profile_id = data.get('active_profile', 'default')
+                    self._active_profile_id = data.get("active_profile", "default")
 
-                    for profile_data in data.get('profiles', []):
-                        if not profile_data.get('is_builtin', False):
+                    for profile_data in data.get("profiles", []):
+                        if not profile_data.get("is_builtin", False):
                             profile = Profile.from_dict(profile_data)
                             self._profiles[profile.id] = profile
 
@@ -174,12 +175,17 @@ class ProfileManager:
             # 사용자 프로필만 저장 (내장 프로필은 저장하지 않음)
             user_profiles = [p.to_dict() for p in self._profiles.values() if not p.is_builtin]
 
-            with open(self._profiles_file, 'w', encoding='utf-8') as f:
-                json.dump({
-                    'version': 1,
-                    'active_profile': self._active_profile_id,
-                    'profiles': user_profiles,
-                }, f, ensure_ascii=False, indent=2)
+            with open(self._profiles_file, "w", encoding="utf-8") as f:
+                json.dump(
+                    {
+                        "version": 1,
+                        "active_profile": self._active_profile_id,
+                        "profiles": user_profiles,
+                    },
+                    f,
+                    ensure_ascii=False,
+                    indent=2,
+                )
 
             logger.debug(f"프로필 저장: {len(user_profiles)}개 사용자 프로필")
         except Exception as e:
@@ -195,7 +201,7 @@ class ProfileManager:
 
     def get_active_profile(self) -> Profile:
         """현재 활성 프로필"""
-        return self._profiles.get(self._active_profile_id, self._profiles['default'])
+        return self._profiles.get(self._active_profile_id, self._profiles["default"])
 
     def set_active_profile(self, profile_id: str) -> bool:
         """활성 프로필 변경"""
@@ -206,8 +212,13 @@ class ProfileManager:
             return True
         return False
 
-    def create_profile(self, name: str, description: str = '',
-                       settings: dict | None = None, base_profile_id: str | None = None) -> Profile:
+    def create_profile(
+        self,
+        name: str,
+        description: str = "",
+        settings: dict | None = None,
+        base_profile_id: str | None = None,
+    ) -> Profile:
         """새 프로필 생성"""
         profile_id = f"user_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
@@ -236,8 +247,13 @@ class ProfileManager:
         logger.info(f"프로필 생성: {name} ({profile_id})")
         return profile
 
-    def update_profile(self, profile_id: str, name: str | None = None,
-                       description: str | None = None, settings: dict | None = None) -> Profile | None:
+    def update_profile(
+        self,
+        profile_id: str,
+        name: str | None = None,
+        description: str | None = None,
+        settings: dict | None = None,
+    ) -> Profile | None:
         """프로필 업데이트"""
         profile = self._profiles.get(profile_id)
         if not profile or profile.is_builtin:
@@ -270,7 +286,7 @@ class ProfileManager:
 
         # 활성 프로필이 삭제되면 기본으로 변경
         if self._active_profile_id == profile_id:
-            self._active_profile_id = 'default'
+            self._active_profile_id = "default"
 
         self._save()
         logger.info(f"프로필 삭제: {profile.name}")
@@ -296,12 +312,11 @@ class ProfileManager:
 
         return self._deep_merge(config, profile.settings)
 
-    def extract_profile_settings(self, config: dict, name: str,
-                                 description: str = '') -> Profile:
+    def extract_profile_settings(self, config: dict, name: str, description: str = "") -> Profile:
         """현재 config에서 프로필 생성"""
         # 중요 설정만 추출
         settings = {}
-        important_keys = ['style', 'content', 'cover', 'toc', 'page', 'dialogue', 'fonts']
+        important_keys = ["style", "content", "cover", "toc", "page", "dialogue", "fonts"]
 
         for key in important_keys:
             if key in config:
@@ -326,7 +341,7 @@ class ProfileManager:
             return False
 
         try:
-            with open(output_path, 'w', encoding='utf-8') as f:
+            with open(output_path, "w", encoding="utf-8") as f:
                 json.dump(profile.to_dict(), f, ensure_ascii=False, indent=2)
             logger.info(f"프로필 내보내기: {output_path}")
             return True
@@ -337,14 +352,14 @@ class ProfileManager:
     def import_profile(self, input_path: Path) -> Profile | None:
         """파일에서 프로필 가져오기"""
         try:
-            with open(input_path, encoding='utf-8') as f:
+            with open(input_path, encoding="utf-8") as f:
                 data = json.load(f)
 
             # 새 ID 생성
-            data['id'] = f"imported_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-            data['is_builtin'] = False
-            data['is_default'] = False
-            data['modified'] = datetime.now().isoformat()
+            data["id"] = f"imported_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+            data["is_builtin"] = False
+            data["is_default"] = False
+            data["modified"] = datetime.now().isoformat()
 
             profile = Profile.from_dict(data)
             self._profiles[profile.id] = profile

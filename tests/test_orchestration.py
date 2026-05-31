@@ -2,6 +2,7 @@
 
 These functions are used by the GUI/CLI and previously had no test coverage.
 """
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -43,6 +44,7 @@ def test_convert_both_outputs(tmp_path: Path, temp_config):
 
 def test_convert_pdf_when_available(tmp_path: Path, temp_config):
     from core.pdf_generator import PDF_AVAILABLE
+
     if not PDF_AVAILABLE:
         pytest.skip("reportlab not installed")
 

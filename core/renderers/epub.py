@@ -4,6 +4,7 @@ The public entry point is :func:`create_epub`. ``entries_to_html`` /
 ``create_cover_html`` / ``create_toc_html`` are exported for tests and for
 callers that need to assemble custom EPUB structures.
 """
+
 from __future__ import annotations
 
 import logging
@@ -39,9 +40,7 @@ def entries_to_html(
 
     if chapter_title:
         clean_title = chapter_title.lstrip("■▶ ").strip() or chapter_title
-        html_parts.append(
-            f'<h1 class="scene-title chapter">{escape_html(clean_title)}</h1>'
-        )
+        html_parts.append(f'<h1 class="scene-title chapter">{escape_html(clean_title)}</h1>')
 
     for entry in entries:
         t = entry["type"]
@@ -89,9 +88,7 @@ def entries_to_html(
             html_parts.append(f'<p class="narration">{prefix}{content_escaped}</p>')
         elif t == "dice":
             if name_escaped:
-                html_parts.append(
-                    f'<p class="dice">{name_escaped} : {content_escaped}</p>'
-                )
+                html_parts.append(f'<p class="dice">{name_escaped} : {content_escaped}</p>')
             else:
                 html_parts.append(f'<p class="dice">{content_escaped}</p>')
         elif t == "system":
@@ -136,10 +133,7 @@ def create_toc_html(scenes: list[dict[str, Any]], config: dict[str, Any]) -> str
     # 챕터 파일명은 원본 인덱스 기준 (filter 후에도 chapter_3.xhtml 식별 유지).
     for original_idx, scene in filter_toc_scenes(scenes, config):
         title = scene.get("title") or f"장면 {original_idx + 1}"
-        html += (
-            f'<li><a href="chapter_{original_idx+1}.xhtml">'
-            f'{escape_html(title)}</a></li>'
-        )
+        html += f'<li><a href="chapter_{original_idx + 1}.xhtml">{escape_html(title)}</a></li>'
     html += "</ul></div>"
     return html
 
@@ -261,12 +255,12 @@ def create_epub(
         scene_entries = scene.get("entries", [])
         if progress_callback:
             pct = 30 + int(60 * idx / max(len(scenes), 1))
-            progress_callback(pct, 100, f"장면 {idx+1}/{len(scenes)} 생성 중...")
+            progress_callback(pct, 100, f"장면 {idx + 1}/{len(scenes)} 생성 중...")
 
         content_html = entries_to_html(scene_entries, scene_title, config)
         chapter = epub.EpubHtml(
-            title=scene_title or f"장면 {idx+1}",
-            file_name=f"chapter_{idx+1}.xhtml",
+            title=scene_title or f"장면 {idx + 1}",
+            file_name=f"chapter_{idx + 1}.xhtml",
             lang=language,
         )
         chapter.set_content(
@@ -288,9 +282,7 @@ def create_epub(
         progress_callback(90, 100, "EPUB 저장 중...")
 
     # 원자적 쓰기: 임시 파일에 작성 후 rename
-    tmp_fd, tmp_path = tempfile.mkstemp(
-        suffix=".epub", dir=os.path.dirname(output_path) or "."
-    )
+    tmp_fd, tmp_path = tempfile.mkstemp(suffix=".epub", dir=os.path.dirname(output_path) or ".")
     os.close(tmp_fd)
     try:
         epub.write_epub(tmp_path, book)

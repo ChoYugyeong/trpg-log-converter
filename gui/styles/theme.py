@@ -54,36 +54,86 @@ class Theme:
     # 테마 프리셋
     PRESETS: ClassVar[dict] = {
         "Tokyo Night": {
-            "colors": ["#1a1b26", "#24283b", "#414868", "#7aa2f7", "#bb9af7",
-                       "#7dcfff", "#9ece6a", "#e0af68", "#f7768e", "#c0caf5"],
+            "colors": [
+                "#1a1b26",
+                "#24283b",
+                "#414868",
+                "#7aa2f7",
+                "#bb9af7",
+                "#7dcfff",
+                "#9ece6a",
+                "#e0af68",
+                "#f7768e",
+                "#c0caf5",
+            ],
             "body_bg": "#1a1b26",
             "body_text": "#c0caf5",
             "name_color": "#7aa2f7",
         },
         "Tokyo Night Light": {
-            "colors": ["#d5d6db", "#9699a3", "#4e5173", "#34548a", "#5a4a78",
-                       "#166775", "#485e30", "#8f5e15", "#8c4351", "#343b59"],
+            "colors": [
+                "#d5d6db",
+                "#9699a3",
+                "#4e5173",
+                "#34548a",
+                "#5a4a78",
+                "#166775",
+                "#485e30",
+                "#8f5e15",
+                "#8c4351",
+                "#343b59",
+            ],
             "body_bg": "#d5d6db",
             "body_text": "#343b59",
             "name_color": "#34548a",
         },
         "Sepia": {
-            "colors": ["#f8f4e8", "#e8e0c8", "#d4c8a8", "#8b7355", "#6b5344",
-                       "#4a3728", "#3d2f24", "#2d1f1a", "#8b4513", "#a0522d"],
+            "colors": [
+                "#f8f4e8",
+                "#e8e0c8",
+                "#d4c8a8",
+                "#8b7355",
+                "#6b5344",
+                "#4a3728",
+                "#3d2f24",
+                "#2d1f1a",
+                "#8b4513",
+                "#a0522d",
+            ],
             "body_bg": "#f8f4e8",
             "body_text": "#3d2f24",
             "name_color": "#6b5344",
         },
         "Classic Light": {
-            "colors": ["#ffffff", "#f5f5f5", "#e0e0e0", "#cccccc", "#999999",
-                       "#666666", "#333333", "#1a1a1a", "#2d2d2d", "#4a4a4a"],
+            "colors": [
+                "#ffffff",
+                "#f5f5f5",
+                "#e0e0e0",
+                "#cccccc",
+                "#999999",
+                "#666666",
+                "#333333",
+                "#1a1a1a",
+                "#2d2d2d",
+                "#4a4a4a",
+            ],
             "body_bg": "#ffffff",
             "body_text": "#1a1a1a",
             "name_color": "#2d2d2d",
         },
         "Dark Mode": {
-            "colors": ["#121212", "#1e1e1e", "#2d2d2d", "#3d3d3d", "#4d4d4d",
-                       "#6d6d6d", "#8d8d8d", "#adadad", "#cdcdcd", "#ededed"],
+            "colors": [
+                "#121212",
+                "#1e1e1e",
+                "#2d2d2d",
+                "#3d3d3d",
+                "#4d4d4d",
+                "#6d6d6d",
+                "#8d8d8d",
+                "#adadad",
+                "#cdcdcd",
+                "#ededed",
+            ],
             "body_bg": "#121212",
             "body_text": "#ededed",
             "name_color": "#adadad",
@@ -111,10 +161,11 @@ class Theme:
         if not qss_path.exists():
             return ""
 
-        qss = qss_path.read_text(encoding='utf-8')
+        qss = qss_path.read_text(encoding="utf-8")
 
         # Typography 토큰 → px 값 치환
         from gui.theme import Typography
+
         tokens = {
             "__FS_TINY__": Typography.SIZE_TINY,
             "__FS_XS__": Typography.SIZE_XS,

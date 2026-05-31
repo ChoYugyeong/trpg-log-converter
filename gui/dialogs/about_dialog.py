@@ -3,6 +3,7 @@
 UI/UX Pro Max §5 visual-hierarchy: app name + version 헤더, 그 아래
 설명, 크레딧, 시스템 정보 순서로 정보 위계 명확히.
 """
+
 from __future__ import annotations
 
 import platform
@@ -75,8 +76,7 @@ class AboutDialog(QDialog):
 
         version = QLabel(f"버전 {__version__}")
         version.setStyleSheet(
-            "font-size: 13px; font-weight: 500; color: palette(highlight); "
-            "margin: 0; padding: 0;"
+            "font-size: 13px; font-weight: 500; color: palette(highlight); margin: 0; padding: 0;"
         )
         layout.addWidget(version)
 
@@ -152,11 +152,13 @@ class AboutDialog(QDialog):
 
     def _open_homepage(self) -> None:
         from PySide6.QtCore import QUrl
+
         QDesktopServices.openUrl(QUrl(__homepage__))
 
     def _open_releases(self) -> None:
         """Releases 페이지를 시스템 기본 브라우저로. private 저장소도 OK."""
         from PySide6.QtCore import QUrl
+
         QDesktopServices.openUrl(QUrl(f"{__homepage__}/releases/latest"))
 
     def _export_diagnostics(self) -> None:
@@ -165,10 +167,12 @@ class AboutDialog(QDialog):
 
         try:
             from core.services.diagnostics import build_diagnostic_zip
+
             path = build_diagnostic_zip()
         except Exception as exc:
             QMessageBox.warning(
-                self, "진단 정보 내보내기 실패",
+                self,
+                "진단 정보 내보내기 실패",
                 f"진단 ZIP 을 만들지 못했어요:\n{exc}",
             )
             return
@@ -177,14 +181,13 @@ class AboutDialog(QDialog):
         msg = QMessageBox(self)
         msg.setIcon(QMessageBox.Information)
         msg.setWindowTitle("진단 정보 저장 완료")
-        msg.setText(
-            f"진단 ZIP 이 만들어졌어요 ({size_kb:.0f} KB).\n\n{path}"
-        )
+        msg.setText(f"진단 ZIP 이 만들어졌어요 ({size_kb:.0f} KB).\n\n{path}")
         msg.setStandardButtons(QMessageBox.Ok)
         msg.exec()
         # 파일 위치를 시스템 파일 탐색기에서 열어주면 사용자가 바로 찾을 수 있음.
         try:
             from PySide6.QtCore import QUrl
+
             QDesktopServices.openUrl(QUrl.fromLocalFile(str(path.parent)))
         except Exception:
             pass

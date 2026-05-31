@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 
 class ErrorSeverity(Enum):
     """에러 심각도"""
+
     INFO = "info"
     WARNING = "warning"
     ERROR = "error"
@@ -26,8 +27,14 @@ class ErrorSeverity(Enum):
 
 class ConversionError(Exception):
     """변환 관련 에러"""
-    def __init__(self, message: str, stage: str | None = None,
-                 recoverable: bool = True, details: dict | None = None):
+
+    def __init__(
+        self,
+        message: str,
+        stage: str | None = None,
+        recoverable: bool = True,
+        details: dict | None = None,
+    ):
         super().__init__(message)
         self.stage = stage
         self.recoverable = recoverable
@@ -37,6 +44,7 @@ class ConversionError(Exception):
 
 class FileError(ConversionError):
     """파일 관련 에러"""
+
     def __init__(self, message: str, file_path: str | None = None, **kwargs):
         super().__init__(message, stage="file_io", **kwargs)
         self.file_path = file_path
@@ -44,6 +52,7 @@ class FileError(ConversionError):
 
 class ParseError(ConversionError):
     """파싱 관련 에러"""
+
     def __init__(self, message: str, line_number: int | None = None, **kwargs):
         super().__init__(message, stage="parsing", **kwargs)
         self.line_number = line_number
@@ -51,6 +60,7 @@ class ParseError(ConversionError):
 
 class ExportError(ConversionError):
     """내보내기 관련 에러"""
+
     def __init__(self, message: str, format: str | None = None, **kwargs):
         super().__init__(message, stage="export", **kwargs)
         self.format = format
@@ -70,22 +80,27 @@ class ErrorHandler:
             ErrorSeverity.CRITICAL: [],
         }
 
-    def handle(self, error: Exception, severity: ErrorSeverity = ErrorSeverity.ERROR,
-               context: str | None = None, suppress: bool = False) -> str | None:
+    def handle(
+        self,
+        error: Exception,
+        severity: ErrorSeverity = ErrorSeverity.ERROR,
+        context: str | None = None,
+        suppress: bool = False,
+    ) -> str | None:
         """에러 처리"""
         error_info = {
-            'timestamp': datetime.now().isoformat(),
-            'severity': severity.value,
-            'type': type(error).__name__,
-            'message': str(error),
-            'context': context,
-            'traceback': traceback.format_exc() if not suppress else None,
+            "timestamp": datetime.now().isoformat(),
+            "severity": severity.value,
+            "type": type(error).__name__,
+            "message": str(error),
+            "context": context,
+            "traceback": traceback.format_exc() if not suppress else None,
         }
 
         # 에러 로그 추가
         self._error_log.append(error_info)
         if len(self._error_log) > self._max_log_size:
-            self._error_log = self._error_log[-self._max_log_size:]
+            self._error_log = self._error_log[-self._max_log_size :]
 
         # 로깅
         log_message = f"[{context or 'Unknown'}] {error}"
@@ -105,7 +120,7 @@ class ErrorHandler:
             except Exception as e:
                 logger.warning(f"에러 콜백 실행 실패: {e}")
 
-        return error_info.get('message')
+        return error_info.get("message")
 
     def register_callback(self, severity: ErrorSeverity, callback: Callable):
         """에러 콜백 등록"""
@@ -123,15 +138,15 @@ class ErrorHandler:
     def get_error_summary(self) -> dict:
         """에러 요약"""
         summary = {
-            'total': len(self._error_log),
-            'by_severity': {},
-            'by_type': {},
+            "total": len(self._error_log),
+            "by_severity": {},
+            "by_type": {},
         }
         for error in self._error_log:
-            sev = error.get('severity', 'unknown')
-            typ = error.get('type', 'unknown')
-            summary['by_severity'][sev] = summary['by_severity'].get(sev, 0) + 1
-            summary['by_type'][typ] = summary['by_type'].get(typ, 0) + 1
+            sev = error.get("severity", "unknown")
+            typ = error.get("type", "unknown")
+            summary["by_severity"][sev] = summary["by_severity"].get(sev, 0) + 1
+            summary["by_type"][typ] = summary["by_type"].get(typ, 0) + 1
         return summary
 
 
@@ -147,9 +162,14 @@ def get_error_handler(app_dir: Path | None = None) -> ErrorHandler:
     return _error_handler
 
 
-def safe_operation(default_return=None, suppress_errors: bool = False,
-                   context: str | None = None, severity: ErrorSeverity = ErrorSeverity.ERROR):
+def safe_operation(
+    default_return=None,
+    suppress_errors: bool = False,
+    context: str | None = None,
+    severity: ErrorSeverity = ErrorSeverity.ERROR,
+):
     """안전한 작업 데코레이터"""
+
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -157,11 +177,13 @@ def safe_operation(default_return=None, suppress_errors: bool = False,
                 return func(*args, **kwargs)
             except Exception as e:
                 handler = get_error_handler()
-                handler.handle(e, severity=severity,
-                               context=context or func.__name__,
-                               suppress=suppress_errors)
+                handler.handle(
+                    e, severity=severity, context=context or func.__name__, suppress=suppress_errors
+                )
                 return default_return
+
         return wrapper
+
     return decorator
 
 
@@ -175,8 +197,9 @@ def try_operation(operation: Callable, default=None, context: str | None = None)
         return default
 
 
-def validate_file_path(path: str, must_exist: bool = True,
-                       allowed_extensions: list | None = None) -> Path:
+def validate_file_path(
+    path: str, must_exist: bool = True, allowed_extensions: list | None = None
+) -> Path:
     """파일 경로 유효성 검사"""
     if not path:
         raise FileError("파일 경로가 비어있습니다")
@@ -186,11 +209,13 @@ def validate_file_path(path: str, must_exist: bool = True,
     if must_exist and not file_path.exists():
         raise FileError(f"파일이 존재하지 않습니다: {path}", file_path=str(path))
 
-    if allowed_extensions and file_path.suffix.lower() not in [e.lower() for e in allowed_extensions]:
+    if allowed_extensions and file_path.suffix.lower() not in [
+        e.lower() for e in allowed_extensions
+    ]:
         raise FileError(
             f"지원하지 않는 파일 형식입니다: {file_path.suffix}",
             file_path=str(path),
-            details={'allowed': allowed_extensions},
+            details={"allowed": allowed_extensions},
         )
 
     return file_path
@@ -207,7 +232,7 @@ def validate_config(config: dict, required_keys: list | None = None) -> bool:
             raise ConversionError(
                 f"필수 설정이 누락되었습니다: {', '.join(missing)}",
                 stage="config",
-                details={'missing_keys': missing}
+                details={"missing_keys": missing},
             )
 
     return True
@@ -216,8 +241,9 @@ def validate_config(config: dict, required_keys: list | None = None) -> bool:
 class RetryHandler:
     """재시도 핸들러"""
 
-    def __init__(self, max_retries: int = 3, delay_seconds: float = 1.0,
-                 exponential_backoff: bool = True):
+    def __init__(
+        self, max_retries: int = 3, delay_seconds: float = 1.0, exponential_backoff: bool = True
+    ):
         self.max_retries = max_retries
         self.delay_seconds = delay_seconds
         self.exponential_backoff = exponential_backoff
@@ -237,7 +263,7 @@ class RetryHandler:
                 if attempt < self.max_retries - 1:
                     delay = self.delay_seconds
                     if self.exponential_backoff:
-                        delay *= (2 ** attempt)
+                        delay *= 2**attempt
                     time.sleep(delay)
 
         raise last_error
@@ -245,10 +271,13 @@ class RetryHandler:
 
 def with_retry(max_retries: int = 3, delay: float = 1.0):
     """재시도 데코레이터"""
+
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         def wrapper(*args, **kwargs):
             handler = RetryHandler(max_retries=max_retries, delay_seconds=delay)
             return handler.execute(lambda: func(*args, **kwargs), context=func.__name__)
+
         return wrapper
+
     return decorator

@@ -76,7 +76,7 @@ class TestPresetService:
             display_name="내 프리셋",
             description="테스트 프리셋",
             platform="custom",
-            tags=["test"]
+            tags=["test"],
         )
 
         preset = service.get_preset("my_preset")
@@ -107,10 +107,7 @@ class TestPresetService:
         """apply_preset이 설정을 올바르게 병합하는지 확인"""
         service = PresetService()
 
-        base_config = {
-            "metadata": {"title": "테스트"},
-            "log_source": "auto"
-        }
+        base_config = {"metadata": {"title": "테스트"}, "log_source": "auto"}
 
         result = service.apply_preset(base_config, "ccfolia_default")
 
@@ -123,12 +120,7 @@ class TestPresetService:
         """중첩된 설정도 올바르게 병합되는지 확인"""
         service = PresetService()
 
-        base_config = {
-            "narration": {
-                "users": ["GM"],
-                "custom_field": "keep_this"
-            }
-        }
+        base_config = {"narration": {"users": ["GM"], "custom_field": "keep_this"}}
 
         result = service.apply_preset(base_config, "ccfolia_default")
 
@@ -159,7 +151,7 @@ class TestPresetService:
             "description": "테스트용",
             "platform": "test",
             "config": {"test_key": "test_value"},
-            "tags": ["imported"]
+            "tags": ["imported"],
         }
 
         result = service.import_preset(preset_data)
@@ -186,9 +178,7 @@ class TestPresetService:
 
     def test_custom_presets_in_constructor(self):
         """생성자에서 사용자 정의 프리셋을 전달할 수 있는지 확인"""
-        custom = {
-            "initial_preset": {"config_key": "value"}
-        }
+        custom = {"initial_preset": {"config_key": "value"}}
 
         service = PresetService(custom_presets=custom)
 

@@ -7,6 +7,7 @@ Anything outside this file that hardcodes engine defaults is a bug; import from
 here instead. To change a default, edit this file (and bump
 ``CONFIG_SCHEMA_VERSION`` if the change is breaking).
 """
+
 from __future__ import annotations
 
 import copy
@@ -43,8 +44,7 @@ DEFAULT_ENGINE_CONFIG: dict[str, Any] = {
         "name_font": "'Pretendard', sans-serif",
         "body_font": "'Nanum Myeongjo', serif",
         "pretendard_cdn": (
-            "https://cdn.jsdelivr.net/gh/orioncactus/pretendard"
-            "/dist/web/static/pretendard.css"
+            "https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css"
         ),
         "embed": {},
         "docx_fallback": {"body": "맑은 고딕", "name": "맑은 고딕"},

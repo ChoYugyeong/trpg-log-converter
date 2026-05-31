@@ -6,6 +6,7 @@ These verify:
   * Files in unsupported encodings raise EncodingError with structured context.
   * The "tried encodings" list reaches the error context for debugging.
 """
+
 from __future__ import annotations
 
 from pathlib import Path

@@ -42,40 +42,40 @@ class TestHistoryManager:
     def test_add_record(self, history_manager):
         """기록 추가"""
         record = history_manager.add_record(
-            input_file='/path/to/input.html',
-            output_files=['/path/to/output.epub'],
-            output_format='epub',
-            title='테스트 리플레이',
-            author='GM',
+            input_file="/path/to/input.html",
+            output_files=["/path/to/output.epub"],
+            output_format="epub",
+            title="테스트 리플레이",
+            author="GM",
             entry_count=100,
             scene_count=5,
-            success=True
+            success=True,
         )
         assert record is not None
-        assert record.title == '테스트 리플레이'
+        assert record.title == "테스트 리플레이"
         assert record.entry_count == 100
 
     def test_get_records(self, history_manager):
         """기록 조회"""
         history_manager.add_record(
-            input_file='/path/to/input.html',
-            output_files=['/path/to/output.epub'],
-            output_format='epub',
-            title='테스트 1',
-            author='GM',
+            input_file="/path/to/input.html",
+            output_files=["/path/to/output.epub"],
+            output_format="epub",
+            title="테스트 1",
+            author="GM",
             entry_count=50,
             scene_count=3,
-            success=True
+            success=True,
         )
         history_manager.add_record(
-            input_file='/path/to/input2.html',
-            output_files=['/path/to/output2.epub'],
-            output_format='epub',
-            title='테스트 2',
-            author='GM',
+            input_file="/path/to/input2.html",
+            output_files=["/path/to/output2.epub"],
+            output_format="epub",
+            title="테스트 2",
+            author="GM",
             entry_count=80,
             scene_count=4,
-            success=True
+            success=True,
         )
         records = history_manager.get_records()
         assert len(records) == 2
@@ -83,34 +83,34 @@ class TestHistoryManager:
     def test_get_stats(self, history_manager):
         """통계 조회"""
         history_manager.add_record(
-            input_file='/path/to/input.html',
-            output_files=['/path/to/output.epub'],
-            output_format='epub',
-            title='테스트',
-            author='GM',
+            input_file="/path/to/input.html",
+            output_files=["/path/to/output.epub"],
+            output_format="epub",
+            title="테스트",
+            author="GM",
             entry_count=100,
             scene_count=5,
-            success=True
+            success=True,
         )
         stats = history_manager.get_stats()
-        assert stats['total_conversions'] == 1
-        assert stats['success_count'] == 1
+        assert stats["total_conversions"] == 1
+        assert stats["success_count"] == 1
 
     def test_search(self, history_manager):
         """검색"""
         history_manager.add_record(
-            input_file='/path/to/fantasy_game.html',
-            output_files=['/path/to/output.epub'],
-            output_format='epub',
-            title='판타지 모험',
-            author='GM',
+            input_file="/path/to/fantasy_game.html",
+            output_files=["/path/to/output.epub"],
+            output_format="epub",
+            title="판타지 모험",
+            author="GM",
             entry_count=100,
             scene_count=5,
-            success=True
+            success=True,
         )
-        results = history_manager.search('판타지')
+        results = history_manager.search("판타지")
         assert len(results) == 1
-        assert results[0].title == '판타지 모험'
+        assert results[0].title == "판타지 모험"
 
 
 class TestProfileManager:
@@ -134,54 +134,50 @@ class TestProfileManager:
         assert len(profiles) >= 5  # 기본, 소설, 리플레이, 미니멀, 인쇄용
 
         # 기본 프로필 확인
-        default = profile_manager.get_profile('default')
+        default = profile_manager.get_profile("default")
         assert default is not None
         assert default.is_builtin is True
 
     def test_create_profile(self, profile_manager):
         """프로필 생성"""
         profile = profile_manager.create_profile(
-            name='내 프로필',
-            description='테스트용 프로필',
-            settings={'style': {'narration_prefix': '→'}}
+            name="내 프로필",
+            description="테스트용 프로필",
+            settings={"style": {"narration_prefix": "→"}},
         )
         assert profile is not None
-        assert profile.name == '내 프로필'
-        assert profile.settings['style']['narration_prefix'] == '→'
+        assert profile.name == "내 프로필"
+        assert profile.settings["style"]["narration_prefix"] == "→"
 
     def test_update_profile(self, profile_manager):
         """프로필 수정"""
         profile = profile_manager.create_profile(
-            name='수정 테스트',
-            description='수정 전',
+            name="수정 테스트",
+            description="수정 전",
         )
-        profile_manager.update_profile(
-            profile.id,
-            name='수정됨',
-            description='수정 후'
-        )
+        profile_manager.update_profile(profile.id, name="수정됨", description="수정 후")
         updated = profile_manager.get_profile(profile.id)
-        assert updated.name == '수정됨'
-        assert updated.description == '수정 후'
+        assert updated.name == "수정됨"
+        assert updated.description == "수정 후"
 
     def test_delete_profile(self, profile_manager):
         """프로필 삭제"""
-        profile = profile_manager.create_profile(name='삭제 테스트')
+        profile = profile_manager.create_profile(name="삭제 테스트")
         result = profile_manager.delete_profile(profile.id)
         assert result is True
         assert profile_manager.get_profile(profile.id) is None
 
     def test_cannot_delete_builtin(self, profile_manager):
         """내장 프로필 삭제 불가"""
-        result = profile_manager.delete_profile('default')
+        result = profile_manager.delete_profile("default")
         assert result is False
 
     def test_apply_profile(self, profile_manager):
         """프로필 적용"""
-        config = {'style': {'narration_prefix': '＿', 'scene_marker': '■'}}
-        result = profile_manager.apply_profile_to_config(config, 'novel_style')
-        assert result['style']['narration_prefix'] == '　'
-        assert result['style']['scene_marker'] == '◆'
+        config = {"style": {"narration_prefix": "＿", "scene_marker": "■"}}
+        result = profile_manager.apply_profile_to_config(config, "novel_style")
+        assert result["style"]["narration_prefix"] == "　"
+        assert result["style"]["scene_marker"] == "◆"
 
 
 class TestErrorHandler:
@@ -211,7 +207,7 @@ class TestErrorHandler:
         error_handler.handle(ValueError("에러"), severity=ErrorSeverity.ERROR)
         error_handler.handle(RuntimeError("에러"), severity=ErrorSeverity.WARNING)
         summary = error_handler.get_error_summary()
-        assert summary['total'] == 2
+        assert summary["total"] == 2
 
 
 class TestValidation:
@@ -230,11 +226,11 @@ class TestValidation:
     def test_validate_config_missing_keys(self):
         """필수 키 누락"""
         with pytest.raises(ConversionError):
-            validate_config({'a': 1}, required_keys=['a', 'b', 'c'])
+            validate_config({"a": 1}, required_keys=["a", "b", "c"])
 
     def test_validate_config_success(self):
         """유효한 설정"""
-        result = validate_config({'a': 1, 'b': 2}, required_keys=['a', 'b'])
+        result = validate_config({"a": 1, "b": 2}, required_keys=["a", "b"])
         assert result is True
 
 
@@ -271,6 +267,7 @@ class TestSafeOperation:
 
     def test_safe_operation_success(self):
         """성공 케이스"""
+
         @safe_operation(default_return=-1)
         def good_func():
             return 42
@@ -280,6 +277,7 @@ class TestSafeOperation:
 
     def test_safe_operation_failure(self):
         """실패 케이스"""
+
         @safe_operation(default_return=-1, suppress_errors=True)
         def bad_func():
             raise ValueError("에러")
@@ -288,5 +286,5 @@ class TestSafeOperation:
         assert result == -1
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

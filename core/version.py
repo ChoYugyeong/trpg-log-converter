@@ -9,6 +9,7 @@ Why centralised:
 Convention: semver (MAJOR.MINOR.PATCH) without leading 'v'. GitHub release
 tags are prefixed with 'v' and stripped during comparison.
 """
+
 from __future__ import annotations
 
 __version__ = "2.4.0"

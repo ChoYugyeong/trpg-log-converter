@@ -14,6 +14,7 @@ verify the structural requirements that 90% of broken EPUBs fail:
 If these pass, the file is overwhelmingly likely to open in Calibre, Apple
 Books, and ReadiumJS without issue.
 """
+
 from __future__ import annotations
 
 import zipfile
@@ -133,7 +134,8 @@ def test_epub_has_navigation_doc(tmp_path: Path, engine):
         opf = ET.fromstring(zf.read(opf_path))
         # Either properties="nav" (EPUB3) or a toc.ncx (EPUB2 compat)
         nav_items = [
-            it for it in opf.findall(".//opf:manifest/opf:item", NS)
+            it
+            for it in opf.findall(".//opf:manifest/opf:item", NS)
             if "nav" in (it.get("properties") or "")
             or it.get("media-type") == "application/x-dtbncx+xml"
         ]
@@ -147,7 +149,5 @@ def test_epub_unique_manifest_ids(tmp_path: Path, engine):
         container = ET.fromstring(zf.read("META-INF/container.xml"))
         opf_path = container.find(".//container:rootfile", NS).get("full-path")
         opf = ET.fromstring(zf.read(opf_path))
-        ids = [
-            it.get("id") for it in opf.findall(".//opf:manifest/opf:item", NS)
-        ]
+        ids = [it.get("id") for it in opf.findall(".//opf:manifest/opf:item", NS)]
         assert len(ids) == len(set(ids)), f"duplicate manifest ids: {ids}"

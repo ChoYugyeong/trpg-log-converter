@@ -1,4 +1,5 @@
 """Tests for the GUI settings schema migration framework."""
+
 from __future__ import annotations
 
 import pytest
@@ -41,6 +42,7 @@ class TestRegistryGuards:
     def test_duplicate_registration_raises(self):
         # ``from_version=1`` is already registered by core.config.migrations.
         with pytest.raises(RuntimeError, match="Duplicate migration"):
+
             @migration(from_version=1)
             def _dup(settings: dict) -> dict:
                 return settings

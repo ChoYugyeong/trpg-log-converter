@@ -1,4 +1,5 @@
 """Tests for the single-source default engine config."""
+
 from __future__ import annotations
 
 from core.config.defaults import (
@@ -48,4 +49,5 @@ def test_performance_defaults_sane():
 def test_config_manager_alias_matches():
     """Legacy callers using ConfigManager.DEFAULT_CONFIG must see the same dict."""
     from core.config_manager import ConfigManager
+
     assert ConfigManager.DEFAULT_CONFIG is DEFAULT_ENGINE_CONFIG

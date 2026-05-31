@@ -22,6 +22,7 @@ from pydantic import BaseModel, Field, field_validator
 # 1. HomeSettings - 변환 페이지 (홈)
 # ──────────────────────────────────────────────
 
+
 class HomeSettings(BaseModel):
     """변환 페이지: 플랫폼, 메타데이터, 출력 기본 설정"""
 
@@ -43,6 +44,7 @@ class HomeSettings(BaseModel):
 # ──────────────────────────────────────────────
 # 2. StyleSettings - 시각적 스타일
 # ──────────────────────────────────────────────
+
 
 class ColorPalette(BaseModel):
     """요소별 색상 팔레트"""
@@ -84,6 +86,7 @@ class StyleSettings(BaseModel):
 # 3. FontSettings - 폰트 설정
 # ──────────────────────────────────────────────
 
+
 class FontSettings(BaseModel):
     """폰트 설정: EPUB/DOCX 폰트, 임베드 경로, 줄 간격, 기본 폰트 크기"""
 
@@ -110,6 +113,7 @@ class FontSettings(BaseModel):
 # ──────────────────────────────────────────────
 # 4. CoverSettings - 표지 설정
 # ──────────────────────────────────────────────
+
 
 class CoverSettings(BaseModel):
     """표지 설정: 표지 포함 여부, 제목/저자 표시, 부제목, 배경/제목 색상, 표지 이미지, 목차"""
@@ -143,6 +147,7 @@ class CoverSettings(BaseModel):
 # ──────────────────────────────────────────────
 # 5. DecorationSettings - 장식 설정
 # ──────────────────────────────────────────────
+
 
 class DecorationSettings(BaseModel):
     """장식 설정: 구분선 유형/텍스트/색상, 장면 마커, 챕터 장식, 장면 구분선"""
@@ -184,6 +189,7 @@ class DecorationSettings(BaseModel):
 # 6. FormatStyleGroup - 서식 탭 그룹
 # ──────────────────────────────────────────────
 
+
 class FormatStyleGroup(BaseModel):
     """서식 탭: 스타일 + 폰트 + 표지 + 장식"""
 
@@ -196,6 +202,7 @@ class FormatStyleGroup(BaseModel):
 # ──────────────────────────────────────────────
 # 7. ContentFilterSettings - 콘텐츠 필터
 # ──────────────────────────────────────────────
+
 
 class ContentFilterSettings(BaseModel):
     """콘텐츠 필터: 포함/제외 설정, 나레이션, 대화 병합, 이미지"""
@@ -220,6 +227,7 @@ class ContentFilterSettings(BaseModel):
 # 8. SceneSplitSettings - 장면 분할
 # ──────────────────────────────────────────────
 
+
 class SceneSplitSettings(BaseModel):
     """장면 분할 설정"""
 
@@ -242,6 +250,7 @@ class SceneSplitSettings(BaseModel):
 # ──────────────────────────────────────────────
 # 9. ParsingRulesSettings - 파싱 규칙
 # ──────────────────────────────────────────────
+
 
 class ParsingRulesSettings(BaseModel):
     """파싱 규칙: 구분자, 이름 위치, 이름 최대 길이, 주사위/시스템 키워드"""
@@ -271,6 +280,7 @@ class ParsingRulesSettings(BaseModel):
 # 10. ParsingContentGroup - 콘텐츠/파싱 탭 그룹
 # ──────────────────────────────────────────────
 
+
 class ParsingContentGroup(BaseModel):
     """콘텐츠/파싱 탭: 콘텐츠 필터 + 장면 분할 + 파싱 규칙"""
 
@@ -282,6 +292,7 @@ class ParsingContentGroup(BaseModel):
 # ──────────────────────────────────────────────
 # 11. OutputSettings - 출력 레이아웃
 # ──────────────────────────────────────────────
+
 
 class MarginsSettings(BaseModel):
     """페이지 여백 (인치)"""
@@ -305,6 +316,7 @@ class OutputSettings(BaseModel):
 # ──────────────────────────────────────────────
 # 12. AdvancedOptions - 고급 옵션
 # ──────────────────────────────────────────────
+
 
 class AdvancedOptions(BaseModel):
     """고급 옵션: 파싱/Roll20/이미지/캠페인/CSS 등"""
@@ -344,6 +356,7 @@ class AdvancedOptions(BaseModel):
 # 13. AdvancedGroup - 고급 탭 그룹
 # ──────────────────────────────────────────────
 
+
 class AdvancedGroup(BaseModel):
     """고급 탭: 출력 레이아웃 + 고급 옵션"""
 
@@ -354,6 +367,7 @@ class AdvancedGroup(BaseModel):
 # ──────────────────────────────────────────────
 # 14. AppSettings - 최상위 통합 모델
 # ──────────────────────────────────────────────
+
 
 class AppSettings(BaseModel, extra="allow"):
     """최상위 설정 모델 - 모든 그룹을 결합.

@@ -16,6 +16,7 @@ class BasePage(ScrollArea):
     서브클래스는 설정 읽기/쓰기 시 self.app_state를 사용할 수 있다.
     app_state가 없으면 self.settings (flat dict) 폴백.
     """
+
     settings_changed = Signal()
 
     # MainWindow에서 주입하는 공유 AppState (클래스 변수)
@@ -43,14 +44,16 @@ class BasePage(ScrollArea):
 
         # 메인 위젯
         self.scroll_widget = QWidget()
-        self.scroll_widget.setObjectName('scrollWidget')
+        self.scroll_widget.setObjectName("scrollWidget")
         self.setWidget(self.scroll_widget)
 
         # 메인 레이아웃 - 반응형 마진
         self.main_layout = QVBoxLayout(self.scroll_widget)
         self.main_layout.setContentsMargins(
-            Sizes.PAGE_MARGIN_H, Sizes.PAGE_MARGIN_V_TOP,
-            Sizes.PAGE_MARGIN_H, Sizes.PAGE_MARGIN_V_BOTTOM,
+            Sizes.PAGE_MARGIN_H,
+            Sizes.PAGE_MARGIN_V_TOP,
+            Sizes.PAGE_MARGIN_H,
+            Sizes.PAGE_MARGIN_V_BOTTOM,
         )
         self.main_layout.setSpacing(Sizes.PAGE_SPACING)
         self.main_layout.setAlignment(Qt.AlignTop)
@@ -76,6 +79,7 @@ class BasePage(ScrollArea):
     def add_section_title(self, title: str):
         """섹션 제목 추가"""
         from qfluentwidgets import StrongBodyLabel
+
         label = StrongBodyLabel(title)
         self.content_layout.addWidget(label)
 
@@ -85,7 +89,7 @@ class BasePage(ScrollArea):
 
     def update_inspector(self, **kwargs):
         """인스펙터 바 업데이트"""
-        if self.inspector and hasattr(self.inspector, 'update_preview'):
+        if self.inspector and hasattr(self.inspector, "update_preview"):
             self.inspector.update_preview(**kwargs)
 
     def on_page_enter(self):

@@ -4,6 +4,7 @@ Focus: data flow (manager ↔ dialog) and the contract that ConversionWorker.
 last_records 가 main_window 의 _on_conversion_finished 에서 정상적으로 기록되는지.
 GUI dialog 자체는 pytest-qt 로 표면 검사만.
 """
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -21,8 +22,7 @@ def hm(tmp_path: Path) -> HistoryManager:
 def _add(hm: HistoryManager, **overrides) -> ConversionRecord:
     base = {
         "input_file": str(Path("session.html").resolve()),
-        "output_files": [str(Path("session.epub").resolve()),
-                       str(Path("session.docx").resolve())],
+        "output_files": [str(Path("session.epub").resolve()), str(Path("session.docx").resolve())],
         "output_format": "both",
         "title": "테스트 변환",
         "author": "GM",
@@ -102,16 +102,34 @@ class TestDialogContract:
     """HistoryDialog 가 의존하는 manager API 가 사라지지 않도록."""
 
     def test_required_methods_exist(self):
-        for name in ("get_records", "get_record_by_id", "search", "get_stats",
-                     "delete_record", "clear", "add_record"):
+        for name in (
+            "get_records",
+            "get_record_by_id",
+            "search",
+            "get_stats",
+            "delete_record",
+            "clear",
+            "add_record",
+        ):
             assert hasattr(HistoryManager, name), f"HistoryManager.{name} missing"
 
     def test_record_has_required_attributes(self, hm: HistoryManager):
         rec = _add(hm)
         # 표시에 필요한 모든 필드.
-        for attr in ("id", "timestamp", "input_filename", "title", "author",
-                     "output_format", "output_files", "entry_count",
-                     "scene_count", "success", "error_message", "duration_ms"):
+        for attr in (
+            "id",
+            "timestamp",
+            "input_filename",
+            "title",
+            "author",
+            "output_format",
+            "output_files",
+            "entry_count",
+            "scene_count",
+            "success",
+            "error_message",
+            "duration_ms",
+        ):
             assert hasattr(rec, attr), f"ConversionRecord.{attr} missing"
 
 
@@ -134,6 +152,7 @@ class TestMainWindowIntegrationContract:
         }
         # HistoryManager.add_record 가 같은 키를 받는지 확인.
         import inspect
+
         sig = inspect.signature(HistoryManager.add_record)
         for k in sample:
             if k == "duration_ms":

@@ -1,4 +1,5 @@
 """Coverage tests for font discovery and image utilities."""
+
 from __future__ import annotations
 
 import io
@@ -14,6 +15,7 @@ from core.parsers.images import (
 )
 
 # ── Fonts ────────────────────────────────────────────────────────────────
+
 
 def test_get_font_files_returns_empty_when_dir_missing(tmp_path: Path):
     config = {"paths": {"fonts_dir": str(tmp_path / "does-not-exist")}, "fonts": {"embed": {}}}
@@ -59,6 +61,7 @@ def test_get_font_family_name_strips_weight_suffixes():
 
 # ── Image markers ────────────────────────────────────────────────────────
 
+
 @pytest.fixture
 def base_config():
     return {
@@ -100,6 +103,7 @@ def test_extract_image_markers_survives_bad_pattern(base_config, caplog):
 
 # ── find_image_file ──────────────────────────────────────────────────────
 
+
 def test_find_image_file_resolves_absolute_paths(tmp_path: Path):
     img = tmp_path / "thing.png"
     img.write_bytes(b"\x89PNG\r\n")
@@ -123,11 +127,13 @@ def test_find_image_file_returns_none_when_missing(tmp_path: Path):
 
 # ── optimize_image ───────────────────────────────────────────────────────
 
+
 @pytest.fixture
 def tiny_png(tmp_path: Path) -> Path:
     """Produce a 10x10 red PNG to feed Pillow."""
     pytest.importorskip("PIL")
     from PIL import Image
+
     p = tmp_path / "tiny.png"
     Image.new("RGB", (10, 10), color=(255, 0, 0)).save(p, format="PNG")
     return p
@@ -144,6 +150,7 @@ def test_optimize_image_passes_through_small_png(tiny_png: Path):
 def test_optimize_image_resizes_when_over_limit(tmp_path: Path):
     pytest.importorskip("PIL")
     from PIL import Image
+
     p = tmp_path / "big.png"
     Image.new("RGB", (4000, 2000), color=(0, 255, 0)).save(p, format="PNG")
     config = {"images": {"max_resolution": 500, "jpeg_quality": 85, "convert_webp": True}}
@@ -156,6 +163,7 @@ def test_optimize_image_resizes_when_over_limit(tmp_path: Path):
 def test_optimize_image_converts_webp_to_jpeg(tmp_path: Path):
     pytest.importorskip("PIL")
     from PIL import Image
+
     p = tmp_path / "thing.webp"
     Image.new("RGB", (50, 50), color=(0, 0, 255)).save(p, format="WEBP")
     config = {"images": {"max_resolution": 0, "jpeg_quality": 80, "convert_webp": True}}

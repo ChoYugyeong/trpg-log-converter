@@ -5,6 +5,7 @@ Three states (UI/UX Pro Max §8 multi-step-progress):
 2. DOWNLOADING - progress bar + cancel
 3. READY   - "Restart now to apply" + [Restart / Later]
 """
+
 from __future__ import annotations
 
 import logging
@@ -28,8 +29,8 @@ logger = logging.getLogger(__name__)
 
 
 class _DownloadWorker(QObject):
-    progress = Signal(int, int)    # downloaded, total
-    finished = Signal(object)       # Path on success
+    progress = Signal(int, int)  # downloaded, total
+    finished = Signal(object)  # Path on success
     failed = Signal(str)
 
     def __init__(self, service: UpdateService, info: UpdateInfo) -> None:
@@ -83,8 +84,7 @@ class UpdateDialog(QDialog):
     def _build_header(self) -> None:
         title = QLabel(f"새 버전이 있어요 — {self._info.tag}")
         title.setStyleSheet(
-            "font-size: 18px; font-weight: 700; color: palette(text); "
-            "letter-spacing: -0.4px;"
+            "font-size: 18px; font-weight: 700; color: palette(text); letter-spacing: -0.4px;"
         )
         self._layout.addWidget(title)
 
@@ -144,8 +144,7 @@ class UpdateDialog(QDialog):
             self._progress.setVisible(False)
             self._status.setVisible(True)
             self._status.setText(
-                f"다운로드 크기: {size_mb:.1f} MiB · "
-                f"적용은 앱 재시작과 함께 자동 진행됩니다."
+                f"다운로드 크기: {size_mb:.1f} MiB · 적용은 앱 재시작과 함께 자동 진행됩니다."
             )
             self._primary_btn.setText("지금 업데이트")
             self._primary_btn.setEnabled(True)
@@ -164,9 +163,7 @@ class UpdateDialog(QDialog):
         elif state == self.STATE_READY:
             self._progress.setVisible(False)
             self._status.setVisible(True)
-            self._status.setText(
-                "다운로드 완료. [지금 재시작] 을 누르면 새 버전이 적용됩니다."
-            )
+            self._status.setText("다운로드 완료. [지금 재시작] 을 누르면 새 버전이 적용됩니다.")
             self._primary_btn.setEnabled(True)
             self._primary_btn.setText("지금 재시작")
             self._later_btn.setEnabled(True)
@@ -239,6 +236,7 @@ class UpdateDialog(QDialog):
         # The parent main window's closeEvent should also fire, but ensure exit
         # in case the dialog was launched outside the normal lifecycle.
         from PySide6.QtCore import QTimer
+
         QTimer.singleShot(100, lambda: sys.exit(0))
 
     def closeEvent(self, event) -> None:

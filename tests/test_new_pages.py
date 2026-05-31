@@ -15,6 +15,7 @@ from PySide6.QtCore import Signal
 # 공통 fixture
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture
 def app_state(tmp_path):
     """AppState + ConfigManager를 생성하고 BasePage에 주입한다."""
@@ -33,6 +34,7 @@ def home_page(qtbot, app_state):
     """HomePage 인스턴스를 생성하고 반환한다."""
     state, cm = app_state
     from gui.pages.home_page import HomePage
+
     page = HomePage(cm)
     qtbot.addWidget(page)
     return page, state, cm
@@ -41,6 +43,7 @@ def home_page(qtbot, app_state):
 # ===================================================================
 # 1. HomePage 생성
 # ===================================================================
+
 
 class TestHomePageCreation:
     """HomePage 인스턴스 생성 및 기본 구조 검증"""
@@ -51,6 +54,7 @@ class TestHomePageCreation:
 
         # WHEN: HomePage를 생성한다
         from gui.pages.home_page import HomePage
+
         page = HomePage(cm)
         qtbot.addWidget(page)
 
@@ -62,6 +66,7 @@ class TestHomePageCreation:
 # ===================================================================
 # 2. HomePage 시그널 존재 확인
 # ===================================================================
+
 
 class TestHomePageSignals:
     """HomePage에 필수 시그널이 정의되어 있는지 검증"""
@@ -102,6 +107,7 @@ class TestHomePageSignals:
 # ===================================================================
 # 3. HomePage 필수 메서드 존재 확인
 # ===================================================================
+
 
 class TestHomePageMethods:
     """HomePage에 필수 메서드가 정의되어 있는지 검증"""
@@ -190,6 +196,7 @@ class TestHomePageMethods:
 # 4. HomePage save/load 라운드트립 - AppState 경유
 # ===================================================================
 
+
 class TestHomePageSaveLoadRoundTrip:
     """AppState를 통한 save → load 라운드트립 검증.
 
@@ -250,6 +257,7 @@ class TestHomePageSaveLoadRoundTrip:
 # 5. 언어 드롭다운 표시명 검증
 # ===================================================================
 
+
 class TestHomePageLanguage:
     """언어 매핑이 전체 이름을 사용하는지 검증.
 
@@ -301,6 +309,7 @@ class TestHomePageLanguage:
 # 6. FormatStylePage 생성
 # ===================================================================
 
+
 class TestFormatStylePageCreation:
     """FormatStylePage 인스턴스 생성 검증"""
 
@@ -310,6 +319,7 @@ class TestFormatStylePageCreation:
 
         # WHEN: FormatStylePage를 생성한다
         from gui.pages.format_style_page import FormatStylePage
+
         page = FormatStylePage(cm)
         qtbot.addWidget(page)
 
@@ -332,6 +342,7 @@ class TestFormatStylePageCreation:
 # 7. ParsingContentPage 생성
 # ===================================================================
 
+
 class TestParsingContentPageCreation:
     """ParsingContentPage 인스턴스 생성 검증"""
 
@@ -340,6 +351,7 @@ class TestParsingContentPageCreation:
         _state, cm = app_state
 
         from gui.pages.parsing_content_page import ParsingContentPage
+
         page = ParsingContentPage(cm)
         qtbot.addWidget(page)
 
@@ -350,6 +362,7 @@ class TestParsingContentPageCreation:
         _state, cm = app_state
 
         from gui.pages.parsing_content_page import ParsingContentPage
+
         page = ParsingContentPage(cm)
         qtbot.addWidget(page)
 
@@ -360,6 +373,7 @@ class TestParsingContentPageCreation:
 # 8. AdvancedSettingsPage 생성
 # ===================================================================
 
+
 class TestAdvancedSettingsPageCreation:
     """AdvancedSettingsPage 인스턴스 생성 검증"""
 
@@ -368,6 +382,7 @@ class TestAdvancedSettingsPageCreation:
         _state, cm = app_state
 
         from gui.pages.advanced_settings_page import AdvancedSettingsPage
+
         page = AdvancedSettingsPage(cm)
         qtbot.addWidget(page)
 
@@ -378,6 +393,7 @@ class TestAdvancedSettingsPageCreation:
         _state, cm = app_state
 
         from gui.pages.advanced_settings_page import AdvancedSettingsPage
+
         page = AdvancedSettingsPage(cm)
         qtbot.addWidget(page)
 
@@ -387,6 +403,7 @@ class TestAdvancedSettingsPageCreation:
 # ===================================================================
 # 9. 모든 페이지가 같은 AppState를 공유
 # ===================================================================
+
 
 class TestAllPagesShareAppState:
     """모든 페이지가 동일한 AppState 참조를 사용하는지 검증"""

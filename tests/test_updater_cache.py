@@ -5,6 +5,7 @@
   ``_cache`` hit. UI 연타에 멈춤 0.
 - 응답 결과에 따라 ``last_outcome`` 이 정확한 ``CheckOutcome.*`` 코드로 세팅.
 """
+
 from __future__ import annotations
 
 import json
@@ -29,7 +30,10 @@ def _mock_resp(body: bytes) -> MagicMock:
 def _http_error(code: int):
     return urllib.error.HTTPError(
         url="https://api.github.com/test",
-        code=code, msg=f"{code}", hdrs={}, fp=BytesIO(b""),
+        code=code,
+        msg=f"{code}",
+        hdrs={},
+        fp=BytesIO(b""),
     )
 
 
@@ -89,7 +93,7 @@ class TestCache:
             start = time.monotonic()
             svc.check()
             elapsed = time.monotonic() - start
-        assert elapsed < 0.01, f"cache hit took {elapsed*1000:.1f}ms (should be < 10ms)"
+        assert elapsed < 0.01, f"cache hit took {elapsed * 1000:.1f}ms (should be < 10ms)"
 
 
 class TestOutcomeClassification:
@@ -132,6 +136,7 @@ class TestOutcomeClassification:
     def test_outcome_latest_on_same_version(self):
         # 현재와 같은 버전을 응답으로 줌 → "not newer" → LATEST.
         from core.version import __version__
+
         body = json.dumps({"tag_name": f"v{__version__}"}).encode()
         with patch(
             "core.services.updater._OPENER.open",

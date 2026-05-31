@@ -11,54 +11,56 @@ logger = logging.getLogger(__name__)
 
 
 class PathsConfig(BaseModel):
-    input_dir: str = './input'
-    output_dir: str = './export'
-    fonts_dir: str = './fonts'
-    images_dir: str = './images'
+    input_dir: str = "./input"
+    output_dir: str = "./export"
+    fonts_dir: str = "./fonts"
+    images_dir: str = "./images"
 
 
 class CoverConfig(BaseModel):
-    image: str = ''
+    image: str = ""
     include: bool = True
     title_on_cover: bool = True
     author_on_cover: bool = True
-    background_color: str = '#1a1a1a'
-    title_color: str = '#ffffff'
-    subtitle: str = ''
+    background_color: str = "#1a1a1a"
+    title_color: str = "#ffffff"
+    subtitle: str = ""
 
-    @field_validator('background_color', 'title_color')
+    @field_validator("background_color", "title_color")
     @classmethod
     def validate_color(cls, v):
-        if not v.startswith('#') or len(v) not in (4, 7):
-            return '#1a1a1a'
+        if not v.startswith("#") or len(v) not in (4, 7):
+            return "#1a1a1a"
         return v
 
 
 class TocConfig(BaseModel):
     include: bool = True
-    title: str = '목차'
-    mode: str = 'auto'
+    title: str = "목차"
+    mode: str = "auto"
     entries: list = Field(default_factory=list)
-    style: str = 'simple'
+    style: str = "simple"
 
 
 class FontsConfig(BaseModel):
     name_font: str = "'Pretendard', sans-serif"
     body_font: str = "'Nanum Myeongjo', serif"
-    pretendard_cdn: str = "https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css"
+    pretendard_cdn: str = (
+        "https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css"
+    )
     embed: dict = Field(default_factory=dict)
-    docx_fallback: dict = Field(default_factory=lambda: {'body': '맑은 고딕', 'name': '맑은 고딕'})
+    docx_fallback: dict = Field(default_factory=lambda: {"body": "맑은 고딕", "name": "맑은 고딕"})
 
 
 class StyleConfig(BaseModel):
-    narration_prefix: str = '＿'
-    scene_marker: str = '■'
+    narration_prefix: str = "＿"
+    scene_marker: str = "■"
     dialogue_margin: float = 0.12
     narration_margin: float = 0.8
     narration_indent: float = 1.5
-    dice_color: str = '#888'
+    dice_color: str = "#888"
 
-    @field_validator('dialogue_margin', 'narration_margin', 'narration_indent')
+    @field_validator("dialogue_margin", "narration_margin", "narration_indent")
     @classmethod
     def validate_margin(cls, v):
         if v < 0:
@@ -69,8 +71,8 @@ class StyleConfig(BaseModel):
 
 
 class NarrationConfig(BaseModel):
-    users: list[str] = Field(default_factory=lambda: ['GM', 'KP', 'DM', 'Keeper', 'Narrator'])
-    style: str = 'indent'
+    users: list[str] = Field(default_factory=lambda: ["GM", "KP", "DM", "Keeper", "Narrator"])
+    style: str = "indent"
 
 
 class ContentConfig(BaseModel):
@@ -81,10 +83,10 @@ class ContentConfig(BaseModel):
 
 class DialogueConfig(BaseModel):
     merge_consecutive: bool = False
-    merge_separator: str = '\n'
+    merge_separator: str = "\n"
     merge_max: int = 5
 
-    @field_validator('merge_max')
+    @field_validator("merge_max")
     @classmethod
     def validate_merge_max(cls, v):
         return max(0, min(v, 100))
@@ -92,39 +94,45 @@ class DialogueConfig(BaseModel):
 
 class ImagesConfig(BaseModel):
     enable: bool = True
-    markers: list[str] = Field(default_factory=lambda: [r'\[IMG:\s*(.+?)\]', r'\[삽화:\s*(.+?)\]'])
+    markers: list[str] = Field(default_factory=lambda: [r"\[IMG:\s*(.+?)\]", r"\[삽화:\s*(.+?)\]"])
     show_caption: bool = True
     max_resolution: int = 0
     jpeg_quality: int = 85
     convert_webp: bool = True
 
-    @field_validator('jpeg_quality')
+    @field_validator("jpeg_quality")
     @classmethod
     def validate_quality(cls, v):
         return max(10, min(v, 100))
 
-    @field_validator('max_resolution')
+    @field_validator("max_resolution")
     @classmethod
     def validate_resolution(cls, v):
         return max(0, v)
 
 
 class ChapterConfig(BaseModel):
-    split_mode: str = 'scene'
+    split_mode: str = "scene"
     entries_per_chapter: int = 300
     extract_scene_title: bool = True
-    title_format: str = '장면 {n}'
+    title_format: str = "장면 {n}"
     min_scene_entries: int = 10
-    scene_patterns: list[str] = Field(default_factory=lambda: [
-        '^■', '^●', '^▶', '^씬\\s*\\d+', '^장면\\s*\\d+',
-    ])
+    scene_patterns: list[str] = Field(
+        default_factory=lambda: [
+            "^■",
+            "^●",
+            "^▶",
+            "^씬\\s*\\d+",
+            "^장면\\s*\\d+",
+        ]
+    )
 
-    @field_validator('entries_per_chapter')
+    @field_validator("entries_per_chapter")
     @classmethod
     def validate_entries(cls, v):
         return max(10, min(v, 10000))
 
-    @field_validator('min_scene_entries')
+    @field_validator("min_scene_entries")
     @classmethod
     def validate_min_entries(cls, v):
         return max(1, min(v, 1000))
@@ -135,7 +143,7 @@ class ParsingConfig(BaseModel):
     skip_channels: list[str] = Field(default_factory=list)
     normalize_punctuation: bool = True
 
-    @field_validator('name_max_length')
+    @field_validator("name_max_length")
     @classmethod
     def validate_name_length(cls, v):
         return max(5, min(v, 200))
@@ -143,15 +151,16 @@ class ParsingConfig(BaseModel):
 
 class PerformanceConfig(BaseModel):
     """런타임 성능 옵션."""
+
     parse_max_workers: int = 4
     max_html_bytes: int = 50 * 1024 * 1024  # 50 MiB
 
-    @field_validator('parse_max_workers')
+    @field_validator("parse_max_workers")
     @classmethod
     def validate_workers(cls, v):
         return max(1, min(int(v), 32))
 
-    @field_validator('max_html_bytes')
+    @field_validator("max_html_bytes")
     @classmethod
     def validate_max_bytes(cls, v):
         # 1 MiB ~ 1 GiB
@@ -160,9 +169,10 @@ class PerformanceConfig(BaseModel):
 
 class EngineConfig(BaseModel):
     """엔진 설정 전체 스키마"""
+
     paths: PathsConfig = Field(default_factory=PathsConfig)
-    output_format: str = 'both'
-    log_source: str = 'auto'
+    output_format: str = "both"
+    log_source: str = "auto"
     cover: CoverConfig = Field(default_factory=CoverConfig)
     toc: TocConfig = Field(default_factory=TocConfig)
     fonts: FontsConfig = Field(default_factory=FontsConfig)
@@ -176,17 +186,17 @@ class EngineConfig(BaseModel):
     parsing: ParsingConfig = Field(default_factory=ParsingConfig)
     performance: PerformanceConfig = Field(default_factory=PerformanceConfig)
 
-    @field_validator('output_format')
+    @field_validator("output_format")
     @classmethod
     def validate_format(cls, v):
-        valid = {'epub', 'docx', 'both', 'all', 'pdf'}
-        return v if v in valid else 'both'
+        valid = {"epub", "docx", "both", "all", "pdf"}
+        return v if v in valid else "both"
 
-    @field_validator('log_source')
+    @field_validator("log_source")
     @classmethod
     def validate_source(cls, v):
-        valid = {'auto', 'cocofolia', 'roll20'}
-        return v if v in valid else 'auto'
+        valid = {"auto", "cocofolia", "roll20"}
+        return v if v in valid else "auto"
 
 
 def validate_engine_config(config_dict: dict) -> dict:

@@ -36,6 +36,7 @@ Privacy
 - No telemetry: only requests the public Releases API endpoint.
 - Disabled when ``updates.check_on_startup`` is False in settings.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -83,33 +84,37 @@ _OPENER = urllib.request.build_opener(
     urllib.request.HTTPSHandler(context=ssl.create_default_context()),
 )
 
+
 # 결과 코드 — 404 인지 (private repo / no releases) 사용자에게 정확한 메시지를
 # 줄 수 있도록 구분된 마커.
 class CheckOutcome:
     """check() 의 두 번째 반환값. ``None`` 만으로는 '최신' 인지 '실패' 인지 구분 불가."""
-    LATEST = "latest"          # 정상 응답, 새 버전 없음
+
+    LATEST = "latest"  # 정상 응답, 새 버전 없음
     PRIVATE_OR_MISSING = "private"  # 404 — repo 가 private 이거나 release 없음
     NETWORK_ERROR = "network"  # DNS / timeout / SSL / connection
-    PARSE_ERROR = "parse"      # 200 인데 응답 형식 이상
+    PARSE_ERROR = "parse"  # 200 인데 응답 형식 이상
 
 
 @dataclass(frozen=True)
 class UpdateInfo:
     """Resolved update available on the remote."""
-    version: str                       # "2.3.0" (no 'v')
-    tag: str                           # "v2.3.0"
-    title: str                         # release name
-    body: str                          # release notes (markdown)
-    download_url: str                  # platform asset URL
+
+    version: str  # "2.3.0" (no 'v')
+    tag: str  # "v2.3.0"
+    title: str  # release name
+    body: str  # release notes (markdown)
+    download_url: str  # platform asset URL
     asset_name: str
-    asset_size: int                    # bytes
-    sha256: str | None = None       # parsed from release body if present
+    asset_size: int  # bytes
+    sha256: str | None = None  # parsed from release body if present
     published_at: str = ""
 
 
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
+
 
 class UpdateService:
     """Stateless service object; safe to instantiate per-call.
@@ -154,7 +159,8 @@ class UpdateService:
                 self.last_outcome = outcome
                 logger.info(
                     "Update check cache hit (%.0fs old, outcome=%s)",
-                    time.monotonic() - ts, outcome,
+                    time.monotonic() - ts,
+                    outcome,
                 )
                 return info
 
@@ -271,8 +277,7 @@ class UpdateService:
         # 두고 전체 진행은 chunk 단위로 무한정 허용. urlopen 의 timeout 은
         # "socket operation between data" 이라 chunk 가 흐르는 동안엔 reset.
         # WPAD 우회 위해 모듈 레벨 _OPENER 재사용.
-        with _OPENER.open(req, timeout=_TIMEOUT_SECONDS) as resp, \
-                open(target, "wb") as out:
+        with _OPENER.open(req, timeout=_TIMEOUT_SECONDS) as resp, open(target, "wb") as out:
             total = int(resp.headers.get("Content-Length", info.asset_size or 0))
             downloaded = 0
             chunk = 64 * 1024
@@ -422,7 +427,7 @@ echo Done. >> "%LOG%"
         subprocess.Popen(
             ["cmd", "/c", "start", "", "/min", str(script_path)],
             creationflags=getattr(subprocess, "DETACHED_PROCESS", 0)
-                          | getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0),
+            | getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0),
             close_fds=True,
             shell=False,
         )

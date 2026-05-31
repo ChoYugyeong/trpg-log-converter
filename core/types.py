@@ -11,6 +11,7 @@ Usage:
 
     def filter(entries: list[Entry]) -> list[Entry]: ...
 """
+
 from __future__ import annotations
 
 from collections.abc import Callable

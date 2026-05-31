@@ -54,6 +54,7 @@ logger = logging.getLogger(__name__)
 # 헬퍼
 # ---------------------------------------------------------------------------
 
+
 def _ensure_str(value, default=""):
     """리스트/기타 타입을 문자열로 안전하게 변환.
     narrators 등 내부적으로 문자열로 저장해야 하는 필드에 사용한다.
@@ -67,15 +68,16 @@ def _ensure_str(value, default=""):
 # HomePage
 # ---------------------------------------------------------------------------
 
+
 class HomePage(BasePage):
     """홈 페이지 - 파일 선택 · 기본 설정 · 변환 실행을 하나로 통합한 메인 워크플로우 페이지"""
 
     # --- 시그널 ---
-    conversion_requested = Signal()       # 변환 시작 요청 (외부 컨트롤러에서 수신)
-    conversion_started = Signal()         # 하위 호환: 변환 시작
+    conversion_requested = Signal()  # 변환 시작 요청 (외부 컨트롤러에서 수신)
+    conversion_started = Signal()  # 하위 호환: 변환 시작
     conversion_finished = Signal(bool, str)  # 변환 완료 (성공 여부, 메시지)
-    files_updated = Signal(list)          # 파일 목록 변경
-    entries_parsed = Signal(list)         # 엔트리 파싱 완료
+    files_updated = Signal(list)  # 파일 목록 변경
+    entries_parsed = Signal(list)  # 엔트리 파싱 완료
 
     def __init__(self, config_manager, inspector=None, parent=None):
         super().__init__(config_manager, inspector, parent)
@@ -179,8 +181,7 @@ class HomePage(BasePage):
 
         list_header = BodyLabel("추가된 파일")
         list_header.setStyleSheet(
-            "color: palette(text); font-size: 13px; font-weight: 600; "
-            "padding: 0; margin: 0;"
+            "color: palette(text); font-size: 13px; font-weight: 600; padding: 0; margin: 0;"
         )
         file_card.add_widget(list_header)
 
@@ -208,16 +209,13 @@ class HomePage(BasePage):
         self.file_list.model().rowsMoved.connect(self._on_files_reordered)
         self.file_list.model().rowsInserted.connect(self._on_files_reordered)
         self.file_list.model().rowsRemoved.connect(self._on_files_reordered)
-        self.file_list.setToolTip(
-            "위에 있는 파일이 먼저 병합됩니다.\n드래그해서 순서를 바꾸세요."
-        )
+        self.file_list.setToolTip("위에 있는 파일이 먼저 병합됩니다.\n드래그해서 순서를 바꾸세요.")
         file_card.add_widget(self.file_list)
 
         # 빈 상태 플레이스홀더 — 파일이 없을 때만 보이는 안내 (UX §8 empty-states).
         # QListWidget 위에 오버레이로 띄워 자리잡음.
         self._empty_state = BodyLabel(
-            "아직 추가된 파일이 없어요\n"
-            "위 영역에 드래그하거나 [파일 추가] 버튼을 눌러보세요"
+            "아직 추가된 파일이 없어요\n위 영역에 드래그하거나 [파일 추가] 버튼을 눌러보세요"
         )
         self._empty_state.setAlignment(Qt.AlignCenter)
         self._empty_state.setStyleSheet(
@@ -396,7 +394,7 @@ class HomePage(BasePage):
         # Roll20 가이드
         roll20_card = ContentCard(
             "Roll20 채팅 로그 추출",
-            help_text="Roll20에서 채팅 로그를 HTML 파일로 다운로드하는 방법입니다."
+            help_text="Roll20에서 채팅 로그를 HTML 파일로 다운로드하는 방법입니다.",
         )
         roll20_guide = BodyLabel(self.ROLL20_GUIDE_TEXT)
         roll20_guide.setWordWrap(True)
@@ -407,7 +405,7 @@ class HomePage(BasePage):
         # 코코포리아 가이드
         coco_card = ContentCard(
             "코코포리아 (Cocofolia) 로그 추출",
-            help_text="코코포리아에서 채팅 로그를 다운로드하는 방법입니다."
+            help_text="코코포리아에서 채팅 로그를 다운로드하는 방법입니다.",
         )
         coco_guide = BodyLabel(self.COCOFOLIA_GUIDE_TEXT)
         coco_guide.setWordWrap(True)
@@ -417,8 +415,7 @@ class HomePage(BasePage):
 
         # TXT 형식 가이드
         txt_card = ContentCard(
-            "텍스트(.txt) 파일 형식",
-            help_text="직접 정리한 텍스트 로그도 변환할 수 있습니다."
+            "텍스트(.txt) 파일 형식", help_text="직접 정리한 텍스트 로그도 변환할 수 있습니다."
         )
         txt_guide = BodyLabel(
             "지원되는 텍스트 형식:\n"
@@ -478,7 +475,9 @@ class HomePage(BasePage):
 
         # 제목
         self.title_card = HelpableLineEditCard(
-            FIF.EDIT, "제목", "변환될 문서의 제목",
+            FIF.EDIT,
+            "제목",
+            "변환될 문서의 제목",
             placeholder="TRPG 리플레이",
             help_text="EPUB/DOCX 파일에 표시될 제목",
         )
@@ -486,7 +485,9 @@ class HomePage(BasePage):
 
         # 저자
         self.author_card = HelpableLineEditCard(
-            FIF.PEOPLE, "저자", "문서 저자",
+            FIF.PEOPLE,
+            "저자",
+            "문서 저자",
             placeholder="GM",
             help_text="메타데이터에 기록될 저자명",
         )
@@ -494,7 +495,9 @@ class HomePage(BasePage):
 
         # 플랫폼
         self.platform_card = HelpableComboBoxCard(
-            FIF.GLOBE, "플랫폼", "로그 출처 플랫폼",
+            FIF.GLOBE,
+            "플랫폼",
+            "로그 출처 플랫폼",
             options=["cocofolia", "roll20", "auto"],
             default="cocofolia",
             help_text="로그 출처 플랫폼 (auto는 자동 감지)",
@@ -503,22 +506,22 @@ class HomePage(BasePage):
 
         # 나레이터 이름 (BasicPage에서 흡수)
         self.narrators_card = HelpableLineEditCard(
-            FIF.CHAT, "나레이터", "나레이션 처리할 이름 목록 (쉼표 구분)",
+            FIF.CHAT,
+            "나레이터",
+            "나레이션 처리할 이름 목록 (쉼표 구분)",
             placeholder=DEFAULTS["narrators"],
-            default=_ensure_str(
-                self.settings.get("narrators"), DEFAULTS["narrators"]
-            ),
+            default=_ensure_str(self.settings.get("narrators"), DEFAULTS["narrators"]),
             help_text="이 이름들의 대사는 나레이션으로 처리됩니다. 쉼표로 구분 (예: GM, KP, DM)",
         )
         group.addSettingCard(self.narrators_card)
 
         # 언어 (BasicPage에서 흡수) - 표시명으로 보여주고 코드로 저장
         lang_code = self.settings.get("language", DEFAULTS["language"])
-        lang_display = LANGUAGE_REVERSE_MAP.get(
-            lang_code, next(iter(LANGUAGE_MAP.keys()))
-        )
+        lang_display = LANGUAGE_REVERSE_MAP.get(lang_code, next(iter(LANGUAGE_MAP.keys())))
         self.language_card = HelpableComboBoxCard(
-            FIF.LANGUAGE, "언어", "문서 언어 설정",
+            FIF.LANGUAGE,
+            "언어",
+            "문서 언어 설정",
             options=list(LANGUAGE_MAP.keys()),
             default=lang_display,
             help_text="EPUB 메타데이터에 기록되는 문서 언어입니다.",
@@ -653,8 +656,7 @@ class HomePage(BasePage):
 
         self.preset_combo.currentIndexChanged.connect(self._on_preset_changed)
         preset_card.add_field(
-            "프리셋 선택", self.preset_combo,
-            help_text="저장된 스타일 프리셋 적용"
+            "프리셋 선택", self.preset_combo, help_text="저장된 스타일 프리셋 적용"
         )
 
         # 프리셋 설명 라벨 (선택 시 표시)
@@ -750,7 +752,7 @@ class HomePage(BasePage):
             InfoBar.warning(
                 title="대용량 파일 경고",
                 content=(
-                    f'10MB 이상 파일이 포함되어 있습니다: {", ".join(large_files)}. '
+                    f"10MB 이상 파일이 포함되어 있습니다: {', '.join(large_files)}. "
                     "변환에 시간이 걸릴 수 있습니다."
                 ),
                 parent=self,
@@ -841,6 +843,7 @@ class HomePage(BasePage):
     def eventFilter(self, obj, event):
         """리스트 viewport 리사이즈 시 placeholder 위치를 따라가게 한다."""
         from PySide6.QtCore import QEvent
+
         if (
             hasattr(self, "file_list")
             and obj is self.file_list.viewport()
@@ -1028,9 +1031,7 @@ class HomePage(BasePage):
             from core.text_parser import parse_file
 
             log_source = platform if platform != "ccfolia" else "cocofolia"
-            narrators_raw = _ensure_str(
-                self.settings.get("narrators", DEFAULTS["narrators"])
-            )
+            narrators_raw = _ensure_str(self.settings.get("narrators", DEFAULTS["narrators"]))
             narrator_list = [n.strip() for n in narrators_raw.split(",") if n.strip()]
 
             config = {
@@ -1050,13 +1051,9 @@ class HomePage(BasePage):
                 "narration_color": self.settings.get("narration_color", "#555555"),
                 "scene_marker": self.settings.get("scene_marker", "■"),
                 "narration_prefix": self.settings.get("narration_prefix", "＿"),
-                "narrators": _ensure_str(
-                    self.settings.get("narrators", DEFAULTS["narrators"])
-                ),
+                "narrators": _ensure_str(self.settings.get("narrators", DEFAULTS["narrators"])),
             }
-            self.document_preview.update_preview(
-                entries=entries, settings=preview_settings
-            )
+            self.document_preview.update_preview(entries=entries, settings=preview_settings)
         except Exception as e:
             logger.warning("미리보기 업데이트 오류: %s", e, exc_info=True)
 
@@ -1211,9 +1208,7 @@ class HomePage(BasePage):
         self.author_card.set_value(str(state.get("author", "")))
         self.platform_card.set_value(str(state.get("platform", "cocofolia")))
         self.output_entry.setText(str(state.get("output_dir", "./export")))
-        self.narrators_card.set_value(
-            _ensure_str(state.get("narrators"), DEFAULTS["narrators"])
-        )
+        self.narrators_card.set_value(_ensure_str(state.get("narrators"), DEFAULTS["narrators"]))
 
         lang_code = state.get("language", DEFAULTS["language"])
         self.language_card.set_value(
@@ -1239,9 +1234,7 @@ class HomePage(BasePage):
     def on_page_enter(self):
         """페이지 진입 시 호출 - 다른 페이지에서 변경된 output_dir 동기화"""
         if hasattr(self, "output_entry"):
-            current = self.config_manager.get_gui_settings().get(
-                "output_dir", "./export"
-            )
+            current = self.config_manager.get_gui_settings().get("output_dir", "./export")
             if self.output_entry.text() != current:
                 self.output_entry.setText(current)
 

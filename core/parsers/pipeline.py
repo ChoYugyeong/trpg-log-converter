@@ -5,6 +5,7 @@
 * ``merge_consecutive_dialogues`` — collapse same-speaker runs.
 * ``split_into_scenes`` — produce chapter-shaped scene list for renderers.
 """
+
 from __future__ import annotations
 
 import logging
@@ -30,10 +31,7 @@ def parse_log(html_content: str, config: dict[str, Any]) -> list[dict[str, Any]]
     soup = BeautifulSoup(html_content, "html.parser")
 
     # Roll20 형식 감지
-    is_roll20 = (
-        soup.find(id="textchat") is not None
-        or soup.find(class_="message") is not None
-    )
+    is_roll20 = soup.find(id="textchat") is not None or soup.find(class_="message") is not None
     if is_roll20:
         return parse_roll20(soup, config)
 
@@ -130,13 +128,15 @@ def split_by_count(entries, chapter_config) -> list[dict]:
     title_format = chapter_config.get("title_format", "장면 {n}")
     scenes: list[dict] = []
     for i in range(0, len(entries), per_chapter):
-        chunk = entries[i:i + per_chapter]
+        chunk = entries[i : i + per_chapter]
         # count-split 은 모든 제목이 자동 생성이라 auto_title=True.
-        scenes.append({
-            "title": title_format.format(n=len(scenes) + 1),
-            "entries": chunk,
-            "auto_title": True,
-        })
+        scenes.append(
+            {
+                "title": title_format.format(n=len(scenes) + 1),
+                "entries": chunk,
+                "auto_title": True,
+            }
+        )
     return scenes
 
 
@@ -158,7 +158,9 @@ def split_by_scene(entries, chapter_config) -> list[dict]:
         entry_type = entry["type"]
 
         is_scene = False
-        if entry_type == "scene" or (entry_type in ("system", "narration") and is_scene_marker(content, patterns)):
+        if entry_type == "scene" or (
+            entry_type in ("system", "narration") and is_scene_marker(content, patterns)
+        ):
             is_scene = True
 
         if is_scene:
@@ -175,7 +177,7 @@ def split_by_scene(entries, chapter_config) -> list[dict]:
                 auto_title = False  # 사용자가 명시적으로 쓴 씬 제목
             else:
                 scene_title = title_format.format(n=scene_count)
-                auto_title = True   # "장면 N" 같은 자동 생성
+                auto_title = True  # "장면 N" 같은 자동 생성
 
             # ``auto_title`` 은 TOC 필터링 (toc.scene_only) 에서 사용됨.
             # 이 필드가 사라지면 renderers/epub.py / pdf_generator.py 의 filter 가
@@ -187,9 +189,7 @@ def split_by_scene(entries, chapter_config) -> list[dict]:
 
     if current_scene["entries"]:
         if not current_scene["title"]:
-            current_scene["title"] = (
-                title_format.format(n=scene_count + 1) if scene_count else None
-            )
+            current_scene["title"] = title_format.format(n=scene_count + 1) if scene_count else None
             current_scene["auto_title"] = True
         else:
             current_scene.setdefault("auto_title", False)

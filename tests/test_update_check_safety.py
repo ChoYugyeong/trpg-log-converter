@@ -9,6 +9,7 @@ These tests pin:
 - timeout is short (≤ 5s) so the thread can exit when the window closes
 - multiple rapid calls don't spawn dangling threads (guarded)
 """
+
 from __future__ import annotations
 
 from unittest.mock import patch
@@ -36,6 +37,7 @@ def test_timeout_is_short_enough_for_clean_shutdown():
 def test_check_returns_none_on_dns_failure():
     """When DNS fails, check() returns None instead of propagating the exception."""
     import urllib.error
+
     with patch(
         "core.services.updater.urllib.request.urlopen",
         side_effect=urllib.error.URLError("Temporary failure in name resolution"),
@@ -57,6 +59,7 @@ def test_check_returns_none_on_timeout():
 def test_check_returns_none_on_json_decode_error():
     """If GitHub returns HTML instead of JSON (rate limit page etc.) — graceful."""
     from unittest.mock import MagicMock
+
     mock_resp = MagicMock()
     mock_resp.read.return_value = b"<html>Rate limit exceeded</html>"
     mock_resp.__enter__ = lambda self: self

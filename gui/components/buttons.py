@@ -34,7 +34,7 @@ class ActionButton(QPushButton):
             self.setText("처리 중...")
             self.setEnabled(False)
         else:
-            if hasattr(self, '_original_text'):
+            if hasattr(self, "_original_text"):
                 self.setText(self._original_text)
             self.setEnabled(True)
 

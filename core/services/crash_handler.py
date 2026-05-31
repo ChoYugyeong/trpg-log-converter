@@ -10,6 +10,7 @@ Production-grade safety net:
 
 No PII collected, no network call. Pure local file write.
 """
+
 from __future__ import annotations
 
 import contextlib
@@ -42,6 +43,7 @@ def install(app_dir: Path) -> None:
         return
     try:
         from core.paths import user_data_dir
+
         _CRASH_DIR = user_data_dir() / "crashes"
     except ImportError:
         _CRASH_DIR = Path(app_dir) / "crashes"
@@ -111,7 +113,9 @@ def _write_dump(exc_type, exc_value, exc_tb, *, source: str) -> None:
             encoding="utf-8",
         )
         logger.error(
-            "Crash dump written: %s (%s)", path.name, exc_type.__name__,
+            "Crash dump written: %s (%s)",
+            path.name,
+            exc_type.__name__,
             exc_info=(exc_type, exc_value, exc_tb),
         )
     except OSError as write_err:

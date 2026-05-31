@@ -1,4 +1,5 @@
 """Font-file discovery for EPUB embedding."""
+
 from __future__ import annotations
 
 from pathlib import Path

@@ -1,4 +1,5 @@
 """Tests for the domain exception hierarchy in ``core.exceptions``."""
+
 from __future__ import annotations
 
 import pytest

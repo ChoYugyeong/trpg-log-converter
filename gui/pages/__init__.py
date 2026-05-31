@@ -12,9 +12,9 @@ from .home_page import HomePage
 from .parsing_content_page import ParsingContentPage
 
 __all__ = [
-    'AdvancedSettingsPage',
-    'BasePage',
-    'FormatStylePage',
-    'HomePage',
-    'ParsingContentPage',
+    "AdvancedSettingsPage",
+    "BasePage",
+    "FormatStylePage",
+    "HomePage",
+    "ParsingContentPage",
 ]

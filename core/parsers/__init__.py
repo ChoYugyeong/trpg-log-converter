@@ -13,6 +13,7 @@ Lower-level helpers live in:
     parsers.images    — image marker extraction & optimisation
     parsers.fonts     — font-file discovery
 """
+
 from core.parsers.cocofolia import parse_cocofolia
 from core.parsers.fonts import (
     get_font_family_name,

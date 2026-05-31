@@ -15,6 +15,7 @@ and assert that:
 These tests are slow-ish (file IO + EPUB/DOCX/PDF rendering) and run on
 ``tmp_path`` so they leave no artefacts behind.
 """
+
 from __future__ import annotations
 
 import zipfile
@@ -54,6 +55,7 @@ def _write(tmp_path: Path, name: str, content: str, suffix: str = ".html") -> Pa
 # ---------------------------------------------------------------------------
 # Parsing
 # ---------------------------------------------------------------------------
+
 
 class TestParseCocofolia:
     def test_basic_returns_entries_with_scenes(self, tmp_path: Path, engine: ConversionEngine):
@@ -130,6 +132,7 @@ class TestParseText:
 # Full pipeline: parse → EPUB / DOCX / PDF
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.parametrize(
     "log_name,suffix,content_factory",
     [
@@ -170,6 +173,7 @@ class TestFullPipeline:
 
     def test_pdf(self, tmp_path, engine, log_name, suffix, content_factory):
         from core.pdf_generator import PDF_AVAILABLE
+
         if not PDF_AVAILABLE:
             pytest.skip("reportlab not installed")
 
@@ -189,6 +193,7 @@ class TestFullPipeline:
 # ---------------------------------------------------------------------------
 # Coverage smoke: every catalog entry exercises the parser at least once.
 # ---------------------------------------------------------------------------
+
 
 def test_all_catalog_entries_parse(tmp_path: Path, engine: ConversionEngine):
     """Every fixture must parse without raising; only the genuinely-content

@@ -77,7 +77,12 @@ class InspectorBar(QFrame):
 
         return frame
 
-    def update_font_preview(self, font_family: str | None = None, font_size: int | None = None, sample_text: str | None = None):
+    def update_font_preview(
+        self,
+        font_family: str | None = None,
+        font_size: int | None = None,
+        sample_text: str | None = None,
+    ):
         """폰트 미리보기 업데이트"""
         if sample_text:
             self.font_preview_label.setText(sample_text)
@@ -94,14 +99,19 @@ class InspectorBar(QFrame):
     def update_content_preview(self, text: str):
         """콘텐츠 미리보기 업데이트"""
         # 첫 5줄만 표시
-        lines = text.split('\n')[:5]
-        preview_text = '\n'.join(lines)
-        if len(text.split('\n')) > 5:
-            preview_text += '\n...'
+        lines = text.split("\n")[:5]
+        preview_text = "\n".join(lines)
+        if len(text.split("\n")) > 5:
+            preview_text += "\n..."
         self.content_preview.setPlainText(preview_text)
 
-    def update_cover_preview(self, title: str | None = None, author: str | None = None,
-                             bg_color: str | None = None, title_color: str | None = None):
+    def update_cover_preview(
+        self,
+        title: str | None = None,
+        author: str | None = None,
+        bg_color: str | None = None,
+        title_color: str | None = None,
+    ):
         """표지 미리보기 업데이트"""
         self.cover_preview.update_preview(title, author, bg_color, title_color)
 
@@ -151,8 +161,13 @@ class CoverPreview(QFrame):
 
         self._update_style()
 
-    def update_preview(self, title: str | None = None, author: str | None = None,
-                       bg_color: str | None = None, title_color: str | None = None):
+    def update_preview(
+        self,
+        title: str | None = None,
+        author: str | None = None,
+        bg_color: str | None = None,
+        title_color: str | None = None,
+    ):
         """미리보기 업데이트"""
         if title is not None:
             self._title = title
@@ -462,6 +477,7 @@ class DocumentPreview(QFrame):
         self._update_page_size()
         # 그림자 효과
         from PySide6.QtWidgets import QGraphicsDropShadowEffect
+
         shadow = QGraphicsDropShadowEffect(self.page_widget)
         shadow.setBlurRadius(20)
         shadow.setColor(QColor(0, 0, 0, 60))
@@ -580,13 +596,13 @@ class DocumentPreview(QFrame):
         calculated_height = int(base_width * aspect_ratio)
 
         # page_widget이 있을 때만 크기 설정
-        if hasattr(self, 'page_widget'):
+        if hasattr(self, "page_widget"):
             self.page_widget.setFixedWidth(base_width)
             self.page_widget.setMinimumHeight(calculated_height)
             self.page_widget.setMaximumHeight(calculated_height + 150)
 
         # content_view가 있을 때만 스타일 설정
-        if hasattr(self, 'content_view'):
+        if hasattr(self, "content_view"):
             # Dynamic: 사용자 선택에 따라 변경됨 (줌 레벨 → 폰트 크기)
             font_size = max(9, int(11 * self._zoom_level / 100))  # 최소 9px
             self.content_view.setStyleSheet(f"""
@@ -601,7 +617,9 @@ class DocumentPreview(QFrame):
     def _update_pagination(self):
         """페이지네이션 업데이트"""
         total_entries = len(self._entries)
-        self._total_pages = max(1, (total_entries + self.ENTRIES_PER_PAGE - 1) // self.ENTRIES_PER_PAGE)
+        self._total_pages = max(
+            1, (total_entries + self.ENTRIES_PER_PAGE - 1) // self.ENTRIES_PER_PAGE
+        )
         self._current_page = min(self._current_page, self._total_pages)
 
         self.page_spin.blockSignals(True)
@@ -639,62 +657,78 @@ class DocumentPreview(QFrame):
         entries = self._entries[start_idx:end_idx]
 
         # 스타일 설정 가져오기
-        dialogue_color = settings.get('dialogue_color', '#333333')
-        narration_color = settings.get('narration_color', '#555555')
-        scene_marker = settings.get('scene_marker', '■')
-        narration_prefix = settings.get('narration_prefix', '＿')
-        narration_users = settings.get('narrators', 'GM, KP, DM').split(',')
+        dialogue_color = settings.get("dialogue_color", "#333333")
+        narration_color = settings.get("narration_color", "#555555")
+        scene_marker = settings.get("scene_marker", "■")
+        narration_prefix = settings.get("narration_prefix", "＿")
+        narration_users = settings.get("narrators", "GM, KP, DM").split(",")
         narration_users = [u.strip() for u in narration_users]
 
-        font_family = settings.get('font_family', 'Noto Serif KR')
+        font_family = settings.get("font_family", "Noto Serif KR")
         try:
-            font_size = int(settings.get('font_size', 11))
+            font_size = int(settings.get("font_size", 11))
         except (ValueError, TypeError):
             font_size = 11
         try:
-            line_height = float(settings.get('line_height', 1.8))
+            line_height = float(settings.get("line_height", 1.8))
         except (ValueError, TypeError):
             line_height = 1.8
 
         # HTML 시작 - 모든 요소에 일관된 폰트 크기 적용
-        html_parts = [f"""
+        html_parts = [
+            f"""
         <div style="font-family: '{font_family}', 'Malgun Gothic', serif; font-size: {font_size}pt; line-height: {line_height}; color: {dialogue_color};">
-        """]
+        """
+        ]
 
         current_scene = 0
 
         for entry in entries:
-            entry_type = entry.get('type', 'dialogue')
-            name = entry.get('name', '')
-            content = entry.get('content', '')
+            entry_type = entry.get("type", "dialogue")
+            name = entry.get("name", "")
+            content = entry.get("content", "")
 
             # 장면 전환 감지
-            if content.startswith((scene_marker, '씬', 'Scene')):
+            if content.startswith((scene_marker, "씬", "Scene")):
                 current_scene += 1
-                html_parts.append(f'<p style="font-size: {font_size + 2}pt; font-weight: bold; margin: 16px 0 12px 0; color: #222;">{content}</p>')
+                html_parts.append(
+                    f'<p style="font-size: {font_size + 2}pt; font-weight: bold; margin: 16px 0 12px 0; color: #222;">{content}</p>'
+                )
                 continue
 
-            if entry_type == 'dice':
-                html_parts.append(f'<p style="color: #0066cc; font-size: {font_size}pt; margin: 4px 0;">[Dice] {content}</p>')
-            elif entry_type == 'system':
-                html_parts.append(f'<p style="color: #666; font-size: {font_size}pt; margin: 4px 0;">[System] {content}</p>')
-            elif name in narration_users or entry_type == 'narration':
-                html_parts.append(f'<p style="margin: 8px 0; padding-left: 1.5em; color: {narration_color}; font-style: italic; font-size: {font_size}pt;">{narration_prefix}{content}</p>')
+            if entry_type == "dice":
+                html_parts.append(
+                    f'<p style="color: #0066cc; font-size: {font_size}pt; margin: 4px 0;">[Dice] {content}</p>'
+                )
+            elif entry_type == "system":
+                html_parts.append(
+                    f'<p style="color: #666; font-size: {font_size}pt; margin: 4px 0;">[System] {content}</p>'
+                )
+            elif name in narration_users or entry_type == "narration":
+                html_parts.append(
+                    f'<p style="margin: 8px 0; padding-left: 1.5em; color: {narration_color}; font-style: italic; font-size: {font_size}pt;">{narration_prefix}{content}</p>'
+                )
             else:
                 # 대사
                 if name:
-                    html_parts.append(f'<p style="margin: 4px 0; color: {dialogue_color}; font-size: {font_size}pt;"><b>{name}</b>: {content}</p>')
+                    html_parts.append(
+                        f'<p style="margin: 4px 0; color: {dialogue_color}; font-size: {font_size}pt;"><b>{name}</b>: {content}</p>'
+                    )
                 else:
-                    html_parts.append(f'<p style="margin: 4px 0; color: {dialogue_color}; font-size: {font_size}pt;">{content}</p>')
+                    html_parts.append(
+                        f'<p style="margin: 4px 0; color: {dialogue_color}; font-size: {font_size}pt;">{content}</p>'
+                    )
 
         # 페이지 정보 표시
         if self._total_pages > 1:
-            html_parts.append(f'<p style="text-align: center; color: gray; margin: 16px 0; font-size: {font_size}pt;">— {self._current_page} / {self._total_pages} 페이지 —</p>')
+            html_parts.append(
+                f'<p style="text-align: center; color: gray; margin: 16px 0; font-size: {font_size}pt;">— {self._current_page} / {self._total_pages} 페이지 —</p>'
+            )
 
         # HTML 닫기
-        html_parts.append('</div>')
+        html_parts.append("</div>")
 
-        self.content_view.setHtml(''.join(html_parts))
+        self.content_view.setHtml("".join(html_parts))
 
     def clear_preview(self):
         """미리보기 초기화"""
@@ -719,7 +753,7 @@ class DocumentPreview(QFrame):
         """외부에서 문서 형식 설정"""
         # 출력 설정의 판형을 미리보기 형식으로 매핑
         # × (U+00D7) → x (ASCII) 변환도 처리
-        normalized = format_name.replace('\u00d7', 'x')
+        normalized = format_name.replace("\u00d7", "x")
         format_mapping = {
             "A4 (210x297mm)": "A4 (210x297mm)",
             "A5 (148x210mm)": "A5 (148x210mm)",
@@ -754,10 +788,13 @@ class DocumentPreview(QFrame):
         try:
             fm = self.format_combo.fontMetrics()
             longest = max(self.DOCUMENT_FORMATS.keys(), key=len)
-            needed = max(
-                fm.horizontalAdvance(longest),
-                fm.boundingRect(longest).width(),
-            ) + 60  # 화살표 + padding 여유
+            needed = (
+                max(
+                    fm.horizontalAdvance(longest),
+                    fm.boundingRect(longest).width(),
+                )
+                + 60
+            )  # 화살표 + padding 여유
             if needed > self.format_combo.minimumWidth():
                 self.format_combo.setMinimumWidth(needed)
         except Exception:

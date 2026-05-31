@@ -1,4 +1,5 @@
 """Modal dialogs (About, Update, Welcome, History, ...)."""
+
 from gui.dialogs.about_dialog import AboutDialog
 from gui.dialogs.history_dialog import HistoryDialog
 from gui.dialogs.update_dialog import UpdateDialog

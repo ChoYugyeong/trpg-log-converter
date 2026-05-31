@@ -1,4 +1,5 @@
 """Tests for UpdateService — mocking the GitHub API for offline runs."""
+
 from __future__ import annotations
 
 import json
@@ -50,11 +51,14 @@ class TestCheck:
 
     def test_returns_info_when_remote_is_newer(self, monkeypatch):
         from core.version import version_tuple
+
         major, _minor, _patch_v = version_tuple()
         future_tag = f"v{major + 1}.0.0"
         platform_asset = (
-            "TRPG_Converter_Pro_Windows.zip" if sys.platform == "win32"
-            else "TRPG_Converter_Pro_macOS.zip" if sys.platform == "darwin"
+            "TRPG_Converter_Pro_Windows.zip"
+            if sys.platform == "win32"
+            else "TRPG_Converter_Pro_macOS.zip"
+            if sys.platform == "darwin"
             else "TRPG_Converter_Pro_linux.zip"
         )
         payload = _mock_release_payload(future_tag, platform_asset, size=12345)
@@ -75,6 +79,7 @@ class TestCheck:
 
     def test_returns_none_on_network_error(self):
         import urllib.error
+
         with patch(
             "core.services.updater._OPENER.open",
             side_effect=urllib.error.URLError("DNS fail"),

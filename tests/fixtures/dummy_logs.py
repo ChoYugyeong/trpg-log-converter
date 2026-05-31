@@ -31,6 +31,7 @@ Safety / edge cases:
 - <script> and <iframe> embedded (must be ignored, not executed)
 - Malformed HTML (unclosed tags)
 """
+
 from __future__ import annotations
 
 import random
@@ -61,10 +62,7 @@ def _coco_line(name: str, content: str) -> str:
     # Cocofolia uses a single span with both firing_name_<name> and firing_firing.
     # Names use underscores in place of spaces.
     name_token = name.replace(" ", "_")
-    return (
-        f'<p><span class="firing_name_{name_token} firing_firing">: '
-        f'{content}</span></p>'
-    )
+    return f'<p><span class="firing_name_{name_token} firing_firing">: {content}</span></p>'
 
 
 def make_cocofolia_basic(title: str = "코코포리아 기본 더미") -> str:
@@ -135,9 +133,7 @@ _ROLL20_TEMPLATE = """<!DOCTYPE html>
 
 def _r20_msg(by: str, text: str, *, kind: str = "general") -> str:
     classes = f"message {kind}".strip()
-    return (
-        f'<div class="{classes}"><span class="by">{by}:</span> {text}</div>'
-    )
+    return f'<div class="{classes}"><span class="by">{by}:</span> {text}</div>'
 
 
 def _r20_desc(text: str) -> str:
@@ -179,8 +175,11 @@ def make_roll20_long(scenes: int = 5, lines_per_scene: int = 20) -> str:
             parts.append(_r20_msg(sp, f"이것은 {sp}의 대사입니다. 챕터 {s}."))
             if rng.random() < 0.2:
                 parts.append(
-                    _r20_msg(sp, f"Rolling 1d20+{rng.randint(0,10)} = {rng.randint(1,29)}",
-                             kind="general rollresult")
+                    _r20_msg(
+                        sp,
+                        f"Rolling 1d20+{rng.randint(0, 10)} = {rng.randint(1, 29)}",
+                        kind="general rollresult",
+                    )
                 )
     return _ROLL20_TEMPLATE.format(title=f"Roll20 long ({scenes} scenes)", body="\n".join(parts))
 
@@ -189,9 +188,11 @@ def make_roll20_long(scenes: int = 5, lines_per_scene: int = 20) -> str:
 # Plain text (.txt) format
 # ---------------------------------------------------------------------------
 
+
 def make_text_log() -> str:
-    return textwrap.dedent(
-        """
+    return (
+        textwrap.dedent(
+            """
         GM: ■ 시작
         GM: 오늘은 새로운 모험을 시작합니다.
         김탐정: 「드디어 시작이군.」
@@ -200,7 +201,9 @@ def make_text_log() -> str:
         GM: ■ 장면 1: 추격
         김탐정: 「뒤쫓아가야 해!」
         """
-    ).strip() + "\n"
+        ).strip()
+        + "\n"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -226,10 +229,7 @@ _COCOFOLIA_MODERN_TEMPLATE = """<!DOCTYPE html>
 
 
 def _coco_modern_msg(speaker: str, content: str, *, klass: str = "p1") -> str:
-    return (
-        f'<p class="player {klass}"><span>{speaker}</span> : '
-        f'<span>{content}</span></p>'
-    )
+    return f'<p class="player {klass}"><span>{speaker}</span> : <span>{content}</span></p>'
 
 
 def _coco_modern_dice(speaker: str, expr: str, klass: str = "p1") -> str:
@@ -241,30 +241,36 @@ def _coco_modern_dice(speaker: str, expr: str, klass: str = "p1") -> str:
 
 def make_cocofolia_modern(title: str = "코코포리아 모던 더미") -> str:
     """ccfolia.com 의 최신 export 가 쓰는 ``<p class="player pN">`` 형식."""
-    body = "\n".join([
-        _coco_modern_msg("KP", "■ 도입: 미스카토닉 대학", klass="p0"),
-        _coco_modern_msg("사사키", "「안녕하세요, 교수입니다.」", klass="p1"),
-        _coco_modern_msg("김탐정", "「사설 탐정 김탐정이오.」", klass="p2"),
-        _coco_modern_dice("사사키", "CCB<=65 도서관 ＞ 35 ＞ 成功", klass="p1"),
-        _coco_modern_msg("KP", "오래된 문서에서 단서를 발견합니다.", klass="p0"),
-        _coco_modern_msg("KP", "■ 장면 1: 어둠 속의 조우", klass="p0"),
-        _coco_modern_dice("김탐정", "1D100<=60 청각 ＞ 42 ＞ 成功", klass="p2"),
-        _coco_modern_msg("KP", "발소리가 가까워집니다.", klass="p0"),
-        '<p class="system">사사키 has joined the room</p>',
-    ])
+    body = "\n".join(
+        [
+            _coco_modern_msg("KP", "■ 도입: 미스카토닉 대학", klass="p0"),
+            _coco_modern_msg("사사키", "「안녕하세요, 교수입니다.」", klass="p1"),
+            _coco_modern_msg("김탐정", "「사설 탐정 김탐정이오.」", klass="p2"),
+            _coco_modern_dice("사사키", "CCB<=65 도서관 ＞ 35 ＞ 成功", klass="p1"),
+            _coco_modern_msg("KP", "오래된 문서에서 단서를 발견합니다.", klass="p0"),
+            _coco_modern_msg("KP", "■ 장면 1: 어둠 속의 조우", klass="p0"),
+            _coco_modern_dice("김탐정", "1D100<=60 청각 ＞ 42 ＞ 成功", klass="p2"),
+            _coco_modern_msg("KP", "발소리가 가까워집니다.", klass="p0"),
+            '<p class="system">사사키 has joined the room</p>',
+        ]
+    )
     return _COCOFOLIA_MODERN_TEMPLATE.format(title=title, body=body)
 
 
 def make_cocofolia_multitab(title: str = "코코포리아 멀티탭") -> str:
     """Multiple ``<div class="tab tN">`` channels in one file."""
-    main = "\n".join([
-        _coco_modern_msg("KP", "■ 시작", klass="p0"),
-        _coco_modern_msg("PC1", "「갑니다.」", klass="p1"),
-    ])
-    chat = "\n".join([
-        _coco_modern_msg("PC1", "오늘 컨디션 어때요?", klass="p1"),
-        _coco_modern_msg("PC2", "괜찮아요!", klass="p2"),
-    ])
+    main = "\n".join(
+        [
+            _coco_modern_msg("KP", "■ 시작", klass="p0"),
+            _coco_modern_msg("PC1", "「갑니다.」", klass="p1"),
+        ]
+    )
+    chat = "\n".join(
+        [
+            _coco_modern_msg("PC1", "오늘 컨디션 어때요?", klass="p1"),
+            _coco_modern_msg("PC2", "괜찮아요!", klass="p2"),
+        ]
+    )
     body = (
         f'<div class="tab t0"><h2>メイン</h2>{main}</div>\n'
         f'<div class="tab t1"><h2>雑談</h2>{chat}</div>'
@@ -276,9 +282,10 @@ def make_cocofolia_multitab(title: str = "코코포리아 멀티탭") -> str:
 # Roll20 — rich variants (roll templates, inline rolls, whispers, emotes)
 # ---------------------------------------------------------------------------
 
+
 def make_roll20_with_roll_template(title: str = "Roll20 5e roll template") -> str:
     """A realistic D&D 5e attack roll using ``sheet-rolltemplate-atk`` markup."""
-    body = '''
+    body = """
     <div class="message general" data-messageid="-Nabc111" data-playerid="-Lpc1">
       <span class="by">Aragorn:</span> 검을 휘둘러 공격합니다.
     </div>
@@ -297,13 +304,13 @@ def make_roll20_with_roll_template(title: str = "Roll20 5e roll template") -> st
     <div class="message general" data-messageid="-Nabc113" data-playerid="-Lgm">
       <span class="by">GM:</span> ■ 장면 2: 오크 무리
     </div>
-    '''
+    """
     return _ROLL20_TEMPLATE.format(title=title, body=body)
 
 
 def make_roll20_emote_and_desc(title: str = "Roll20 emote desc") -> str:
     """Mix of /me (emote) and /desc (no-speaker narration)."""
-    body = '''
+    body = """
     <div class="message emote" data-messageid="-N1">
       <div class="spacer"></div>Aragorn draws his sword silently.
     </div>
@@ -316,12 +323,12 @@ def make_roll20_emote_and_desc(title: str = "Roll20 emote desc") -> str:
     <div class="message general" data-messageid="-N4">
       <span class="by">Aragorn:</span> 「조심하라!」
     </div>
-    '''
+    """
     return _ROLL20_TEMPLATE.format(title=title, body=body)
 
 
 def make_roll20_with_whisper(title: str = "Roll20 whisper") -> str:
-    body = '''
+    body = """
     <div class="message general" data-messageid="-Nw1">
       <span class="by">GM:</span> 오늘 세션을 시작합니다.
     </div>
@@ -331,13 +338,13 @@ def make_roll20_with_whisper(title: str = "Roll20 whisper") -> str:
     <div class="message general" data-messageid="-Nw3">
       <span class="by">Aragorn:</span> 「알겠습니다.」
     </div>
-    '''
+    """
     return _ROLL20_TEMPLATE.format(title=title, body=body)
 
 
 def make_roll20_with_avatar_timestamp(title: str = "Roll20 with avatar") -> str:
     """Realistic export with <img class="avatar"> and <span class="tstamp">."""
-    body = '''
+    body = """
     <div class="message general" data-messageid="-Nav1" data-playerid="-Lpc1">
       <img class="avatar" src="https://s3.amazonaws.com/files.d20.io/images/avatar.png"/>
       <span class="tstamp" aria-label="December 24, 2024 7:32PM">12/24/24 7:32PM</span>
@@ -349,13 +356,13 @@ def make_roll20_with_avatar_timestamp(title: str = "Roll20 with avatar") -> str:
       <div class="formattedformula"></div>
       <strong>18</strong>
     </div>
-    '''
+    """
     return _ROLL20_TEMPLATE.format(title=title, body=body)
 
 
 def make_roll20_with_missing_speaker(title: str = "Roll20 orphan") -> str:
     """Edge case: empty <span class="by"></span> (deleted user / API output)."""
-    body = '''
+    body = """
     <div class="message general" data-messageid="-No1">
       <span class="by"></span> (system) API script: 5 monsters spawned.
     </div>
@@ -365,13 +372,14 @@ def make_roll20_with_missing_speaker(title: str = "Roll20 orphan") -> str:
     <div class="message general" data-messageid="-No3">
       <span class="by">GM:</span> 본격적으로 시작합니다.
     </div>
-    '''
+    """
     return _ROLL20_TEMPLATE.format(title=title, body=body)
 
 
 # ---------------------------------------------------------------------------
 # Safety / edge cases
 # ---------------------------------------------------------------------------
+
 
 def make_empty_html() -> str:
     """Empty HTML document — no entries should be produced, no crash."""
@@ -398,13 +406,15 @@ def make_unicode_emoji_html() -> str:
     """Unicode emoji + special chars (full-width, math symbols) in content."""
     return _COCOFOLIA_TEMPLATE.format(
         title="unicode",
-        body="\n".join([
-            _coco_line("GM", "🎲 주사위를 굴립니다 ✨"),
-            _coco_line("PC", "「ㅎㅎㅎ 🔥 가즈아!」"),
-            _coco_line("GM", "결과: 28 ＞ 大成功 ⭐"),
-            _coco_line("PC", "ｸﾘﾃｨｶﾙ! ★彡"),
-            _coco_line("GM", "α + β = γ ∴ 성공"),
-        ]),
+        body="\n".join(
+            [
+                _coco_line("GM", "🎲 주사위를 굴립니다 ✨"),
+                _coco_line("PC", "「ㅎㅎㅎ 🔥 가즈아!」"),
+                _coco_line("GM", "결과: 28 ＞ 大成功 ⭐"),
+                _coco_line("PC", "ｸﾘﾃｨｶﾙ! ★彡"),
+                _coco_line("GM", "α + β = γ ∴ 성공"),
+            ]
+        ),
     )
 
 
@@ -432,7 +442,7 @@ def make_html_with_script_injection() -> str:
 def make_malformed_html() -> str:
     """Unclosed tags — BeautifulSoup should still produce something usable."""
     return (
-        '<!DOCTYPE html><html><body>'
+        "<!DOCTYPE html><html><body>"
         '<p><span class="firing_name_GM firing_firing">: 첫 메시지</span>\n'
         '<p><span class="firing_name_PC firing_firing">: 두 번째 메시지\n'  # unclosed
         '<div><p><span class="firing_name_GM firing_firing">: 닫히지 않은 div\n'
@@ -442,6 +452,7 @@ def make_malformed_html() -> str:
 # ---------------------------------------------------------------------------
 # Catalog
 # ---------------------------------------------------------------------------
+
 
 @dataclass(frozen=True)
 class DummyLog:

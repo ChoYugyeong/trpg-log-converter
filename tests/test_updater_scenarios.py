@@ -19,6 +19,7 @@
 * 비정상 큰 응답 (수십 MB)
 * 매우 빠른 연속 호출 (race condition)
 """
+
 from __future__ import annotations
 
 import json
@@ -44,6 +45,7 @@ def _clear_updater_cache():
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _mock_response(payload_bytes: bytes, *, headers: dict | None = None) -> MagicMock:
     mock = MagicMock()
     mock.read.return_value = payload_bytes
@@ -53,24 +55,30 @@ def _mock_response(payload_bytes: bytes, *, headers: dict | None = None) -> Magi
     return mock
 
 
-def _release_payload(tag: str, asset_name: str = "TRPG_Converter_Pro_Windows.zip",
-                     size: int = 1024) -> bytes:
-    return json.dumps({
-        "tag_name": tag,
-        "name": f"Release {tag}",
-        "body": "",
-        "published_at": "2026-05-01T00:00:00Z",
-        "assets": [{
-            "name": asset_name,
-            "size": size,
-            "browser_download_url": f"https://example.test/{asset_name}",
-        }],
-    }).encode("utf-8")
+def _release_payload(
+    tag: str, asset_name: str = "TRPG_Converter_Pro_Windows.zip", size: int = 1024
+) -> bytes:
+    return json.dumps(
+        {
+            "tag_name": tag,
+            "name": f"Release {tag}",
+            "body": "",
+            "published_at": "2026-05-01T00:00:00Z",
+            "assets": [
+                {
+                    "name": asset_name,
+                    "size": size,
+                    "browser_download_url": f"https://example.test/{asset_name}",
+                }
+            ],
+        }
+    ).encode("utf-8")
 
 
 # ---------------------------------------------------------------------------
 # Hard contract: timeout cannot exceed closeEvent's 5s wait
 # ---------------------------------------------------------------------------
+
 
 def test_timeout_within_close_event_budget():
     """closeEvent 가 worker thread 종료를 5초까지 기다림. timeout 이 5초보다
@@ -87,6 +95,7 @@ def test_timeout_within_close_event_budget():
 # never raise, never hang.
 # ---------------------------------------------------------------------------
 
+
 class TestNetworkFailures:
     """Network-layer failures must all return None within timeout, no exception."""
 
@@ -100,20 +109,17 @@ class TestNetworkFailures:
         assert elapsed < 1.0, f"check() took {elapsed:.2f}s for instant mock"
 
     def test_dns_failure(self):
-        self._assert_quick_none(
-            urllib.error.URLError("Temporary failure in name resolution")
-        )
+        self._assert_quick_none(urllib.error.URLError("Temporary failure in name resolution"))
 
     def test_connection_refused(self):
-        self._assert_quick_none(
-            urllib.error.URLError(ConnectionRefusedError("conn refused"))
-        )
+        self._assert_quick_none(urllib.error.URLError(ConnectionRefusedError("conn refused")))
 
     def test_socket_timeout(self):
         self._assert_quick_none(TimeoutError("timed out"))
 
     def test_ssl_error(self):
         import ssl
+
         self._assert_quick_none(ssl.SSLError("handshake failed"))
 
     def test_python_timeout_error(self):
@@ -138,8 +144,7 @@ class TestHTTPStatusCodes:
             fp=BytesIO(b""),
         )
 
-    @pytest.mark.parametrize("code", [400, 401, 403, 404, 410, 422,
-                                       429, 500, 502, 503, 504])
+    @pytest.mark.parametrize("code", [400, 401, 403, 404, 410, 422, 429, 500, 502, 503, 504])
     def test_http_error_returns_none(self, code: int):
         """모든 HTTP 에러 코드가 graceful None 반환."""
         with patch(
@@ -198,6 +203,7 @@ class TestRapidSequentialCalls:
 
     def test_ten_consecutive_calls_complete_quickly(self):
         from core.version import version_tuple
+
         major, _minor, _patch_v = version_tuple()
         future_tag = f"v{major + 1}.0.0"
 
@@ -220,20 +226,25 @@ class TestLargeResponses:
 
     def test_handles_large_payload(self):
         from core.version import version_tuple
+
         major, _minor, _patch_v = version_tuple()
         future_tag = f"v{major + 1}.0.0"
 
         # 5MB body 시뮬레이션 — body 데이터로 채워서 크기 늘리기.
-        big_body = json.dumps({
-            "tag_name": future_tag,
-            "name": f"Release {future_tag}",
-            "body": "X" * (5 * 1024 * 1024),  # 5MB description
-            "assets": [{
-                "name": "TRPG_Converter_Pro_Windows.zip",
-                "size": 100,
-                "browser_download_url": "https://example.test/x.zip",
-            }],
-        }).encode("utf-8")
+        big_body = json.dumps(
+            {
+                "tag_name": future_tag,
+                "name": f"Release {future_tag}",
+                "body": "X" * (5 * 1024 * 1024),  # 5MB description
+                "assets": [
+                    {
+                        "name": "TRPG_Converter_Pro_Windows.zip",
+                        "size": 100,
+                        "browser_download_url": "https://example.test/x.zip",
+                    }
+                ],
+            }
+        ).encode("utf-8")
 
         mock_resp = _mock_response(big_body)
         with patch(
@@ -305,6 +316,7 @@ class TestProxyBypass:
         Windows 에서 WPAD 가 트리거될 수 있음. 우리 opener 는 그 호출을 절대
         하지 말아야 한다."""
         from unittest.mock import patch as _patch
+
         sentinel = {"called": 0}
 
         def boom(*a, **kw):
@@ -313,8 +325,10 @@ class TestProxyBypass:
 
         # getproxies 가 정의된 두 위치 모두 감시 (Windows / POSIX 분기).
         mock_resp = _mock_response(_release_payload("v0.0.1"))
-        with _patch("urllib.request.getproxies", side_effect=boom), \
-             _patch("core.services.updater._OPENER.open", return_value=mock_resp):
+        with (
+            _patch("urllib.request.getproxies", side_effect=boom),
+            _patch("core.services.updater._OPENER.open", return_value=mock_resp),
+        ):
             UpdateService(repo="fake/repo").check()
         assert sentinel["called"] == 0, (
             "check() invoked urllib.request.getproxies — WPAD bypass leak"
@@ -327,6 +341,7 @@ class TestProxyBypass:
         import urllib.request as _urlreq
 
         from core.services.updater import _OPENER
+
         for proto, handlers in _OPENER.handle_open.items():
             for h in handlers:
                 assert not isinstance(h, _urlreq.ProxyHandler), (
@@ -338,13 +353,16 @@ class TestProxyBypass:
         그 사실이 곧 우리가 모듈 opener 만 통해 가고 있음을 의미."""
         sentinel = object()
         mock_resp = _mock_response(_release_payload("v0.0.1"))
-        with patch(
-            "core.services.updater.urllib.request.urlopen",
-            return_value=sentinel,  # 호출되면 그대로 새어나와 다른 곳에서 폭발
-        ), patch(
-            "core.services.updater._OPENER.open",
-            return_value=mock_resp,
-        ) as opener_mock:
+        with (
+            patch(
+                "core.services.updater.urllib.request.urlopen",
+                return_value=sentinel,  # 호출되면 그대로 새어나와 다른 곳에서 폭발
+            ),
+            patch(
+                "core.services.updater._OPENER.open",
+                return_value=mock_resp,
+            ) as opener_mock,
+        ):
             UpdateService(repo="fake/repo").check()
         assert opener_mock.call_count == 1, (
             "check() did not use the module-level _OPENER — WPAD bypass not active"

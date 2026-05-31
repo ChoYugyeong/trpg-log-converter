@@ -7,6 +7,7 @@
 - atomic write — 저장 중간 실패해도 기존 파일 살아 있음
 - ``list_backups`` / ``restore_backup`` 으로 복구 가능
 """
+
 from __future__ import annotations
 
 import json
@@ -41,9 +42,7 @@ class TestBackupRotation:
 
         backups = cm.list_backups()
         assert len(backups) == 1
-        assert _read(backups[0]) == {"key": "v1"}, (
-            "백업은 직전 settings (v1) 를 보존해야 함"
-        )
+        assert _read(backups[0]) == {"key": "v1"}, "백업은 직전 settings (v1) 를 보존해야 함"
         assert _read(cm.settings_path) == {"key": "v2"}
 
     def test_rotation_caps_at_5_slots(self, cm: ConfigManager):

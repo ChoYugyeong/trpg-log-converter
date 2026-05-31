@@ -11,15 +11,15 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 # 모듈 레벨에서 정규식 미리 컴파일 (성능 최적화)
-_RE_COLON = re.compile(r'^.{1,30}\s*:\s*.+')
-_RE_BRACKET = re.compile(r'^\[(.+?)\]\s*(.+)$')
-_RE_PAREN = re.compile(r'^\((.+?)\)\s*(.+)$')
-_RE_DICE = re.compile(r'(CCB|1D100|2D6|\d+D\d+)', re.IGNORECASE)
+_RE_COLON = re.compile(r"^.{1,30}\s*:\s*.+")
+_RE_BRACKET = re.compile(r"^\[(.+?)\]\s*(.+)$")
+_RE_PAREN = re.compile(r"^\((.+?)\)\s*(.+)$")
+_RE_DICE = re.compile(r"(CCB|1D100|2D6|\d+D\d+)", re.IGNORECASE)
 
 
 def detect_format(content):
     """텍스트 형식 자동 감지"""
-    lines = content.strip().split('\n')[:50]
+    lines = content.strip().split("\n")[:50]
 
     # 코코포리아 스타일: "이름 : 대사"
     colon_count = sum(1 for line in lines if _RE_COLON.match(line))
@@ -31,46 +31,46 @@ def detect_format(content):
     paren_count = sum(1 for line in lines if _RE_PAREN.match(line))
 
     # 탭 구분: "이름\t대사"
-    tab_count = sum(1 for line in lines if '\t' in line and line.count('\t') == 1)
+    tab_count = sum(1 for line in lines if "\t" in line and line.count("\t") == 1)
 
     counts = {
-        'colon': colon_count,
-        'bracket': bracket_count,
-        'paren': paren_count,
-        'tab': tab_count
+        "colon": colon_count,
+        "bracket": bracket_count,
+        "paren": paren_count,
+        "tab": tab_count,
     }
 
     best = max(counts, key=lambda k: counts[k])
     if counts[best] < len(lines) * 0.3:
-        return 'plain'
+        return "plain"
     return best
 
 
 def parse_colon_format(line, config):
     """콜론 형식 파싱: "이름 : 대사" """
-    if ':' not in line:
+    if ":" not in line:
         return None
 
-    colon_pos = line.find(':')
-    name_max = config.get('parsing', {}).get('name_max_length', 50)
+    colon_pos = line.find(":")
+    name_max = config.get("parsing", {}).get("name_max_length", 50)
 
     if colon_pos > name_max or colon_pos < 1:
         return None
 
     name = line[:colon_pos].strip()
-    content = line[colon_pos + 1:].strip()
+    content = line[colon_pos + 1 :].strip()
 
     if not name or not content:
         return None
 
-    return {'name': name, 'content': content}
+    return {"name": name, "content": content}
 
 
 def parse_bracket_format(line):
     """대괄호 형식 파싱: "[이름] 대사" """
     match = _RE_BRACKET.match(line)
     if match:
-        return {'name': match.group(1).strip(), 'content': match.group(2).strip()}
+        return {"name": match.group(1).strip(), "content": match.group(2).strip()}
     return None
 
 
@@ -78,29 +78,29 @@ def parse_paren_format(line):
     """괄호 형식 파싱: "(이름) 대사" """
     match = _RE_PAREN.match(line)
     if match:
-        return {'name': match.group(1).strip(), 'content': match.group(2).strip()}
+        return {"name": match.group(1).strip(), "content": match.group(2).strip()}
     return None
 
 
 def parse_tab_format(line):
     """탭 형식 파싱: "이름\t대사" """
-    if '\t' not in line:
+    if "\t" not in line:
         return None
-    parts = line.split('\t', 1)
+    parts = line.split("\t", 1)
     if len(parts) == 2 and parts[0].strip() and parts[1].strip():
-        return {'name': parts[0].strip(), 'content': parts[1].strip()}
+        return {"name": parts[0].strip(), "content": parts[1].strip()}
     return None
 
 
 def is_narration_user(name, config):
     """나레이션 사용자인지 확인"""
-    narration_users = config.get('narration', {}).get('users', ['GM', 'KP', 'DM'])
+    narration_users = config.get("narration", {}).get("users", ["GM", "KP", "DM"])
     return name.lower().strip() in [u.lower() for u in narration_users]
 
 
 def is_dice_roll(text):
     """다이스 롤인지 확인"""
-    return bool(_RE_DICE.search(text) and ('→' in text or '=' in text or '>' in text))
+    return bool(_RE_DICE.search(text) and ("→" in text or "=" in text or ">" in text))
 
 
 def is_scene_marker(text, patterns):
@@ -121,95 +121,95 @@ def parse_text_log(content, config):
     entries = []
     format_type = detect_format(content)
 
-    scene_patterns = config.get('chapter', {}).get('scene_patterns', ['^■'])
+    scene_patterns = config.get("chapter", {}).get("scene_patterns", ["^■"])
 
-    for line in content.split('\n'):
+    for line in content.split("\n"):
         line = line.strip()
         if not line:
             continue
 
         # 장면 마커 체크 (전체 라인이 ^■ 등으로 시작하는 경우)
         if is_scene_marker(line, scene_patterns):
-            entries.append({
-                'type': 'scene',
-                'name': '',
-                'content': line,
-                'raw': line,
-                'image': None
-            })
+            entries.append(
+                {"type": "scene", "name": "", "content": line, "raw": line, "image": None}
+            )
             continue
 
         # 형식에 따른 파싱
         parsed = None
-        if format_type == 'colon':
+        if format_type == "colon":
             parsed = parse_colon_format(line, config)
-        elif format_type == 'bracket':
+        elif format_type == "bracket":
             parsed = parse_bracket_format(line)
-        elif format_type == 'paren':
+        elif format_type == "paren":
             parsed = parse_paren_format(line)
-        elif format_type == 'tab':
+        elif format_type == "tab":
             parsed = parse_tab_format(line)
 
         if parsed:
-            name = parsed['name']
-            content_text = parsed['content']
+            name = parsed["name"]
+            content_text = parsed["content"]
 
             # 시스템 메시지
-            if name.lower() == 'system':
-                entries.append({
-                    'type': 'system',
-                    'name': '',
-                    'content': content_text,
-                    'raw': line,
-                    'image': None
-                })
+            if name.lower() == "system":
+                entries.append(
+                    {
+                        "type": "system",
+                        "name": "",
+                        "content": content_text,
+                        "raw": line,
+                        "image": None,
+                    }
+                )
             # 나레이션
             elif is_narration_user(name, config):
-                entries.append({
-                    'type': 'narration',
-                    'name': name,
-                    'content': content_text,
-                    'raw': line,
-                    'image': None
-                })
+                entries.append(
+                    {
+                        "type": "narration",
+                        "name": name,
+                        "content": content_text,
+                        "raw": line,
+                        "image": None,
+                    }
+                )
             # 다이스 롤
             elif is_dice_roll(content_text):
-                entries.append({
-                    'type': 'dice',
-                    'name': name,
-                    'content': content_text,
-                    'raw': line,
-                    'image': None
-                })
+                entries.append(
+                    {
+                        "type": "dice",
+                        "name": name,
+                        "content": content_text,
+                        "raw": line,
+                        "image": None,
+                    }
+                )
             # 일반 대사
             else:
-                entries.append({
-                    'type': 'dialogue',
-                    'name': name,
-                    'content': content_text,
-                    'raw': line,
-                    'image': None
-                })
+                entries.append(
+                    {
+                        "type": "dialogue",
+                        "name": name,
+                        "content": content_text,
+                        "raw": line,
+                        "image": None,
+                    }
+                )
         else:
             # 파싱 실패 시 일반 텍스트로 처리
             if line:
-                entries.append({
-                    'type': 'dialogue',
-                    'name': '',
-                    'content': line,
-                    'raw': line,
-                    'image': None
-                })
+                entries.append(
+                    {"type": "dialogue", "name": "", "content": line, "raw": line, "image": None}
+                )
 
     # ``GM: ■ 시작`` 처럼 화자 뒤에 마커가 붙은 라인은 위 ``parse_*_format`` 분기에서
     # dialogue/narration 으로 들어가므로, content 기준으로 한 번 더 scene 분류한다.
     # (HTML 파서도 동일한 post-pass 를 수행한다.)
     for entry in entries:
-        if entry.get('type') == 'scene':
+        if entry.get("type") == "scene":
             continue
-        content_text = entry.get('content') or ''
+        content_text = entry.get("content") or ""
         if content_text and is_scene_marker(content_text, scene_patterns):
-            entry['type'] = 'scene'
+            entry["type"] = "scene"
 
     return entries
 
@@ -236,7 +236,7 @@ def _detect_and_read(path: Path) -> tuple[str, str]:
     # 1. Strict whitelist — these are the encodings we expect from Ccfolia /
     #    Roll20 exports and Korean text editors. ``strict`` means a single bad
     #    byte rejects the encoding, so we never silently mojibake.
-    whitelist = ('utf-8-sig', 'utf-8', 'euc-kr', 'cp949')
+    whitelist = ("utf-8-sig", "utf-8", "euc-kr", "cp949")
     for enc in whitelist:
         try:
             text = raw.decode(enc)
@@ -257,7 +257,10 @@ def _detect_and_read(path: Path) -> tuple[str, str]:
             if best is not None and best.encoding:
                 logger.info(
                     "charset-normalizer chose %s (chaos=%.2f, coherence=%.2f) for %s",
-                    best.encoding, best.chaos, best.coherence, path.name,
+                    best.encoding,
+                    best.chaos,
+                    best.coherence,
+                    path.name,
                 )
                 return str(best), best.encoding
         except Exception:
@@ -265,13 +268,13 @@ def _detect_and_read(path: Path) -> tuple[str, str]:
 
     # 3. Last-resort decode with replacement so the user isn't blocked entirely.
     #    Loud warning makes it obvious that text is degraded.
-    for enc in ('cp949', 'latin-1'):
+    for enc in ("cp949", "latin-1"):
         try:
-            text = raw.decode(enc, errors='replace')
+            text = raw.decode(enc, errors="replace")
             logger.warning(
-                "인코딩 감지 실패, %s + replace 로 복호화: %s "
-                "(일부 글자가 깨질 수 있습니다)",
-                enc, path.name,
+                "인코딩 감지 실패, %s + replace 로 복호화: %s (일부 글자가 깨질 수 있습니다)",
+                enc,
+                path.name,
             )
             return text, f"{enc}+replace"
         except UnicodeDecodeError:
@@ -300,9 +303,7 @@ def parse_file(file_path, config):
 
     path = Path(file_path)
 
-    max_bytes = int(
-        (config or {}).get('performance', {}).get('max_html_bytes', 50 * 1024 * 1024)
-    )
+    max_bytes = int((config or {}).get("performance", {}).get("max_html_bytes", 50 * 1024 * 1024))
     try:
         file_size = path.stat().st_size
     except OSError as exc:
@@ -314,7 +315,7 @@ def parse_file(file_path, config):
         raise ParseError(
             f"파일이 너무 큽니다: {file_size:,} bytes (한계 {max_bytes:,} bytes)",
             user_message=(
-                f"파일이 너무 큽니다 ({file_size // (1024*1024)} MiB). "
+                f"파일이 너무 큽니다 ({file_size // (1024 * 1024)} MiB). "
                 f"설정의 max_html_bytes 보다 작은 파일만 처리합니다."
             ),
             context={"path": str(path), "file_size": file_size, "limit": max_bytes},
@@ -324,8 +325,9 @@ def parse_file(file_path, config):
     logger.debug("Decoded %s as %s (%d chars)", path.name, used_encoding, len(content))
 
     # HTML 파일 감지
-    if path.suffix.lower() in ['.html', '.htm'] or '<html' in content.lower()[:1000]:
+    if path.suffix.lower() in [".html", ".htm"] or "<html" in content.lower()[:1000]:
         from core.parsers import parse_log
+
         return parse_log(content, config)
 
     # 텍스트 파일

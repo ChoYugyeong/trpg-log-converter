@@ -51,6 +51,7 @@ logger = logging.getLogger(__name__)
 
 class RecentFilesManager:
     """최근 파일 관리자"""
+
     MAX_RECENT = 10
 
     def __init__(self, config_manager):
@@ -61,12 +62,12 @@ class RecentFilesManager:
     def _load(self):
         """최근 파일 목록 로드"""
         settings = self.config_manager.get_gui_settings()
-        self._recent_files = settings.get('recent_files', [])
+        self._recent_files = settings.get("recent_files", [])
 
     def _save(self):
         """최근 파일 목록 저장"""
         settings = self.config_manager.get_gui_settings()
-        settings['recent_files'] = self._recent_files
+        settings["recent_files"] = self._recent_files
         self.config_manager.save_gui_settings(settings)
 
     def add_file(self, file_path: str):
@@ -74,7 +75,7 @@ class RecentFilesManager:
         if file_path in self._recent_files:
             self._recent_files.remove(file_path)
         self._recent_files.insert(0, file_path)
-        self._recent_files = self._recent_files[:self.MAX_RECENT]
+        self._recent_files = self._recent_files[: self.MAX_RECENT]
         self._save()
 
     def add_files(self, file_paths: list):
@@ -101,6 +102,7 @@ class _UpdateCheckWorker(QObject):
 
     QThread 직접 상속 대신 QObject + moveToThread 패턴 — Qt 권장 방식.
     """
+
     finished = Signal(object)  # UpdateInfo | None
 
     def __init__(self, service) -> None:
@@ -123,11 +125,21 @@ class _UpdateCheckWorker(QObject):
 
 class ConversionWorker(QThread):
     """변환 작업 스레드"""
+
     progress = Signal(int, str)
     finished = Signal(bool, str)
 
-    def __init__(self, config_manager, files, title, mode, output_format,
-                 preset_config=None, character_colors=None, cache_service=None):
+    def __init__(
+        self,
+        config_manager,
+        files,
+        title,
+        mode,
+        output_format,
+        preset_config=None,
+        character_colors=None,
+        cache_service=None,
+    ):
         super().__init__()
         self.config_manager = config_manager
         self.files = files
@@ -146,27 +158,28 @@ class ConversionWorker(QThread):
     def run(self):
         """변환 실행"""
         import time as _time
+
         start_ts = _time.monotonic()
         try:
             from core.engine import ConversionEngine, deep_merge
 
             self.progress.emit(5, "설정 준비 중...")
             config = self.config_manager.build_engine_config()
-            config['output_format'] = self.output_format
+            config["output_format"] = self.output_format
 
             if self.preset_config:
                 config = deep_merge(config, self.preset_config)
 
             if self.character_colors:
-                if 'custom_styles' not in config:
-                    config['custom_styles'] = {}
-                config['custom_styles']['character_colors'] = self.character_colors
+                if "custom_styles" not in config:
+                    config["custom_styles"] = {}
+                config["custom_styles"]["character_colors"] = self.character_colors
 
-            output_dir = config.get('paths', {}).get('output_dir', './export')
+            output_dir = config.get("paths", {}).get("output_dir", "./export")
             os.makedirs(output_dir, exist_ok=True)
 
             engine = ConversionEngine(config)
-            author = config.get('metadata', {}).get('author', 'GM')
+            author = config.get("metadata", {}).get("author", "GM")
             results = []
 
             # engine progress_callback → Qt signal 변환
@@ -189,12 +202,12 @@ class ConversionWorker(QThread):
                 entries = engine.parse_file(file_path)
 
                 if self.cache_service and entries:
-                    characters = list({e.get('name', '') for e in entries if e.get('name')})
+                    characters = list({e.get("name", "") for e in entries if e.get("name")})
                     self.cache_service.set(file_path, config, entries, characters)
 
                 return entries
 
-            if self.mode == 'merge':
+            if self.mode == "merge":
                 self.progress.emit(10, "파일 병합 중...")
                 all_entries = []
 
@@ -212,49 +225,64 @@ class ConversionWorker(QThread):
                     base = Path(self.files[0]).stem + "_merged"
                     merged_outputs: list[str] = []
 
-                    if self.output_format in ['both', 'all', 'epub']:
-                        out = engine.create_epub(all_entries, os.path.join(output_dir, f"{base}.epub"), self.title, author, progress_callback=engine_progress)
+                    if self.output_format in ["both", "all", "epub"]:
+                        out = engine.create_epub(
+                            all_entries,
+                            os.path.join(output_dir, f"{base}.epub"),
+                            self.title,
+                            author,
+                            progress_callback=engine_progress,
+                        )
                         results.append(out)
                         if out:
                             merged_outputs.append(str(out))
-                    if self.output_format in ['both', 'all', 'docx']:
-                        out = engine.create_docx(all_entries, os.path.join(output_dir, f"{base}.docx"), self.title, author, progress_callback=engine_progress)
+                    if self.output_format in ["both", "all", "docx"]:
+                        out = engine.create_docx(
+                            all_entries,
+                            os.path.join(output_dir, f"{base}.docx"),
+                            self.title,
+                            author,
+                            progress_callback=engine_progress,
+                        )
                         results.append(out)
                         if out:
                             merged_outputs.append(str(out))
-                    if self.output_format in ['all', 'pdf']:
-                        pdf_result = engine.create_pdf(all_entries, os.path.join(output_dir, f"{base}.pdf"), self.title, author)
+                    if self.output_format in ["all", "pdf"]:
+                        pdf_result = engine.create_pdf(
+                            all_entries, os.path.join(output_dir, f"{base}.pdf"), self.title, author
+                        )
                         if pdf_result:
                             results.append(pdf_result)
                             merged_outputs.append(str(pdf_result))
 
                     # 병합 변환은 입력 파일 N개를 한 record 로 기록.
-                    scene_count = sum(1 for e in all_entries if e.get('type') == 'scene')
-                    self.last_records.append({
-                        "input_file": self.files[0],  # 첫 파일을 대표로
-                        "output_files": merged_outputs,
-                        "output_format": self.output_format,
-                        "title": self.title or base,
-                        "author": author,
-                        "entry_count": len(all_entries),
-                        "scene_count": scene_count,
-                        "success": bool(merged_outputs),
-                    })
+                    scene_count = sum(1 for e in all_entries if e.get("type") == "scene")
+                    self.last_records.append(
+                        {
+                            "input_file": self.files[0],  # 첫 파일을 대표로
+                            "output_files": merged_outputs,
+                            "output_format": self.output_format,
+                            "title": self.title or base,
+                            "author": author,
+                            "entry_count": len(all_entries),
+                            "scene_count": scene_count,
+                            "success": bool(merged_outputs),
+                        }
+                    )
 
-            elif self.mode == 'batch':
+            elif self.mode == "batch":
                 total_files = len(self.files)
 
                 # 파싱 단계 병렬화 (I/O 바운드). config.performance.parse_max_workers 사용.
                 from concurrent.futures import ThreadPoolExecutor
+
                 parsed_files = {}
                 self.progress.emit(10, "파일 파싱 중 (병렬)...")
 
                 def _parse_one(fp):
                     return fp, parse_with_cache(fp)
 
-                worker_cap = int(
-                    config.get('performance', {}).get('parse_max_workers', 4)
-                )
+                worker_cap = int(config.get("performance", {}).get("parse_max_workers", 4))
                 worker_count = max(1, min(worker_cap, total_files))
                 with ThreadPoolExecutor(max_workers=worker_count) as pool:
                     if self._stop_event.is_set():
@@ -277,34 +305,50 @@ class ConversionWorker(QThread):
                         file_title = self.title or base
                         file_outputs: list[str] = []
 
-                        if self.output_format in ['both', 'all', 'epub']:
-                            out = engine.create_epub(entries, os.path.join(output_dir, f"{base}.epub"), file_title, author, progress_callback=engine_progress)
+                        if self.output_format in ["both", "all", "epub"]:
+                            out = engine.create_epub(
+                                entries,
+                                os.path.join(output_dir, f"{base}.epub"),
+                                file_title,
+                                author,
+                                progress_callback=engine_progress,
+                            )
                             results.append(out)
                             if out:
                                 file_outputs.append(str(out))
-                        if self.output_format in ['both', 'all', 'docx']:
-                            out = engine.create_docx(entries, os.path.join(output_dir, f"{base}.docx"), file_title, author, progress_callback=engine_progress)
+                        if self.output_format in ["both", "all", "docx"]:
+                            out = engine.create_docx(
+                                entries,
+                                os.path.join(output_dir, f"{base}.docx"),
+                                file_title,
+                                author,
+                                progress_callback=engine_progress,
+                            )
                             results.append(out)
                             if out:
                                 file_outputs.append(str(out))
-                        if self.output_format in ['all', 'pdf']:
-                            pdf_result = engine.create_pdf(entries, os.path.join(output_dir, f"{base}.pdf"), file_title, author)
+                        if self.output_format in ["all", "pdf"]:
+                            pdf_result = engine.create_pdf(
+                                entries, os.path.join(output_dir, f"{base}.pdf"), file_title, author
+                            )
                             if pdf_result:
                                 results.append(pdf_result)
                                 file_outputs.append(str(pdf_result))
 
                         # batch 모드: 파일마다 별도 record.
-                        scene_count = sum(1 for e in entries if e.get('type') == 'scene')
-                        self.last_records.append({
-                            "input_file": file_path,
-                            "output_files": file_outputs,
-                            "output_format": self.output_format,
-                            "title": file_title,
-                            "author": author,
-                            "entry_count": len(entries),
-                            "scene_count": scene_count,
-                            "success": bool(file_outputs),
-                        })
+                        scene_count = sum(1 for e in entries if e.get("type") == "scene")
+                        self.last_records.append(
+                            {
+                                "input_file": file_path,
+                                "output_files": file_outputs,
+                                "output_format": self.output_format,
+                                "title": file_title,
+                                "author": author,
+                                "entry_count": len(entries),
+                                "scene_count": scene_count,
+                                "success": bool(file_outputs),
+                            }
+                        )
 
             else:
                 if self.files:
@@ -317,33 +361,49 @@ class ConversionWorker(QThread):
                         base = Path(file_path).stem
                         single_outputs: list[str] = []
 
-                        if self.output_format in ['both', 'all', 'epub']:
-                            out = engine.create_epub(entries, os.path.join(output_dir, f"{base}.epub"), self.title, author, progress_callback=engine_progress)
+                        if self.output_format in ["both", "all", "epub"]:
+                            out = engine.create_epub(
+                                entries,
+                                os.path.join(output_dir, f"{base}.epub"),
+                                self.title,
+                                author,
+                                progress_callback=engine_progress,
+                            )
                             results.append(out)
                             if out:
                                 single_outputs.append(str(out))
-                        if self.output_format in ['both', 'all', 'docx']:
-                            out = engine.create_docx(entries, os.path.join(output_dir, f"{base}.docx"), self.title, author, progress_callback=engine_progress)
+                        if self.output_format in ["both", "all", "docx"]:
+                            out = engine.create_docx(
+                                entries,
+                                os.path.join(output_dir, f"{base}.docx"),
+                                self.title,
+                                author,
+                                progress_callback=engine_progress,
+                            )
                             results.append(out)
                             if out:
                                 single_outputs.append(str(out))
-                        if self.output_format in ['all', 'pdf']:
-                            pdf_result = engine.create_pdf(entries, os.path.join(output_dir, f"{base}.pdf"), self.title, author)
+                        if self.output_format in ["all", "pdf"]:
+                            pdf_result = engine.create_pdf(
+                                entries, os.path.join(output_dir, f"{base}.pdf"), self.title, author
+                            )
                             if pdf_result:
                                 results.append(pdf_result)
                                 single_outputs.append(str(pdf_result))
 
-                        scene_count = sum(1 for e in entries if e.get('type') == 'scene')
-                        self.last_records.append({
-                            "input_file": file_path,
-                            "output_files": single_outputs,
-                            "output_format": self.output_format,
-                            "title": self.title or base,
-                            "author": author,
-                            "entry_count": len(entries),
-                            "scene_count": scene_count,
-                            "success": bool(single_outputs),
-                        })
+                        scene_count = sum(1 for e in entries if e.get("type") == "scene")
+                        self.last_records.append(
+                            {
+                                "input_file": file_path,
+                                "output_files": single_outputs,
+                                "output_format": self.output_format,
+                                "title": self.title or base,
+                                "author": author,
+                                "entry_count": len(entries),
+                                "scene_count": scene_count,
+                                "success": bool(single_outputs),
+                            }
+                        )
 
             self.progress.emit(100, "완료!")
 
@@ -353,7 +413,9 @@ class ConversionWorker(QThread):
             duration_ms = int((_time.monotonic() - start_ts) * 1000)
             for rec in self.last_records:
                 rec["duration_ms"] = duration_ms
-            self.finished.emit(True, f"변환 완료!\n{success_count}개 파일 생성\n출력 위치: {output_dir}")
+            self.finished.emit(
+                True, f"변환 완료!\n{success_count}개 파일 생성\n출력 위치: {output_dir}"
+            )
 
         except InterruptedError:
             logger.info("변환 작업이 사용자에 의해 중단되었습니다.")
@@ -378,6 +440,7 @@ class ConversionWorker(QThread):
         """스레드에 중지 신호를 보냅니다 (스레드 안전)."""
         self._stop_event.set()
 
+
 class MainWindow(FluentWindow):
     """메인 애플리케이션 윈도우 - Fluent Design"""
 
@@ -391,7 +454,7 @@ class MainWindow(FluentWindow):
 
         # 캐시 서비스 초기화
         gui_settings = config_manager.get_gui_settings()
-        cache_enabled = gui_settings.get('cache_enabled', True)
+        cache_enabled = gui_settings.get("cache_enabled", True)
         self.cache_service = CacheService(enabled=cache_enabled)
 
         # 중앙 반응형 상태 관리자
@@ -399,6 +462,7 @@ class MainWindow(FluentWindow):
 
         # 모든 페이지에서 AppState에 접근할 수 있도록 주입
         from .pages.base_page import BasePage
+
         BasePage.set_app_state(self.app_state)
 
         # 최근 파일 관리자
@@ -411,7 +475,7 @@ class MainWindow(FluentWindow):
 
         # 테마 설정 (시스템 테마 따라감)
         setTheme(Theme.AUTO)
-        setThemeColor('#0A84FF')
+        setThemeColor("#0A84FF")
 
         # 페이지 생성 중 side-effect save 로 gui_settings.json 이 기본값으로
         # 덮여쓰이는 버그를 막기 위해 초기화 구간 동안 AppState 저장/set 을 잠근다.
@@ -430,7 +494,7 @@ class MainWindow(FluentWindow):
             self.app_state._suspend_save = False
 
         # 타이틀바를 최상위로 올려서 드래그 이동 보장
-        if hasattr(self, 'titleBar') and self.titleBar:
+        if hasattr(self, "titleBar") and self.titleBar:
             self.titleBar.raise_()
 
         # 백그라운드 silent 업데이트 체크 — 첫 paint 가 끝난 뒤 5초 지연.
@@ -445,26 +509,25 @@ class MainWindow(FluentWindow):
         # _on_update_check_result 가 private 감지 시 무음으로 끄는 안전장치를
         # 가지고 있는데, 그 결정의 전제(=옛 repo URL)가 깨졌으니 사용자가
         # 명시적으로 끄지 않은 한 다시 켜는 게 옳음.
-        last_seen_repo = gui_settings.get('_updates_repo_seen')
+        last_seen_repo = gui_settings.get("_updates_repo_seen")
         if last_seen_repo != __update_repo__:
             if last_seen_repo is not None and not gui_settings.get(
-                'updates_check_on_startup', True,
+                "updates_check_on_startup",
+                True,
             ):
-                gui_settings['updates_check_on_startup'] = True
+                gui_settings["updates_check_on_startup"] = True
                 logger.info(
                     "Update repo changed (%s → %s); re-enabling startup check.",
-                    last_seen_repo, __update_repo__,
+                    last_seen_repo,
+                    __update_repo__,
                 )
-            gui_settings['_updates_repo_seen'] = __update_repo__
+            gui_settings["_updates_repo_seen"] = __update_repo__
             try:
                 self.config_manager.save_gui_settings(gui_settings)
             except Exception:
                 logger.exception("Failed to persist _updates_repo_seen marker")
 
-        if (
-            getattr(sys, 'frozen', False)
-            and gui_settings.get('updates_check_on_startup', True)
-        ):
+        if getattr(sys, "frozen", False) and gui_settings.get("updates_check_on_startup", True):
             QTimer.singleShot(
                 UPDATE_CHECK_STARTUP_DELAY_MS,
                 lambda: self._check_for_updates(silent=True),
@@ -473,7 +536,7 @@ class MainWindow(FluentWindow):
         # 첫 실행 환영 다이얼로그 — gui_settings 에 _welcome_seen 플래그가
         # 없는 사용자에게만 노출. 첫 paint 후 일정 지연으로 메인 윈도우
         # 렌더가 끝난 다음 자연스럽게 뜨도록 (WELCOME_DIALOG_DELAY_MS).
-        if not gui_settings.get('_welcome_seen'):
+        if not gui_settings.get("_welcome_seen"):
             QTimer.singleShot(WELCOME_DIALOG_DELAY_MS, self._show_welcome_dialog)
 
     def _setup_navigation(self):
@@ -486,27 +549,31 @@ class MainWindow(FluentWindow):
 
         # 페이지 저장
         self.pages = {
-            'home': self.home_page,
-            'format_style': self.format_style_page,
-            'parsing_content': self.parsing_content_page,
-            'advanced': self.advanced_settings_page,
+            "home": self.home_page,
+            "format_style": self.format_style_page,
+            "parsing_content": self.parsing_content_page,
+            "advanced": self.advanced_settings_page,
         }
 
         # 네비게이션 아이템 추가 (4개 탭)
-        self.addSubInterface(self.home_page, FIF.PLAY_SOLID, '홈')
-        self.addSubInterface(self.format_style_page, FIF.PALETTE, '서식 및 스타일')
-        self.addSubInterface(self.parsing_content_page, FIF.DOCUMENT, '파싱 및 콘텐츠')
+        self.addSubInterface(self.home_page, FIF.PLAY_SOLID, "홈")
+        self.addSubInterface(self.format_style_page, FIF.PALETTE, "서식 및 스타일")
+        self.addSubInterface(self.parsing_content_page, FIF.DOCUMENT, "파싱 및 콘텐츠")
 
         self.navigationInterface.addSeparator(NavigationItemPosition.BOTTOM)
 
-        self.addSubInterface(self.advanced_settings_page, FIF.DEVELOPER_TOOLS, '고급 설정',
-                            position=NavigationItemPosition.BOTTOM)
+        self.addSubInterface(
+            self.advanced_settings_page,
+            FIF.DEVELOPER_TOOLS,
+            "고급 설정",
+            position=NavigationItemPosition.BOTTOM,
+        )
 
         # 변환 이력
         self.navigationInterface.addItem(
-            routeKey='history',
+            routeKey="history",
             icon=FIF.HISTORY,
-            text='변환 이력',
+            text="변환 이력",
             onClick=self._show_history_dialog,
             selectable=False,
             position=NavigationItemPosition.BOTTOM,
@@ -514,9 +581,9 @@ class MainWindow(FluentWindow):
 
         # 업데이트 확인
         self.navigationInterface.addItem(
-            routeKey='check_update',
+            routeKey="check_update",
             icon=FIF.UPDATE,
-            text='업데이트 확인',
+            text="업데이트 확인",
             onClick=self._check_for_updates,
             selectable=False,
             position=NavigationItemPosition.BOTTOM,
@@ -524,9 +591,9 @@ class MainWindow(FluentWindow):
 
         # 정보
         self.navigationInterface.addItem(
-            routeKey='about',
+            routeKey="about",
             icon=FIF.INFO,
-            text='정보',
+            text="정보",
             onClick=self._show_about_dialog,
             selectable=False,
             position=NavigationItemPosition.BOTTOM,
@@ -534,12 +601,12 @@ class MainWindow(FluentWindow):
 
         # 종료 버튼
         self.navigationInterface.addItem(
-            routeKey='quit',
+            routeKey="quit",
             icon=FIF.POWER_BUTTON,
-            text='종료',
+            text="종료",
             onClick=self.close,
             selectable=False,
-            position=NavigationItemPosition.BOTTOM
+            position=NavigationItemPosition.BOTTOM,
         )
 
         # 네비게이션 확장 모드
@@ -573,7 +640,7 @@ class MainWindow(FluentWindow):
         self.main_splitter.setChildrenCollapsible(False)
 
         # FluentWindow의 widgetLayout에 직접 삽입 (48px 상단 여백 보장)
-        if hasattr(self, 'widgetLayout'):
+        if hasattr(self, "widgetLayout"):
             self.widgetLayout.removeWidget(self.stackedWidget)
             self.main_splitter.addWidget(self.stackedWidget)
             self.main_splitter.addWidget(self.preview_container)
@@ -592,13 +659,13 @@ class MainWindow(FluentWindow):
         self.main_splitter.setStretchFactor(1, 2)
 
         # 타이틀바가 레이아웃 변경 후에도 최상위에 오도록 보장
-        if hasattr(self, 'titleBar') and self.titleBar:
+        if hasattr(self, "titleBar") and self.titleBar:
             self.titleBar.raise_()
 
     def resizeEvent(self, e):
         """창 크기 변경 시 타이틀바 정렬 보장"""
         super().resizeEvent(e)
-        if hasattr(self, 'titleBar') and self.titleBar:
+        if hasattr(self, "titleBar") and self.titleBar:
             self.titleBar.raise_()
 
     def toggle_preview(self):
@@ -608,7 +675,6 @@ class MainWindow(FluentWindow):
         if self._preview_visible:
             self.main_splitter.setSizes([550, 450])
 
-
     def _connect_signals(self):
         """시그널 연결"""
         self.home_page.conversion_started.connect(self._start_conversion)
@@ -616,8 +682,11 @@ class MainWindow(FluentWindow):
         self.home_page.entries_parsed.connect(self._on_entries_parsed)
 
         # 각 페이지의 설정 변경 시 미리보기 업데이트
-        for page in (self.format_style_page, self.parsing_content_page,
-                     self.advanced_settings_page):
+        for page in (
+            self.format_style_page,
+            self.parsing_content_page,
+            self.advanced_settings_page,
+        ):
             page.settings_changed.connect(self._update_document_preview)
 
         # AppState 그룹 변경 시 미리보기 자동 갱신
@@ -668,7 +737,7 @@ class MainWindow(FluentWindow):
         preview_shortcut.activated.connect(self.toggle_preview)
 
         # ⌘+1~4: 4탭 페이지 전환
-        page_keys = ['home', 'format_style', 'parsing_content', 'advanced']
+        page_keys = ["home", "format_style", "parsing_content", "advanced"]
         for i, key in enumerate(page_keys, 1):
             shortcut = QShortcut(QKeySequence(f"Ctrl+{i}"), self)
             shortcut.activated.connect(lambda k=key: self._switch_to_page(k))
@@ -676,14 +745,11 @@ class MainWindow(FluentWindow):
     def _shortcut_open_files(self):
         """단축키로 파일 열기"""
         files, _ = QFileDialog.getOpenFileNames(
-            self,
-            "로그 파일 선택",
-            "",
-            "지원 형식 (*.html *.htm *.txt);;모든 파일 (*.*)"
+            self, "로그 파일 선택", "", "지원 형식 (*.html *.htm *.txt);;모든 파일 (*.*)"
         )
         if files:
             self.home_page._on_files_dropped(files)
-            self._switch_to_page('home')
+            self._switch_to_page("home")
 
     def _switch_to_page(self, page_key: str):
         """특정 페이지로 전환"""
@@ -733,10 +799,7 @@ class MainWindow(FluentWindow):
     def export_settings(self):
         """설정 내보내기"""
         file_path, _ = QFileDialog.getSaveFileName(
-            self,
-            "설정 내보내기",
-            "trpg_converter_settings.json",
-            "JSON 파일 (*.json)"
+            self, "설정 내보내기", "trpg_converter_settings.json", "JSON 파일 (*.json)"
         )
 
         if not file_path:
@@ -746,44 +809,40 @@ class MainWindow(FluentWindow):
             settings = self.config_manager.get_gui_settings()
 
             # base64 이미지 데이터는 제외 (파일 크기 문제)
-            export_settings = {k: v for k, v in settings.items()
-                              if not (isinstance(v, str) and len(v) > 10000)}
+            export_settings = {
+                k: v for k, v in settings.items() if not (isinstance(v, str) and len(v) > 10000)
+            }
 
-            with open(file_path, 'w', encoding='utf-8') as f:
+            with open(file_path, "w", encoding="utf-8") as f:
                 json.dump(export_settings, f, ensure_ascii=False, indent=2)
 
             InfoBar.success(
-                title='내보내기 완료',
-                content=f'설정이 저장되었습니다: {Path(file_path).name}',
+                title="내보내기 완료",
+                content=f"설정이 저장되었습니다: {Path(file_path).name}",
                 parent=self,
                 position=InfoBarPosition.TOP,
-                duration=INFOBAR_DURATION_INFO_MS
+                duration=INFOBAR_DURATION_INFO_MS,
             )
         except Exception as e:
             InfoBar.error(
-                title='내보내기 실패',
+                title="내보내기 실패",
                 content=str(e),
                 parent=self,
                 position=InfoBarPosition.TOP,
-                duration=INFOBAR_DURATION_WARNING_MS
+                duration=INFOBAR_DURATION_WARNING_MS,
             )
 
     def import_settings(self):
         """설정 가져오기"""
-        file_path, _ = QFileDialog.getOpenFileName(
-            self,
-            "설정 가져오기",
-            "",
-            "JSON 파일 (*.json)"
-        )
+        file_path, _ = QFileDialog.getOpenFileName(self, "설정 가져오기", "", "JSON 파일 (*.json)")
 
         if not file_path:
             return
 
         try:
-            with open(file_path, encoding='utf-8') as f:
+            with open(file_path, encoding="utf-8") as f:
                 imported = json.load(f)
-            imported.pop('_meta', None)
+            imported.pop("_meta", None)
 
             # 현재 설정과 병합
             current = self.config_manager.get_gui_settings()
@@ -810,24 +869,25 @@ class MainWindow(FluentWindow):
             self.app_state.load()
 
             InfoBar.success(
-                title='가져오기 완료',
-                content='설정이 적용되었습니다. 일부 설정은 앱 재시작 후 적용됩니다.',
+                title="가져오기 완료",
+                content="설정이 적용되었습니다. 일부 설정은 앱 재시작 후 적용됩니다.",
                 parent=self,
                 position=InfoBarPosition.TOP,
-                duration=INFOBAR_DURATION_INFO_MS
+                duration=INFOBAR_DURATION_INFO_MS,
             )
         except Exception as e:
             InfoBar.error(
-                title='가져오기 실패',
+                title="가져오기 실패",
                 content=str(e),
                 parent=self,
                 position=InfoBarPosition.TOP,
-                duration=INFOBAR_DURATION_WARNING_MS
+                duration=INFOBAR_DURATION_WARNING_MS,
             )
 
     def add_conversion_log(self, message: str):
         """변환 로그 추가"""
         from datetime import datetime
+
         timestamp = datetime.now().strftime("%H:%M:%S")
         self._conversion_log.append(f"[{timestamp}] {message}")
         # 최대 1000줄 유지
@@ -843,13 +903,11 @@ class MainWindow(FluentWindow):
         else:
             log_text = "\n".join(self._conversion_log[-50:])  # 최근 50줄
             if len(self._conversion_log) > 50:
-                log_text = f"... (최근 50줄만 표시, 총 {len(self._conversion_log)}줄)\n\n" + log_text
+                log_text = (
+                    f"... (최근 50줄만 표시, 총 {len(self._conversion_log)}줄)\n\n" + log_text
+                )
 
-        w = MessageBox(
-            "변환 로그",
-            log_text,
-            self
-        )
+        w = MessageBox("변환 로그", log_text, self)
         w.exec()
 
     def get_recent_files(self) -> list:
@@ -865,8 +923,8 @@ class MainWindow(FluentWindow):
         """변환 시작"""
         if self._worker is not None and self._worker.isRunning():
             InfoBar.warning(
-                title='변환 진행 중',
-                content='이전 변환이 끝난 뒤 다시 시도해주세요.',
+                title="변환 진행 중",
+                content="이전 변환이 끝난 뒤 다시 시도해주세요.",
                 parent=self,
                 position=InfoBarPosition.TOP,
                 duration=INFOBAR_DURATION_INFO_MS,
@@ -876,11 +934,11 @@ class MainWindow(FluentWindow):
         files = self.home_page.get_files()
         if not files:
             InfoBar.warning(
-                title='파일 없음',
-                content='변환할 파일을 추가해주세요.',
+                title="파일 없음",
+                content="변환할 파일을 추가해주세요.",
                 parent=self,
                 position=InfoBarPosition.TOP,
-                duration=INFOBAR_DURATION_INFO_MS
+                duration=INFOBAR_DURATION_INFO_MS,
             )
             return
 
@@ -899,10 +957,14 @@ class MainWindow(FluentWindow):
         self._cleanup_worker()
 
         self._worker = ConversionWorker(
-            self.config_manager, files, title, mode, output_format,
+            self.config_manager,
+            files,
+            title,
+            mode,
+            output_format,
             preset_config=preset_config,
             character_colors=character_colors,
-            cache_service=self.cache_service
+            cache_service=self.cache_service,
         )
         self._worker.progress.connect(self._on_conversion_progress)
         self._worker.finished.connect(self._on_conversion_finished)
@@ -954,19 +1016,19 @@ class MainWindow(FluentWindow):
 
         if success:
             InfoBar.success(
-                title='변환 완료',
+                title="변환 완료",
                 content=message,
                 parent=self,
                 position=InfoBarPosition.TOP,
-                duration=INFOBAR_DURATION_WARNING_MS
+                duration=INFOBAR_DURATION_WARNING_MS,
             )
         else:
             InfoBar.error(
-                title='변환 실패',
+                title="변환 실패",
                 content=message,
                 parent=self,
                 position=InfoBarPosition.TOP,
-                duration=INFOBAR_DURATION_WARNING_MS
+                duration=INFOBAR_DURATION_WARNING_MS,
             )
 
     _SHUTDOWN_WORKER_TIMEOUT_MS = CONVERT_WORKER_SHUTDOWN_TIMEOUT_MS
@@ -978,16 +1040,18 @@ class MainWindow(FluentWindow):
     def _show_about_dialog(self) -> None:
         """앱 정보 다이얼로그 표시."""
         from gui.dialogs import AboutDialog
+
         AboutDialog(self).exec()
 
     def _show_history_dialog(self) -> None:
         """변환 이력 다이얼로그 표시."""
         from gui.dialogs import HistoryDialog
+
         hm = self.config_manager.history
         if hm is None:
             InfoBar.warning(
-                title='이력 기능 불가',
-                content='이력 관리자 로드에 실패했습니다.',
+                title="이력 기능 불가",
+                content="이력 관리자 로드에 실패했습니다.",
                 parent=self,
                 position=InfoBarPosition.TOP,
                 duration=INFOBAR_DURATION_INFO_MS,
@@ -1005,6 +1069,7 @@ class MainWindow(FluentWindow):
         from PySide6.QtGui import QDesktopServices
 
         from core.version import __homepage__
+
         QDesktopServices.openUrl(QUrl(f"{__homepage__}/releases/latest"))
 
     def _show_welcome_dialog(self) -> None:
@@ -1016,11 +1081,12 @@ class MainWindow(FluentWindow):
           - 창을 X 로 닫음 (dismiss)                  → 다음 실행에 다시 노출
         """
         from gui.dialogs import WelcomeDialog
+
         dlg = WelcomeDialog(self)
         result = dlg.exec()
         if result == WelcomeDialog.Accepted:
             settings = self.config_manager.get_gui_settings()
-            settings['_welcome_seen'] = True
+            settings["_welcome_seen"] = True
             self.config_manager.save_gui_settings(settings)
 
     def _check_for_updates(self, _checked: bool = False, *, silent: bool = False) -> None:
@@ -1098,17 +1164,14 @@ class MainWindow(FluentWindow):
         #    결과 핸들러가 정상 실행되면 timer 는 stop() 으로 무력화됨.
         self._update_check_watchdog = QTimer(self)
         self._update_check_watchdog.setSingleShot(True)
-        self._update_check_watchdog.timeout.connect(
-            lambda: self._on_update_check_timeout(silent)
-        )
+        self._update_check_watchdog.timeout.connect(lambda: self._on_update_check_timeout(silent))
         self._update_check_watchdog.start(UPDATE_CHECK_HARD_TIMEOUT_MS)
-        logger.info(
-            "[update] hard-timeout watchdog armed (%dms)", UPDATE_CHECK_HARD_TIMEOUT_MS
-        )
+        logger.info("[update] hard-timeout watchdog armed (%dms)", UPDATE_CHECK_HARD_TIMEOUT_MS)
 
     def _on_update_check_timeout(self, silent: bool) -> None:
         """Hard-timeout 발동 — worker 가 응답 없음. UI 를 항상 깨끗하게 복구."""
         from core.constants import INFOBAR_DURATION_WARNING_MS
+
         thread = getattr(self, "_update_check_thread", None)
         if thread is None or not thread.isRunning():
             # 결과가 timeout 직전에 도착했으면 아무것도 안 해도 됨.
@@ -1131,10 +1194,7 @@ class MainWindow(FluentWindow):
         if not silent:
             InfoBar.warning(
                 title="응답이 없어요",
-                content=(
-                    "업데이트 서버 응답이 늦어지고 있어요. "
-                    "잠시 후 다시 시도해주세요."
-                ),
+                content=("업데이트 서버 응답이 늦어지고 있어요. 잠시 후 다시 시도해주세요."),
                 parent=self,
                 position=InfoBarPosition.TOP,
                 duration=INFOBAR_DURATION_WARNING_MS,
@@ -1156,7 +1216,8 @@ class MainWindow(FluentWindow):
 
         logger.info(
             "[update] result handler entry: info=%s, silent=%s",
-            "None" if info is None else f"v{info.version}", silent,
+            "None" if info is None else f"v{info.version}",
+            silent,
         )
 
         # Hard-timeout watchdog 무력화 — 정상 도착이니까 더 이상 강제 cleanup 불필요.
@@ -1219,6 +1280,7 @@ class MainWindow(FluentWindow):
                 # addWidget 으로 임의 위젯을 받음.
                 try:
                     from qfluentwidgets import PushButton as FluentButton
+
                     btn = FluentButton("Releases 페이지 열기")
                     btn.clicked.connect(self._open_releases_page)
                     bar.addWidget(btn)
@@ -1251,6 +1313,7 @@ class MainWindow(FluentWindow):
             return
 
         from gui.dialogs import UpdateDialog
+
         UpdateDialog(info, UpdateService(), self).exec()
 
     def closeEvent(self, event):
@@ -1309,9 +1372,7 @@ class MainWindow(FluentWindow):
             update_thread.quit()
             # urlopen 의 timeout 은 4초 → 약간 더 줘서 5초 대기.
             if not update_thread.wait(UPDATE_THREAD_SHUTDOWN_TIMEOUT_MS):
-                logger.warning(
-                    "Update check thread did not finish in time; forcing terminate"
-                )
+                logger.warning("Update check thread did not finish in time; forcing terminate")
                 update_thread.terminate()
                 update_thread.wait(THREAD_TERMINATE_GRACE_MS)
         self._update_check_thread = None

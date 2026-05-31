@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class ConversionRecord:
     """변환 기록 데이터"""
+
     id: str
     timestamp: str
     input_file: str
@@ -35,7 +36,7 @@ class ConversionRecord:
         return asdict(self)
 
     @classmethod
-    def from_dict(cls, data: dict) -> 'ConversionRecord':
+    def from_dict(cls, data: dict) -> "ConversionRecord":
         return cls(**data)
 
 
@@ -48,11 +49,13 @@ class HistoryManager:
         # 인 경우에도 저장 가능하도록 user_data_dir 로. 개발/테스트 모드에서는
         # app_dir 옆에 두어 격리.
         import sys
+
         if getattr(sys, "frozen", False):
             from core.paths import history_path
+
             self._history_file = history_path()
         else:
-            self._history_file = app_dir / 'data' / 'conversion_history.json'
+            self._history_file = app_dir / "data" / "conversion_history.json"
         self._max_records = max_records
         self._records: list[ConversionRecord] = []
         self._load()
@@ -61,9 +64,9 @@ class HistoryManager:
         """이력 파일 로드"""
         try:
             if self._history_file.exists():
-                with open(self._history_file, encoding='utf-8') as f:
+                with open(self._history_file, encoding="utf-8") as f:
                     data = json.load(f)
-                    self._records = [ConversionRecord.from_dict(r) for r in data.get('records', [])]
+                    self._records = [ConversionRecord.from_dict(r) for r in data.get("records", [])]
                 logger.debug(f"변환 이력 로드: {len(self._records)}개")
         except Exception as e:
             logger.warning(f"변환 이력 로드 실패: {e}")
@@ -73,24 +76,38 @@ class HistoryManager:
         """이력 파일 저장"""
         try:
             self._history_file.parent.mkdir(parents=True, exist_ok=True)
-            with open(self._history_file, 'w', encoding='utf-8') as f:
-                json.dump({
-                    'version': 1,
-                    'updated': datetime.now().isoformat(),
-                    'records': [r.to_dict() for r in self._records]
-                }, f, ensure_ascii=False, indent=2)
+            with open(self._history_file, "w", encoding="utf-8") as f:
+                json.dump(
+                    {
+                        "version": 1,
+                        "updated": datetime.now().isoformat(),
+                        "records": [r.to_dict() for r in self._records],
+                    },
+                    f,
+                    ensure_ascii=False,
+                    indent=2,
+                )
             logger.debug(f"변환 이력 저장: {len(self._records)}개")
         except Exception as e:
             logger.error(f"변환 이력 저장 실패: {e}")
 
-    def add_record(self, input_file: str, output_files: list[str],
-                   output_format: str, title: str, author: str,
-                   entry_count: int, scene_count: int,
-                   success: bool, error_message: str | None = None,
-                   duration_ms: int = 0, profile_used: str | None = None) -> ConversionRecord:
+    def add_record(
+        self,
+        input_file: str,
+        output_files: list[str],
+        output_format: str,
+        title: str,
+        author: str,
+        entry_count: int,
+        scene_count: int,
+        success: bool,
+        error_message: str | None = None,
+        duration_ms: int = 0,
+        profile_used: str | None = None,
+    ) -> ConversionRecord:
         """새 변환 기록 추가"""
         record = ConversionRecord(
-            id=datetime.now().strftime('%Y%m%d_%H%M%S_%f'),
+            id=datetime.now().strftime("%Y%m%d_%H%M%S_%f"),
             timestamp=datetime.now().isoformat(),
             input_file=str(input_file),
             input_filename=Path(input_file).name,
@@ -110,7 +127,7 @@ class HistoryManager:
 
         # 최대 개수 초과시 오래된 기록 삭제
         if len(self._records) > self._max_records:
-            self._records = self._records[:self._max_records]
+            self._records = self._records[: self._max_records]
 
         self._save()
         logger.info(f"변환 기록 추가: {record.input_filename} -> {output_format}")
@@ -145,12 +162,12 @@ class HistoryManager:
         """변환 통계"""
         if not self._records:
             return {
-                'total_conversions': 0,
-                'success_count': 0,
-                'failure_count': 0,
-                'total_entries': 0,
-                'avg_entries': 0,
-                'formats_used': {},
+                "total_conversions": 0,
+                "success_count": 0,
+                "failure_count": 0,
+                "total_entries": 0,
+                "avg_entries": 0,
+                "formats_used": {},
             }
 
         success_count = sum(1 for r in self._records if r.success)
@@ -161,12 +178,12 @@ class HistoryManager:
             formats[r.output_format] = formats.get(r.output_format, 0) + 1
 
         return {
-            'total_conversions': len(self._records),
-            'success_count': success_count,
-            'failure_count': len(self._records) - success_count,
-            'total_entries': total_entries,
-            'avg_entries': total_entries // len(self._records) if self._records else 0,
-            'formats_used': formats,
+            "total_conversions": len(self._records),
+            "success_count": success_count,
+            "failure_count": len(self._records) - success_count,
+            "total_entries": total_entries,
+            "avg_entries": total_entries // len(self._records) if self._records else 0,
+            "formats_used": formats,
         }
 
     def clear(self):
@@ -189,8 +206,10 @@ class HistoryManager:
         query_lower = query.lower()
         results = []
         for record in self._records:
-            if (query_lower in record.input_filename.lower() or
-                query_lower in record.title.lower() or
-                query_lower in record.author.lower()):
+            if (
+                query_lower in record.input_filename.lower()
+                or query_lower in record.title.lower()
+                or query_lower in record.author.lower()
+            ):
                 results.append(record)
         return results

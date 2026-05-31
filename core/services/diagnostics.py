@@ -14,6 +14,7 @@ Privacy: the bundle stays on disk; it is never uploaded automatically.
 ``gui_settings.json`` may contain customised paths or character names — the
 user controls what to share.
 """
+
 from __future__ import annotations
 
 import contextlib
@@ -60,7 +61,7 @@ def build_diagnostic_zip(output_path: Path | None = None) -> Path:
                 data = log.read_bytes()
                 # Truncate to last 1 MiB to keep the bundle small.
                 if len(data) > 1024 * 1024:
-                    data = data[-(1024 * 1024):]
+                    data = data[-(1024 * 1024) :]
                     arcname = f"logs/{log.name}.tail"
                 else:
                     arcname = f"logs/{log.name}"
@@ -100,8 +101,7 @@ def build_diagnostic_zip(output_path: Path | None = None) -> Path:
                 continue
         zf.writestr("user_data_listing.txt", listing.getvalue())
 
-    logger.info("Diagnostic bundle written: %s (%d bytes)",
-                output_path, output_path.stat().st_size)
+    logger.info("Diagnostic bundle written: %s (%d bytes)", output_path, output_path.stat().st_size)
     return output_path
 
 

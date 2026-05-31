@@ -24,6 +24,7 @@ def _default_gui_settings() -> dict:
     """
     # 지연 import: core → gui 방향 계층 역전을 피함
     from gui.config_models import AppSettings, flatten_settings
+
     return flatten_settings(AppSettings())
 
 
@@ -87,6 +88,7 @@ class ConfigManager:
                 gui_settings_path,
                 migrate_from_install_dir,
             )
+
             ensure_dirs()
             migrate_from_install_dir(self.app_dir)
             self.settings_path: Path = gui_settings_path()
@@ -106,6 +108,7 @@ class ConfigManager:
         if self._history_manager is None:
             try:
                 from core.services.history import HistoryManager
+
                 self._history_manager = HistoryManager(self.app_dir)
             except ImportError:
                 logger.warning("HistoryManager를 로드할 수 없습니다")
@@ -117,6 +120,7 @@ class ConfigManager:
         if self._profile_manager is None:
             try:
                 from core.services.profiles import ProfileManager
+
                 self._profile_manager = ProfileManager(self.app_dir)
             except ImportError:
                 logger.warning("ProfileManager를 로드할 수 없습니다")
@@ -126,7 +130,7 @@ class ConfigManager:
         """config.yaml 로드"""
         if self.config_path.exists():
             try:
-                with open(self.config_path, encoding='utf-8') as f:
+                with open(self.config_path, encoding="utf-8") as f:
                     return yaml.safe_load(f) or {}
             except (OSError, yaml.YAMLError) as e:
                 logger.warning("config.yaml 로드 실패: %s", e)
@@ -142,7 +146,7 @@ class ConfigManager:
         """
         if self.settings_path.exists():
             try:
-                with open(self.settings_path, encoding='utf-8') as f:
+                with open(self.settings_path, encoding="utf-8") as f:
                     loaded = json.load(f)
                 loaded = migrate_gui_settings(loaded)
                 # 기본값과 병합: 사용자 파일에 없는 신규 키에 기본값을 채워준다
@@ -177,7 +181,7 @@ class ConfigManager:
         # 2) 새 settings 를 atomic 으로 저장 (임시 파일 → rename).
         self.gui_settings = settings
         tmp = self.settings_path.with_suffix(".json.tmp")
-        with open(tmp, 'w', encoding='utf-8') as f:
+        with open(tmp, "w", encoding="utf-8") as f:
             json.dump(settings, f, ensure_ascii=False, indent=2)
         # Path.replace 는 같은 디스크 내 atomic.
         tmp.replace(self.settings_path)
@@ -187,6 +191,7 @@ class ConfigManager:
         keeping only the most recent ``_BACKUP_SLOTS`` backups.
         """
         from datetime import datetime
+
         backup_dir = self.settings_path.parent / "backups"
         backup_dir.mkdir(parents=True, exist_ok=True)
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -198,6 +203,7 @@ class ConfigManager:
             n += 1
         try:
             import shutil
+
             shutil.copy2(self.settings_path, target)
         except OSError:
             return
@@ -208,7 +214,7 @@ class ConfigManager:
             key=lambda p: p.stat().st_mtime,
             reverse=True,
         )
-        for old in backups[self._BACKUP_SLOTS:]:
+        for old in backups[self._BACKUP_SLOTS :]:
             with contextlib.suppress(OSError):
                 old.unlink()
 
@@ -243,186 +249,209 @@ class ConfigManager:
         if gui_settings is None:
             gui_settings = self.gui_settings
 
-        sep_map = {'newline': '\n', 'space': ' ', 'dash': ' — '}
+        sep_map = {"newline": "\n", "space": " ", "dash": " — "}
 
         # 기본 설정과 병합
         config = deep_merge(default_engine_config(), self.yaml_config)
 
         # GUI 설정 적용
         gui_config = {
-            'log_source': gui_settings.get('platform', 'auto'),
-            'output_format': gui_settings.get('output_format', 'both'),
-            'metadata': {
-                'author': gui_settings.get('author', 'GM'),
-                'language': gui_settings.get('language', 'ko'),
+            "log_source": gui_settings.get("platform", "auto"),
+            "output_format": gui_settings.get("output_format", "both"),
+            "metadata": {
+                "author": gui_settings.get("author", "GM"),
+                "language": gui_settings.get("language", "ko"),
             },
-            'paths': {
-                'output_dir': gui_settings.get('output_dir', str(self.app_dir / 'export')),
-                'images_dir': str(self.app_dir / 'images'),
-                'fonts_dir': str(self.app_dir / 'fonts'),
+            "paths": {
+                "output_dir": gui_settings.get("output_dir", str(self.app_dir / "export")),
+                "images_dir": str(self.app_dir / "images"),
+                "fonts_dir": str(self.app_dir / "fonts"),
             },
-            'narration': {
-                'users': (
-                    gui_settings.get('narrators')
-                    if isinstance(gui_settings.get('narrators'), list)
-                    else [n.strip() for n in str(gui_settings.get('narrators', 'GM')).split(',')]
+            "narration": {
+                "users": (
+                    gui_settings.get("narrators")
+                    if isinstance(gui_settings.get("narrators"), list)
+                    else [n.strip() for n in str(gui_settings.get("narrators", "GM")).split(",")]
                 ),
             },
-            'style': {
-                'narration_prefix': gui_settings.get('narration_prefix', '＿'),
-                'scene_marker': gui_settings.get('scene_marker', '■'),
-                'chapter_ornament': gui_settings.get('chapter_ornament', '─────  ✦  ─────'),
-                'scene_separator': gui_settings.get('scene_separator', '＊　＊　＊'),
-                'base_font_size': safe_float(gui_settings.get('base_font_size', '1.0'), 1.0),
-                'body_line_height': safe_float(gui_settings.get('body_line_height', '1.6'), 1.6),
-                'dialogue_line_height': safe_float(gui_settings.get('dialogue_line_height', '1.5'), 1.5),
-                'narration_line_height': safe_float(gui_settings.get('narration_line_height', '1.7'), 1.7),
-                'narration_indent': safe_float(gui_settings.get('narration_indent', '1.5'), 1.5),
+            "style": {
+                "narration_prefix": gui_settings.get("narration_prefix", "＿"),
+                "scene_marker": gui_settings.get("scene_marker", "■"),
+                "chapter_ornament": gui_settings.get("chapter_ornament", "─────  ✦  ─────"),
+                "scene_separator": gui_settings.get("scene_separator", "＊　＊　＊"),
+                "base_font_size": safe_float(gui_settings.get("base_font_size", "1.0"), 1.0),
+                "body_line_height": safe_float(gui_settings.get("body_line_height", "1.6"), 1.6),
+                "dialogue_line_height": safe_float(
+                    gui_settings.get("dialogue_line_height", "1.5"), 1.5
+                ),
+                "narration_line_height": safe_float(
+                    gui_settings.get("narration_line_height", "1.7"), 1.7
+                ),
+                "narration_indent": safe_float(gui_settings.get("narration_indent", "1.5"), 1.5),
             },
-            'fonts': {
-                'body_font': gui_settings.get('epub_body_font', "'Nanum Myeongjo', serif"),
-                'name_font': gui_settings.get('epub_name_font', "'Pretendard', sans-serif"),
-                'embed': {
-                    'body': gui_settings.get('embed_body_font', ''),
-                    'name': gui_settings.get('embed_name_font', ''),
+            "fonts": {
+                "body_font": gui_settings.get("epub_body_font", "'Nanum Myeongjo', serif"),
+                "name_font": gui_settings.get("epub_name_font", "'Pretendard', sans-serif"),
+                "embed": {
+                    "body": gui_settings.get("embed_body_font", ""),
+                    "name": gui_settings.get("embed_name_font", ""),
                 },
-                'docx_fallback': {
-                    'body': gui_settings.get('docx_body_font', '맑은 고딕'),
-                    'name': gui_settings.get('docx_name_font', '맑은 고딕'),
+                "docx_fallback": {
+                    "body": gui_settings.get("docx_body_font", "맑은 고딕"),
+                    "name": gui_settings.get("docx_name_font", "맑은 고딕"),
                 },
             },
-            'content': {
-                'include_dice': gui_settings.get('include_dice', True),
-                'include_effects': gui_settings.get('include_effects', True),
-                'include_system': gui_settings.get('include_system', True),
-                'include_ooc': gui_settings.get('include_ooc', False),
+            "content": {
+                "include_dice": gui_settings.get("include_dice", True),
+                "include_effects": gui_settings.get("include_effects", True),
+                "include_system": gui_settings.get("include_system", True),
+                "include_ooc": gui_settings.get("include_ooc", False),
             },
-            'dialogue': {
-                'merge_consecutive': gui_settings.get('merge_dialogue', False),
-                'merge_separator': sep_map.get(gui_settings.get('merge_separator', 'newline'), '\n'),
-                'merge_max': safe_int(gui_settings.get('merge_max', '5'), 5),
-                'empty_dialogue': gui_settings.get('empty_dialogue', '……'),
+            "dialogue": {
+                "merge_consecutive": gui_settings.get("merge_dialogue", False),
+                "merge_separator": sep_map.get(
+                    gui_settings.get("merge_separator", "newline"), "\n"
+                ),
+                "merge_max": safe_int(gui_settings.get("merge_max", "5"), 5),
+                "empty_dialogue": gui_settings.get("empty_dialogue", "……"),
             },
-            'images': {
-                'enable': gui_settings.get('images_enable', True),
-                'show_caption': gui_settings.get('show_caption', True),
-                'alignment': gui_settings.get('image_align', 'center'),
-                'max_width': safe_int(gui_settings.get('image_max_width', '100'), 100),
-                'max_resolution': safe_int(gui_settings.get('image_max_resolution', '1600'), 1600),
-                'jpeg_quality': safe_int(gui_settings.get('image_jpeg_quality', '85 (권장)'), 85),
-                'convert_webp': gui_settings.get('image_convert_webp', True),
+            "images": {
+                "enable": gui_settings.get("images_enable", True),
+                "show_caption": gui_settings.get("show_caption", True),
+                "alignment": gui_settings.get("image_align", "center"),
+                "max_width": safe_int(gui_settings.get("image_max_width", "100"), 100),
+                "max_resolution": safe_int(gui_settings.get("image_max_resolution", "1600"), 1600),
+                "jpeg_quality": safe_int(gui_settings.get("image_jpeg_quality", "85 (권장)"), 85),
+                "convert_webp": gui_settings.get("image_convert_webp", True),
             },
-            'cover': {
-                'include': gui_settings.get('include_cover', True),
-                'title_on_cover': gui_settings.get('title_on_cover', True),
-                'author_on_cover': gui_settings.get('author_on_cover', True),
-                'image': gui_settings.get('cover_image', ''),
-                'subtitle': gui_settings.get('cover_subtitle', ''),
-                'background_color': gui_settings.get('cover_bg', '#1a1a1a'),
-                'title_color': gui_settings.get('cover_title_color', '#ffffff'),
+            "cover": {
+                "include": gui_settings.get("include_cover", True),
+                "title_on_cover": gui_settings.get("title_on_cover", True),
+                "author_on_cover": gui_settings.get("author_on_cover", True),
+                "image": gui_settings.get("cover_image", ""),
+                "subtitle": gui_settings.get("cover_subtitle", ""),
+                "background_color": gui_settings.get("cover_bg", "#1a1a1a"),
+                "title_color": gui_settings.get("cover_title_color", "#ffffff"),
             },
-            'toc': {
-                'include': gui_settings.get('include_toc', True),
-                'title': gui_settings.get('toc_title', '목차'),
+            "toc": {
+                "include": gui_settings.get("include_toc", True),
+                "title": gui_settings.get("toc_title", "목차"),
                 # 사용자 명시 씬 제목만 포함 (auto-generated 'N장면' / 시스템 노이즈 제외).
-                'scene_only': bool(gui_settings.get('toc_scene_only', False)),
+                "scene_only": bool(gui_settings.get("toc_scene_only", False)),
                 # 쉼표로 구분된 regex 문자열 → 리스트. 빈 항목 제거.
-                'exclude_patterns': [
-                    p.strip() for p in str(
-                        gui_settings.get('toc_exclude_patterns', '')
-                    ).split(',') if p.strip()
+                "exclude_patterns": [
+                    p.strip()
+                    for p in str(gui_settings.get("toc_exclude_patterns", "")).split(",")
+                    if p.strip()
                 ],
             },
-            'chapter': {
-                'split_mode': gui_settings.get('split_mode', 'scene'),
+            "chapter": {
+                "split_mode": gui_settings.get("split_mode", "scene"),
                 # GUI 에서는 쉼표로 구분된 키워드 문자열("■, ▶Scene, 씬, ...")을 받는다.
                 # 그대로 re.search 에 넣으면 본문 중간 'Scene' 같은 단어도 매칭되어 오탐이
                 # 된다. 이미 '^' 로 시작하지 않는 항목은 자동으로 선두 앵커를 붙인다.
-                'scene_patterns': (
-                    gui_settings.get('scene_patterns')
-                    if isinstance(gui_settings.get('scene_patterns'), list)
+                "scene_patterns": (
+                    gui_settings.get("scene_patterns")
+                    if isinstance(gui_settings.get("scene_patterns"), list)
                     else [
-                        (p if p.startswith('^') else '^' + p)
+                        (p if p.startswith("^") else "^" + p)
                         for p in (
                             s.strip()
-                            for s in str(gui_settings.get('scene_patterns', '■')).split(',')
+                            for s in str(gui_settings.get("scene_patterns", "■")).split(",")
                         )
                         if p
                     ]
                 ),
-                'entries_per_chapter': safe_int(gui_settings.get('entries_per_chapter', '300'), 300),
-                'min_scene_entries': safe_int(gui_settings.get('min_scene_entries', '10'), 10),
-                'title_format': gui_settings.get('title_format', '장면 {n}'),
+                "entries_per_chapter": safe_int(
+                    gui_settings.get("entries_per_chapter", "300"), 300
+                ),
+                "min_scene_entries": safe_int(gui_settings.get("min_scene_entries", "10"), 10),
+                "title_format": gui_settings.get("title_format", "장면 {n}"),
             },
-            'layout': {
-                'docx_margin': (lambda m: {
-                    k: safe_float(m.get(k, '1.0'), 1.0)
-                    for k in ('top', 'bottom', 'left', 'right')
-                })(gui_settings.get('margins') if isinstance(gui_settings.get('margins'), dict) else {}),
+            "layout": {
+                "docx_margin": (
+                    lambda m: {
+                        k: safe_float(m.get(k, "1.0"), 1.0)
+                        for k in ("top", "bottom", "left", "right")
+                    }
+                )(
+                    gui_settings.get("margins")
+                    if isinstance(gui_settings.get("margins"), dict)
+                    else {}
+                ),
             },
             # DOCX 와 PDF 가 공유하는 판형 정보 (core.layout 헬퍼로 파싱)
-            'page_format': gui_settings.get('page_format', 'A5 (148x210mm)'),
-            'epub_page_format': gui_settings.get('epub_page_format', 'EPUB (6x9)'),
+            "page_format": gui_settings.get("page_format", "A5 (148x210mm)"),
+            "epub_page_format": gui_settings.get("epub_page_format", "EPUB (6x9)"),
             # 챕터(씬) 제목 헤더 설정 — DOCX/EPUB/PDF 가 공유
-            'header': {
-                'size': safe_int(gui_settings.get('header_size', 24), 24),
-                'color': gui_settings.get('header_color', '#1a1a1a'),
-                'bold': gui_settings.get('header_bold', True),
-                'underline': gui_settings.get('header_underline', False),
-                'prefix': gui_settings.get('header_prefix', ''),
-                'suffix': gui_settings.get('header_suffix', ''),
-                'box': gui_settings.get('header_box', False),
-                'box_color': gui_settings.get('header_box_color', '#f5f5f5'),
-                'style': gui_settings.get('header_style', '기본'),
+            "header": {
+                "size": safe_int(gui_settings.get("header_size", 24), 24),
+                "color": gui_settings.get("header_color", "#1a1a1a"),
+                "bold": gui_settings.get("header_bold", True),
+                "underline": gui_settings.get("header_underline", False),
+                "prefix": gui_settings.get("header_prefix", ""),
+                "suffix": gui_settings.get("header_suffix", ""),
+                "box": gui_settings.get("header_box", False),
+                "box_color": gui_settings.get("header_box_color", "#f5f5f5"),
+                "style": gui_settings.get("header_style", "기본"),
             },
-            'parsing': {
-                'name_max_length': safe_int(gui_settings.get('name_max_length', '50'), 50),
-                'skip_channels': [c.strip() for c in gui_settings.get('skip_channels', '').split(',') if c.strip()],
-                'normalize_punctuation': gui_settings.get('normalize_punct', True),
+            "parsing": {
+                "name_max_length": safe_int(gui_settings.get("name_max_length", "50"), 50),
+                "skip_channels": [
+                    c.strip() for c in gui_settings.get("skip_channels", "").split(",") if c.strip()
+                ],
+                "normalize_punctuation": gui_settings.get("normalize_punct", True),
             },
-            'roll20': {
-                'session_gap_minutes': safe_int(gui_settings.get('session_gap', '60'), 60),
-                'emote_style': gui_settings.get('emote_style', 'italic'),
-                'include_whisper': gui_settings.get('include_whisper', False),
+            "roll20": {
+                "session_gap_minutes": safe_int(gui_settings.get("session_gap", "60"), 60),
+                "emote_style": gui_settings.get("emote_style", "italic"),
+                "include_whisper": gui_settings.get("include_whisper", False),
             },
-            'campaign': {
-                'enable': gui_settings.get('campaign_enable', False),
-                'title': gui_settings.get('campaign_title', '캠페인 리플레이'),
-                'session_title_format': gui_settings.get('session_title_format', 'Session {n}: {filename}'),
+            "campaign": {
+                "enable": gui_settings.get("campaign_enable", False),
+                "title": gui_settings.get("campaign_title", "캠페인 리플레이"),
+                "session_title_format": gui_settings.get(
+                    "session_title_format", "Session {n}: {filename}"
+                ),
             },
         }
 
         # 색상 설정 적용
-        colors = gui_settings.get('colors', {})
+        colors = gui_settings.get("colors", {})
         if colors:
-            gui_config['style'].update({
-                'text_color': colors.get('text_color', '#1a1a1a'),
-                'name_color': colors.get('name_color', '#2d2d2d'),
-                'dice_color': colors.get('dice_color', '#888888'),
-                'system_color': colors.get('system_color', '#666666'),
-                'effect_bg': colors.get('effect_bg', '#f5f5f5'),
-                'effect_border': colors.get('effect_border', '#cccccc'),
-            })
+            gui_config["style"].update(
+                {
+                    "text_color": colors.get("text_color", "#1a1a1a"),
+                    "name_color": colors.get("name_color", "#2d2d2d"),
+                    "dice_color": colors.get("dice_color", "#888888"),
+                    "system_color": colors.get("system_color", "#666666"),
+                    "effect_bg": colors.get("effect_bg", "#f5f5f5"),
+                    "effect_border": colors.get("effect_border", "#cccccc"),
+                }
+            )
 
         # 비주얼 에디터 스타일 설정 적용 (ContentPage에서 설정)
-        gui_config['style'].update({
-            'body_bg': gui_settings.get('style_body_bg', '#ffffff'),
-            'body_text': gui_settings.get('style_body_text', '#1a1a1a'),
-            'body_font_size': safe_int(gui_settings.get('style_font_size', 14), 14),
-            'name_color': gui_settings.get('style_name_color', '#2d2d2d'),
-            'name_bold': gui_settings.get('style_name_bold', True),
-            'visual_line_height': safe_float(gui_settings.get('style_line_height', 1.6), 1.6),
-            'dialogue_separator': gui_settings.get('style_separator', '「 」 (꺾쇠)'),
-        })
+        gui_config["style"].update(
+            {
+                "body_bg": gui_settings.get("style_body_bg", "#ffffff"),
+                "body_text": gui_settings.get("style_body_text", "#1a1a1a"),
+                "body_font_size": safe_int(gui_settings.get("style_font_size", 14), 14),
+                "name_color": gui_settings.get("style_name_color", "#2d2d2d"),
+                "name_bold": gui_settings.get("style_name_bold", True),
+                "visual_line_height": safe_float(gui_settings.get("style_line_height", 1.6), 1.6),
+                "dialogue_separator": gui_settings.get("style_separator", "「 」 (꺾쇠)"),
+            }
+        )
 
         # 커스텀 CSS
-        gui_config['custom_css'] = gui_settings.get('custom_css', '')
+        gui_config["custom_css"] = gui_settings.get("custom_css", "")
 
         merged = deep_merge(config, gui_config)
 
         # Pydantic으로 최종 설정 검증
         try:
             from core.services.config_schema import validate_engine_config
+
             validated = validate_engine_config(merged)
             # validate_engine_config가 인식하지 못하는 필드 유지
             for key in merged:
@@ -436,7 +465,9 @@ class ConfigManager:
         """엔진 config 반환 (호환성 유지)"""
         return self.build_engine_config()
 
-    def build_engine_config_with_profile(self, gui_settings=None, profile_id: str | None = None) -> dict:
+    def build_engine_config_with_profile(
+        self, gui_settings=None, profile_id: str | None = None
+    ) -> dict:
         """프로필을 적용한 엔진 config 생성"""
         config = self.build_engine_config(gui_settings)
 
@@ -445,11 +476,20 @@ class ConfigManager:
 
         return config
 
-    def record_conversion(self, input_file: str, output_files: list,
-                          output_format: str, title: str, author: str,
-                          entry_count: int, scene_count: int,
-                          success: bool, error_message: str | None = None,
-                          duration_ms: int = 0, profile_used: str | None = None):
+    def record_conversion(
+        self,
+        input_file: str,
+        output_files: list,
+        output_format: str,
+        title: str,
+        author: str,
+        entry_count: int,
+        scene_count: int,
+        success: bool,
+        error_message: str | None = None,
+        duration_ms: int = 0,
+        profile_used: str | None = None,
+    ):
         """변환 기록 추가"""
         if self.history:
             return self.history.add_record(
