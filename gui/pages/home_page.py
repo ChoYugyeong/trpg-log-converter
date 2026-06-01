@@ -23,6 +23,7 @@ from PySide6.QtWidgets import (
 from qfluentwidgets import (
     BodyLabel,
     ComboBox,
+    FlowLayout,
     InfoBar,
     InfoBarPosition,
     LineEdit,
@@ -574,8 +575,13 @@ class HomePage(BasePage):
         options_card.add_layout(mode_header)
 
         self.mode_group = QButtonGroup(self)
-        mode_layout = QHBoxLayout()
-        mode_layout.setSpacing(Spacing.LG)
+        # FlowLayout: 창이 좁아지면 라디오가 자동으로 다음 줄로 넘어간다.
+        # (한 줄 QHBoxLayout 은 최소 너비가 커져 작은 창에서 가로 스크롤을 유발)
+        mode_container = QWidget()
+        mode_layout = FlowLayout(mode_container, needAni=False)
+        mode_layout.setContentsMargins(0, 0, 0, 0)
+        mode_layout.setHorizontalSpacing(Spacing.LG)
+        mode_layout.setVerticalSpacing(8)
 
         modes = [
             ("단일 파일", "single", "파일 1개를 변환합니다"),
@@ -591,8 +597,7 @@ class HomePage(BasePage):
             self.mode_group.addButton(radio)
             mode_layout.addWidget(radio)
 
-        mode_layout.addStretch()
-        options_card.add_layout(mode_layout)
+        options_card.add_widget(mode_container)
 
         options_card.add_spacing(12)
 
@@ -609,8 +614,11 @@ class HomePage(BasePage):
         options_card.add_layout(fmt_header)
 
         self.format_group = QButtonGroup(self)
-        fmt_layout = QHBoxLayout()
-        fmt_layout.setSpacing(Spacing.LG)
+        fmt_container = QWidget()
+        fmt_layout = FlowLayout(fmt_container, needAni=False)
+        fmt_layout.setContentsMargins(0, 0, 0, 0)
+        fmt_layout.setHorizontalSpacing(Spacing.LG)
+        fmt_layout.setVerticalSpacing(8)
 
         formats = [
             ("EPUB + DOCX", "both"),
@@ -627,8 +635,7 @@ class HomePage(BasePage):
             self.format_group.addButton(radio)
             fmt_layout.addWidget(radio)
 
-        fmt_layout.addStretch()
-        options_card.add_layout(fmt_layout)
+        options_card.add_widget(fmt_container)
 
         self.content_layout.addWidget(options_card)
 
