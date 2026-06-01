@@ -619,6 +619,19 @@ def _smoke_test_bundle() -> bool:
             proc.wait(timeout=3)
         except subprocess.TimeoutExpired:
             proc.kill()
+        # PyInstaller(onedir, windowed)는 부트로더+자식 프로세스 구조라 terminate
+        # 만으로는 자식이 남아 dist 폴더를 잠그고 '다음 빌드'를 깨뜨린다.
+        # 이미지 이름 기준 트리 종료로 잔여 프로세스까지 확실히 정리한다.
+        if sys.platform == "win32":
+            try:
+                subprocess.run(
+                    ["taskkill", "/F", "/T", "/IM", exe.name],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    timeout=10,
+                )
+            except Exception:
+                pass
         return True
 
     # Process exited before timeout - capture output for diagnosis.
