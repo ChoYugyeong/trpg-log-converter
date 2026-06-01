@@ -428,7 +428,7 @@ class FormatStylePage(BasePage):
         self.size_spin.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
         self.size_spin.setAlignment(Qt.AlignCenter)
         self.size_spin.setFixedWidth(64)
-        self.size_spin.setFixedHeight(32)
+        self.size_spin.setFixedHeight(36)
         size_layout.addWidget(self.size_spin)
 
         self.size_slider.valueChanged.connect(self._on_font_size_changed)
@@ -468,7 +468,7 @@ class FormatStylePage(BasePage):
         self.height_spin.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
         self.height_spin.setAlignment(Qt.AlignCenter)
         self.height_spin.setFixedWidth(64)
-        self.height_spin.setFixedHeight(32)
+        self.height_spin.setFixedHeight(36)
         height_layout.addWidget(self.height_spin)
 
         self.height_slider.valueChanged.connect(self._on_line_height_changed)
@@ -1065,7 +1065,7 @@ class FormatStylePage(BasePage):
         self.line_width_spin.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
         self.line_width_spin.setAlignment(Qt.AlignCenter)
         self.line_width_spin.setFixedWidth(64)
-        self.line_width_spin.setFixedHeight(32)
+        self.line_width_spin.setFixedHeight(36)
         self.line_width_spin.valueChanged.connect(
             lambda v: (
                 self.line_width.blockSignals(True),
@@ -1117,7 +1117,7 @@ class FormatStylePage(BasePage):
         self.header_size_spin.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
         self.header_size_spin.setAlignment(Qt.AlignCenter)
         self.header_size_spin.setFixedWidth(64)
-        self.header_size_spin.setFixedHeight(32)
+        self.header_size_spin.setFixedHeight(36)
         hdr_size_layout.addWidget(self.header_size_spin)
 
         self.header_size.valueChanged.connect(

@@ -725,8 +725,10 @@ QSpinBox:focus, QDoubleSpinBox:focus {
     background: rgba(128, 128, 128, 0.10);
     border: none;
     border-radius: 8px;
-    padding: 4px 6px;
-    font-weight: 600;
+    /* 세로 패딩을 줄이고 박스 높이로 여백을 확보 — 'p' 같은 글자의 아래(디센더)가
+       잘리던 문제 방지. 수직 가운데정렬은 setAlignment(AlignCenter)가 담당. */
+    padding: 0px 8px;
+    font-weight: 500;
     color: palette(text);
 }
 

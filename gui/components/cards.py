@@ -93,9 +93,10 @@ class CollapsibleSection(QWidget):
 class HelpButton(QPushButton):
     """도움말 버튼 - 원형 ? 아이콘, 클릭 시 설명 팝업 (Notion/Figma 스타일)"""
 
-    # 앱 전체에서 도움말 팝업은 한 번에 하나만. 이전에 띄운 게 안 닫히고 화면에
-    # 쌓이던 문제를 막기 위해 클래스 레벨로 현재 열린 flyout 을 추적한다.
+    # 앱 전체에서 도움말 팝업은 한 번에 하나만. (flyout, 그걸 연 버튼)을 클래스
+    # 레벨로 추적해 중복 누적을 막고, 같은 버튼 재클릭은 토글로 닫는다.
     _open_flyout = None
+    _open_owner = None
 
     def __init__(self, help_text: str, parent=None):
         super().__init__("?", parent)
@@ -106,31 +107,32 @@ class HelpButton(QPushButton):
         self.clicked.connect(self._show_help)
 
     def _show_help(self):
-        """도움말 팝업 표시 — 이전에 열린 도움말은 먼저 닫는다."""
+        """도움말 팝업 표시.
+
+        - 다른 도움말이 떠 있으면 닫고 이걸 연다.
+        - 같은 버튼을 눌렀고 그 도움말이 '실제로 떠 있던' 경우에만 토글로 닫는다.
+          (X/바깥클릭으로 이미 닫힌 경우엔 다시 열어준다 — 이전 구현은 stale 상태
+          때문에 닫은 뒤 다시 눌러도 안 열리는 문제가 있었다.)
+        """
         prev = HelpButton._open_flyout
+        owner = HelpButton._open_owner
+        HelpButton._open_flyout = None
+        HelpButton._open_owner = None
+
+        was_showing = False
         if prev is not None:
             try:
+                was_showing = prev.isVisible()
                 prev.close()
-            except RuntimeError:
-                pass  # 이미 파괴됨
-            HelpButton._open_flyout = None
-            # 같은 버튼을 다시 누른 경우엔 토글로 닫고 끝낸다.
-            if prev is getattr(self, "_my_flyout", None):
-                self._my_flyout = None
-                return
+            except Exception:
+                was_showing = False
+
+        if owner is self and was_showing:
+            return  # 같은 버튼 토글 → 닫기만
 
         view = FlyoutView(title="도움말", content=self.help_text, isClosable=True)
-        flyout = Flyout.make(view, self, self.window(), isDeleteOnClose=True)
-        HelpButton._open_flyout = flyout
-        self._my_flyout = flyout
-
-        def _on_closed(*_):
-            if HelpButton._open_flyout is flyout:
-                HelpButton._open_flyout = None
-            if getattr(self, "_my_flyout", None) is flyout:
-                self._my_flyout = None
-
-        flyout.destroyed.connect(_on_closed)
+        HelpButton._open_flyout = Flyout.make(view, self, self.window(), isDeleteOnClose=True)
+        HelpButton._open_owner = self
 
 
 class ContentCard(CardWidget):
