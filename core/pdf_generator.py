@@ -702,10 +702,12 @@ def create_pdf(
                 elif entry_type == "narration":
                     prefix = narration_prefix if narration_prefix else ""
                     if dropcap_pending:
-                        dc = content.lstrip()
-                        cap = f'<font size="30">{escape_xml(dc[0])}</font>'
+                        from core.utils import split_first_grapheme
+
+                        first, rest = split_first_grapheme(content.lstrip())
+                        cap = f'<font size="30">{escape_xml(first)}</font>'
                         story.append(
-                            Paragraph(f"{cap}{escape_xml(dc[1:])}", pdf_styles["Narration"])
+                            Paragraph(f"{cap}{escape_xml(rest)}", pdf_styles["Narration"])
                         )
                         dropcap_pending = False
                     else:

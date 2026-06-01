@@ -204,10 +204,12 @@ def create_docx(
             elif t == "narration":
                 prefix = narration_prefix if narration_prefix else ""
                 if dropcap_pending:
-                    dc = content.lstrip()
-                    cap_run = para.add_run(dc[0])
+                    from core.utils import split_first_grapheme
+
+                    first, rest = split_first_grapheme(content.lstrip())
+                    cap_run = para.add_run(first)
                     set_run_font(cap_run, name_font, size_pt=30, bold=True)
-                    rest_run = para.add_run(dc[1:])
+                    rest_run = para.add_run(rest)
                     set_run_font(rest_run, body_font, size_pt=10.5)
                     dropcap_pending = False
                 else:

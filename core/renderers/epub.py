@@ -88,9 +88,11 @@ def entries_to_html(
         elif t == "narration":
             prefix = narration_prefix if narration_prefix else ""
             if dropcap_pending:
-                dc = content.lstrip()
-                first_html = escape_html(dc[0])
-                rest_html = escape_html(dc[1:]).replace("\n", "<br/>")
+                from core.utils import split_first_grapheme
+
+                first, rest = split_first_grapheme(content.lstrip())
+                first_html = escape_html(first)
+                rest_html = escape_html(rest).replace("\n", "<br/>")
                 html_parts.append(
                     f'<p class="narration dropcap-para">'
                     f'<span class="dropcap">{first_html}</span>{rest_html}</p>'

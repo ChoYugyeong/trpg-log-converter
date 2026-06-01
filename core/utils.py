@@ -3,6 +3,37 @@ TRPG Log Converter Pro - 공용 유틸리티
 """
 
 import copy
+import unicodedata
+
+
+def split_first_grapheme(text: str) -> tuple[str, str]:
+    """첫 '글자(grapheme cluster)'와 나머지로 분리한다.
+
+    드롭캡처럼 첫 글자만 떼어낼 때 ``text[0]`` / ``text[1:]`` 로 자르면
+    결합 문자(combining mark), 변형 선택자(variation selector), ZWJ 이모지
+    (예: 가족 이모지)가 코드포인트 경계에서 쪼개져 글자가 깨진다.
+    이 함수는 그런 부속 코드포인트를 첫 글자에 붙여 안전하게 분리한다.
+    (astral 문자(😀 등)는 Python str 이 코드포인트 단위라 애초에 안 쪼개진다.)
+    """
+    if not text:
+        return "", ""
+    i = 1
+    n = len(text)
+    while i < n:
+        ch = text[i]
+        cp = ord(ch)
+        # 결합 문자 / 변형 선택자(U+FE00–U+FE0F) → 앞 글자에 붙는다
+        if unicodedata.combining(ch) or 0xFE00 <= cp <= 0xFE0F:
+            i += 1
+            continue
+        # ZWJ(U+200D) → 뒤따르는 글자까지 한 묶음(이모지 시퀀스)
+        if cp == 0x200D:
+            i += 1
+            if i < n:
+                i += 1
+            continue
+        break
+    return text[:i], text[i:]
 
 
 def deep_merge(base: dict, override: dict) -> dict:
