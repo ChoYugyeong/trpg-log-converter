@@ -11,6 +11,7 @@ from pathlib import Path
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QFont, QFontDatabase, QImage, QPixmap
 from PySide6.QtWidgets import (
+    QAbstractSpinBox,
     QDoubleSpinBox,
     QFileDialog,
     QFrame,
@@ -226,6 +227,9 @@ class FormatStylePage(BasePage):
         self._style_apply_timer.setInterval(180)
         self._style_apply_timer.timeout.connect(self._apply_style_debounced)
         self._pending_font_size = None
+        # 슬라이더를 '드래그하는 동안'에는 저장/미리보기를 절대 돌리지 않는다.
+        # (드래그 중 무거운 미리보기 재렌더가 UI 스레드를 막아 핸들이 안 멈추던 원인)
+        self._slider_dragging = False
         self._setup_page()
         self.load_settings()
 
@@ -391,6 +395,7 @@ class FormatStylePage(BasePage):
 
         self.size_slider = Slider(Qt.Horizontal)
         self.size_slider.setRange(10, 24)
+        self.size_slider.setPageStep(2)
         try:
             _font_size = int(self.settings.get("style_font_size", 14))
         except (ValueError, TypeError):
@@ -402,11 +407,17 @@ class FormatStylePage(BasePage):
         self.size_spin.setRange(10, 24)
         self.size_spin.setValue(self.size_slider.value())
         self.size_spin.setSuffix("px")
-        self.size_spin.setFixedWidth(92)
+        # 업/다운 버튼 제거 — 슬라이더가 조절을 담당하므로 값 표시/직접입력만.
+        # (분리돼 떠 보이던 업다운 버튼 제거로 UI 통일)
+        self.size_spin.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
+        self.size_spin.setAlignment(Qt.AlignCenter)
+        self.size_spin.setFixedWidth(64)
         self.size_spin.setFixedHeight(32)
         size_layout.addWidget(self.size_spin)
 
         self.size_slider.valueChanged.connect(self._on_font_size_changed)
+        self.size_slider.sliderPressed.connect(self._on_slider_pressed)
+        self.size_slider.sliderReleased.connect(self._on_slider_released)
         self.size_spin.valueChanged.connect(self._on_font_size_spin_changed)
 
         body_card.add_field(
@@ -424,6 +435,7 @@ class FormatStylePage(BasePage):
 
         self.height_slider = Slider(Qt.Horizontal)
         self.height_slider.setRange(12, 24)
+        self.height_slider.setPageStep(2)
         try:
             _line_height = int(float(self.settings.get("style_line_height", 1.6)) * 10)
         except (ValueError, TypeError):
@@ -436,11 +448,15 @@ class FormatStylePage(BasePage):
         self.height_spin.setSingleStep(0.1)
         self.height_spin.setDecimals(1)
         self.height_spin.setValue(self.height_slider.value() / 10)
-        self.height_spin.setFixedWidth(92)
+        self.height_spin.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
+        self.height_spin.setAlignment(Qt.AlignCenter)
+        self.height_spin.setFixedWidth(64)
         self.height_spin.setFixedHeight(32)
         height_layout.addWidget(self.height_spin)
 
         self.height_slider.valueChanged.connect(self._on_line_height_changed)
+        self.height_slider.sliderPressed.connect(self._on_slider_pressed)
+        self.height_slider.sliderReleased.connect(self._on_slider_released)
         self.height_spin.valueChanged.connect(self._on_line_height_spin_changed)
 
         body_card.add_field(
@@ -1457,12 +1473,25 @@ class FormatStylePage(BasePage):
             self.update_inspector(font_size=self._pending_font_size)
         self.settings_changed.emit()
 
+    def _on_slider_pressed(self):
+        # 드래그 시작 — 진행 중 디바운스 타이머가 터지지 않도록 멈춘다.
+        self._slider_dragging = True
+        self._style_apply_timer.stop()
+
+    def _on_slider_released(self):
+        # 드래그 끝 — 여기서 딱 한 번 저장+미리보기.
+        self._slider_dragging = False
+        self._style_apply_timer.stop()
+        self._apply_style_debounced()
+
     def _on_font_size_changed(self, value: int):
+        # 드래그 중에는 값 라벨만 즉시 갱신(가벼움). 저장/미리보기는 release 에서.
         self.size_spin.blockSignals(True)
         self.size_spin.setValue(value)
         self.size_spin.blockSignals(False)
         self._pending_font_size = value
-        self._style_apply_timer.start()
+        if not self._slider_dragging:
+            self._style_apply_timer.start()  # 키보드/휠 변경 → 디바운스 적용
 
     def _on_font_size_spin_changed(self, value: int):
         self.size_slider.blockSignals(True)
@@ -1475,7 +1504,8 @@ class FormatStylePage(BasePage):
         self.height_spin.blockSignals(True)
         self.height_spin.setValue(value / 10)
         self.height_spin.blockSignals(False)
-        self._style_apply_timer.start()
+        if not self._slider_dragging:
+            self._style_apply_timer.start()
 
     def _on_line_height_spin_changed(self, value: float):
         self.height_slider.blockSignals(True)
