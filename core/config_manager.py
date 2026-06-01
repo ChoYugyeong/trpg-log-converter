@@ -288,6 +288,8 @@ class ConfigManager:
                     gui_settings.get("narration_line_height", "1.7"), 1.7
                 ),
                 "narration_indent": safe_float(gui_settings.get("narration_indent", "1.5"), 1.5),
+                # 드롭캡: 각 챕터 첫 나레이션 문단의 첫 글자를 크게(렌더러가 소비).
+                "first_letter": bool(gui_settings.get("first_letter", False)),
             },
             "fonts": {
                 "body_font": gui_settings.get("epub_body_font", "'Nanum Myeongjo', serif"),

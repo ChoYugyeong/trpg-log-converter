@@ -651,11 +651,15 @@ def create_pdf(
         create_toc(story, scenes, config, pdf_styles)
 
         # 본문
+        drop_cap = bool(config.get("style", {}).get("first_letter", False))
+        page_break_enabled = config.get("layout", {}).get("page_break", True)
         for scene_idx, scene in enumerate(scenes):
             scene_title = scene.get("title")
             scene_entries = scene.get("entries", [])
+            # 드롭캡: 이 챕터의 첫 나레이션 문단에만 적용.
+            dropcap_pending = drop_cap
 
-            if scene_idx > 0:
+            if scene_idx > 0 and page_break_enabled:
                 story.append(PageBreak())
 
             # 장면 제목 — 시각적 마커는 제거하고 prefix/suffix 적용
@@ -697,7 +701,17 @@ def create_pdf(
 
                 elif entry_type == "narration":
                     prefix = narration_prefix if narration_prefix else ""
-                    story.append(Paragraph(f"{prefix}{content_escaped}", pdf_styles["Narration"]))
+                    if dropcap_pending:
+                        dc = content.lstrip()
+                        cap = f'<font size="30">{escape_xml(dc[0])}</font>'
+                        story.append(
+                            Paragraph(f"{cap}{escape_xml(dc[1:])}", pdf_styles["Narration"])
+                        )
+                        dropcap_pending = False
+                    else:
+                        story.append(
+                            Paragraph(f"{prefix}{content_escaped}", pdf_styles["Narration"])
+                        )
 
                 elif entry_type == "dice":
                     dice_text = (

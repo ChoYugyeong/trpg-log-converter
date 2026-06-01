@@ -129,6 +129,7 @@ def create_docx(
         doc.add_page_break()
 
     scenes = split_into_scenes(entries, config)
+    drop_cap = bool(config.get("style", {}).get("first_letter", False))
 
     for scene_idx, scene in enumerate(scenes):
         scene_title = scene.get("title")
@@ -171,6 +172,9 @@ def create_docx(
                 title_run.font.underline = True
             add_paragraph_spacing(title_para, before_pt=72, after_pt=36)
 
+        # 드롭캡: 이 챕터의 첫 나레이션 문단에만 적용.
+        dropcap_pending = drop_cap
+
         for entry in scene_entries:
             t = entry["type"]
             content = entry.get("content", "")
@@ -199,8 +203,16 @@ def create_docx(
 
             elif t == "narration":
                 prefix = narration_prefix if narration_prefix else ""
-                content_run = para.add_run(f"{prefix}{content}")
-                set_run_font(content_run, body_font, size_pt=10.5)
+                if dropcap_pending:
+                    dc = content.lstrip()
+                    cap_run = para.add_run(dc[0])
+                    set_run_font(cap_run, name_font, size_pt=30, bold=True)
+                    rest_run = para.add_run(dc[1:])
+                    set_run_font(rest_run, body_font, size_pt=10.5)
+                    dropcap_pending = False
+                else:
+                    content_run = para.add_run(f"{prefix}{content}")
+                    set_run_font(content_run, body_font, size_pt=10.5)
                 para.paragraph_format.left_indent = Inches(0.3)
                 add_paragraph_spacing(para, before_pt=8, after_pt=8, line_spacing=1.4)
 

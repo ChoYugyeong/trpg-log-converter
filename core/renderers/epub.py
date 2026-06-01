@@ -35,6 +35,8 @@ def entries_to_html(
     style = (config or {}).get("style", {})
     narration_prefix = style.get("narration_prefix", "＿")
     images_config = (config or {}).get("images", {})
+    # 드롭캡: 이 챕터의 첫 나레이션 문단 첫 글자만 크게. 한 번 적용하면 끈다.
+    dropcap_pending = bool(style.get("first_letter", False))
 
     html_parts: list[str] = []
 
@@ -85,7 +87,17 @@ def entries_to_html(
             html_parts.append(f'<div class="effect">{content_escaped}</div>')
         elif t == "narration":
             prefix = narration_prefix if narration_prefix else ""
-            html_parts.append(f'<p class="narration">{prefix}{content_escaped}</p>')
+            if dropcap_pending:
+                dc = content.lstrip()
+                first_html = escape_html(dc[0])
+                rest_html = escape_html(dc[1:]).replace("\n", "<br/>")
+                html_parts.append(
+                    f'<p class="narration dropcap-para">'
+                    f'<span class="dropcap">{first_html}</span>{rest_html}</p>'
+                )
+                dropcap_pending = False
+            else:
+                html_parts.append(f'<p class="narration">{prefix}{content_escaped}</p>')
         elif t == "dice":
             if name_escaped:
                 html_parts.append(f'<p class="dice">{name_escaped} : {content_escaped}</p>')

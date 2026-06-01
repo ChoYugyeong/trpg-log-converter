@@ -1267,43 +1267,9 @@ class FormatStylePage(BasePage):
 
         section.add_widget(dice_card)
 
-        # ---- 페이지 여백 카드 ----
-        margin_card = ContentCard("페이지 여백")
-
-        margin_grid = QGridLayout()
-        margin_grid.setSpacing(Spacing.MD)
-
-        self.margin_top = QSpinBox()
-        self.margin_top.setRange(0, 100)
-        self.margin_top.setValue(20)
-        self.margin_top.setSuffix(" px")
-        margin_grid.addWidget(BodyLabel("상단"), 0, 0)
-        margin_grid.addWidget(self.margin_top, 0, 1)
-
-        self.margin_bottom = QSpinBox()
-        self.margin_bottom.setRange(0, 100)
-        self.margin_bottom.setValue(20)
-        self.margin_bottom.setSuffix(" px")
-        margin_grid.addWidget(BodyLabel("하단"), 0, 2)
-        margin_grid.addWidget(self.margin_bottom, 0, 3)
-
-        self.margin_left = QSpinBox()
-        self.margin_left.setRange(0, 100)
-        self.margin_left.setValue(15)
-        self.margin_left.setSuffix(" px")
-        margin_grid.addWidget(BodyLabel("좌측"), 1, 0)
-        margin_grid.addWidget(self.margin_left, 1, 1)
-
-        self.margin_right = QSpinBox()
-        self.margin_right.setRange(0, 100)
-        self.margin_right.setValue(15)
-        self.margin_right.setSuffix(" px")
-        margin_grid.addWidget(BodyLabel("우측"), 1, 2)
-        margin_grid.addWidget(self.margin_right, 1, 3)
-
-        margin_card.add_layout(margin_grid)
-
-        section.add_widget(margin_card)
+        # 페이지 여백은 [고급 설정] 탭의 'margins'(inch) 에서만 설정한다.
+        # 과거 이 페이지에도 px 단위 슬라이더가 있었으나 엔진이 소비하지 않는
+        # 죽은 값이라 중복/혼란을 없애기 위해 제거했다.
 
         # ---- 특수 효과 카드 ----
         effect_card = ContentCard("특수 효과")
@@ -2005,12 +1971,6 @@ class FormatStylePage(BasePage):
         _s("dice_icon", self.dice_icon.isChecked())
         _s("dice_color", self.dice_color.get_color())
 
-        # Margins
-        _s("margin_top", self.margin_top.value())
-        _s("margin_bottom", self.margin_bottom.value())
-        _s("margin_left", self.margin_left.value())
-        _s("margin_right", self.margin_right.value())
-
         # Effects
         _s("first_letter", self.first_letter.isChecked())
         _s("page_break", self.page_break.isChecked())
@@ -2053,10 +2013,6 @@ class FormatStylePage(BasePage):
             self.quote_style,
             self.dice_style,
             self.dice_icon,
-            self.margin_top,
-            self.margin_bottom,
-            self.margin_left,
-            self.margin_right,
             self.first_letter,
             self.page_break,
             self.divider_img_height,
@@ -2198,12 +2154,6 @@ class FormatStylePage(BasePage):
         self.safe_set_combo(self.dice_style, _g("dice_style", "인라인"))
         self.dice_icon.setChecked(_g("dice_icon", True))
         self.dice_color.set_color(_g("dice_color", "#0066cc"))
-
-        # Margins
-        self.margin_top.setValue(_g("margin_top", 20))
-        self.margin_bottom.setValue(_g("margin_bottom", 20))
-        self.margin_left.setValue(_g("margin_left", 15))
-        self.margin_right.setValue(_g("margin_right", 15))
 
         # Effects
         self.first_letter.setChecked(_g("first_letter", False))

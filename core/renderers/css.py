@@ -55,6 +55,8 @@ body {{ font-family: {body_font}; font-size: {body_font_size}px; line-height: {l
 .dialogue {{ margin: 0.3em 0; line-height: 1.5; }}
 .dialogue .name {{ font-family: {name_font}; font-weight: {name_bold}; color: {name_color}; font-size: 1em; margin-right: 0.8em; }}
 .narration {{ font-size: 0.95em; line-height: 1.7; margin: 0.8em 0; padding-left: 1.5em; }}
+.narration.dropcap-para {{ padding-left: 0; }}
+.dropcap {{ float: left; font-family: {name_font}; font-size: 3.2em; line-height: 0.72; padding: 0.02em 0.1em 0 0; font-weight: 700; color: {header_color}; }}
 .dice {{ font-family: {name_font}; font-size: 0.75em; color: {dice_color}; margin: 0.2em 0; padding-left: 1em; }}
 .system {{ font-family: {name_font}; font-size: 0.85em; color: {system_color}; margin: 1em 0; padding-left: 0.5em; }}
 .effect {{ font-family: {name_font}; font-size: 0.85em; color: #444; background: {effect_bg}; border-left: 3px solid {effect_border}; padding: 0.6em 1em; margin: 0.3em 0 0.3em 1em; }}
