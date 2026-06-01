@@ -93,6 +93,10 @@ class CollapsibleSection(QWidget):
 class HelpButton(QPushButton):
     """도움말 버튼 - 원형 ? 아이콘, 클릭 시 설명 팝업 (Notion/Figma 스타일)"""
 
+    # 앱 전체에서 도움말 팝업은 한 번에 하나만. 이전에 띄운 게 안 닫히고 화면에
+    # 쌓이던 문제를 막기 위해 클래스 레벨로 현재 열린 flyout 을 추적한다.
+    _open_flyout = None
+
     def __init__(self, help_text: str, parent=None):
         super().__init__("?", parent)
         self.help_text = help_text
@@ -102,9 +106,31 @@ class HelpButton(QPushButton):
         self.clicked.connect(self._show_help)
 
     def _show_help(self):
-        """도움말 팝업 표시"""
+        """도움말 팝업 표시 — 이전에 열린 도움말은 먼저 닫는다."""
+        prev = HelpButton._open_flyout
+        if prev is not None:
+            try:
+                prev.close()
+            except RuntimeError:
+                pass  # 이미 파괴됨
+            HelpButton._open_flyout = None
+            # 같은 버튼을 다시 누른 경우엔 토글로 닫고 끝낸다.
+            if prev is getattr(self, "_my_flyout", None):
+                self._my_flyout = None
+                return
+
         view = FlyoutView(title="도움말", content=self.help_text, isClosable=True)
-        Flyout.make(view, self, self.window(), isDeleteOnClose=True)
+        flyout = Flyout.make(view, self, self.window(), isDeleteOnClose=True)
+        HelpButton._open_flyout = flyout
+        self._my_flyout = flyout
+
+        def _on_closed(*_):
+            if HelpButton._open_flyout is flyout:
+                HelpButton._open_flyout = None
+            if getattr(self, "_my_flyout", None) is flyout:
+                self._my_flyout = None
+
+        flyout.destroyed.connect(_on_closed)
 
 
 class ContentCard(CardWidget):

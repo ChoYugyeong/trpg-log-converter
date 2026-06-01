@@ -236,11 +236,14 @@ class SceneSplitSettings(BaseModel):
 
     split_mode: str = Field("scene", description="분할 모드: scene, count, none")
     scene_patterns: str = Field(
-        # '▶Scene' / '▶씬' 은 cocofolia DX3/Insane 세션에서 자주 쓰는 장면 마커.
-        # '^─+' 는 '─── Act 3 ───' 같은 구분선 마커.
-        # '^제\\s*\\d+\\s*장' 는 '제 2 장' 형태의 한국 출판 스타일.
-        "■, ▶Scene, ▶씬, Scene, 씬, 장면, Act, ^─+, ^제\\s*\\d+\\s*장",
-        description="장면 분할 패턴 (쉼표 구분, '^' 또는 정규식 사용 가능)",
+        # 줄이 이 '단어/기호'로 시작하면 새 장면으로 본다(쉼표로 여러 개).
+        # 기본값은 이해하기 쉬운 마커들만. 정규식은 고급 사용자가 직접 추가.
+        "■, ▶Scene, ▶씬, Scene, 씬, 장면, Act",
+        description=(
+            "장면(챕터) 시작 마커. 쉼표로 구분하며, 줄이 이 단어/기호로 시작하면 "
+            "새 장면이 됩니다. 예: '■, 장면, Scene'. 고급: '^제\\\\s*\\\\d+\\\\s*장' "
+            "처럼 ^ 로 시작하면 정규식으로 해석됩니다."
+        ),
     )
     entries_per_chapter: str = Field("300", description="챕터당 항목 수 (count 모드)")
     min_scene_entries: str = Field("10", description="최소 장면 항목 수")

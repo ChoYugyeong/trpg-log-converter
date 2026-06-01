@@ -213,8 +213,15 @@ class ParsingContentPage(BasePage):
             "장면 패턴",
             "scene_patterns",
             placeholder="■, 씬, Scene, 장면",
-            default=self.settings.get("scene_patterns", "■, 씬, Scene, 장면, Act"),
-            help_text="이 텍스트로 시작하는 메시지에서 새 챕터가 시작됩니다.",
+            default=self.settings.get("scene_patterns", "■, ▶Scene, ▶씬, Scene, 씬, 장면, Act"),
+            help_text=(
+                "장면(챕터)이 시작되는 줄을 알아내는 '시작 단어/기호' 목록입니다.\n"
+                "쉼표(,)로 여러 개를 적고, 어떤 줄이 이 단어로 시작하면 거기서 "
+                "새 장면이 나뉩니다.\n\n"
+                "예) '■, 장면, Scene' → '■ 도입', '장면 2', 'Scene 3' 에서 분할\n\n"
+                "고급: '^' 로 시작하는 항목은 정규식으로 해석됩니다. "
+                "예) '^제\\s*\\d+\\s*장' 은 '제 2 장' 같은 줄과 매칭."
+            ),
         )
         self.min_scene_entries = chapter_card.add_text_field(
             "최소 장면 항목",
@@ -314,7 +321,13 @@ class ParsingContentPage(BasePage):
                 "기타 (범용 주사위)",
             ],
             default=self.settings.get("rule_system", "자동 감지"),
-            help_text="룰 시스템에 따라 주사위 키워드와 결과 판정 방식이 달라집니다",
+            help_text=(
+                "'어떤 주사위 표기를 인식할지'만 정합니다 "
+                "(예: CoC=CCB·1d100, D&D=/roll·1d20).\n"
+                "플랫폼(코코포리아/Roll20/디스코드)과는 별개로 적용됩니다 — "
+                "같은 CoC 룰이면 어느 플랫폼 로그든 동일하게 주사위를 잡아냅니다.\n"
+                "'자동 감지'로 두면 로그 내용에서 알아서 찾습니다."
+            ),
         )
         self.rule_system.currentTextChanged.connect(self._on_rule_system_changed)
 

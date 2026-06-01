@@ -8,7 +8,7 @@ import os
 import sys
 from pathlib import Path
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QFont, QFontDatabase, QImage, QPixmap
 from PySide6.QtWidgets import (
     QDoubleSpinBox,
@@ -218,6 +218,14 @@ class FormatStylePage(BasePage):
         self.color_service = CharacterColorService(self.settings.get("character_colors", {}))
         self.character_color_widgets = {}
         self._system_fonts = self._get_system_fonts()
+        # 폰트크기/줄간격 슬라이더 드래그 중 매 픽셀마다 저장+미리보기 재렌더가
+        # 돌면 끊겨서 핸들이 제대로 안 멈춘다. 변경은 라벨만 즉시 반영하고, 무거운
+        # 저장/미리보기는 이 타이머로 디바운스(드래그를 멈추면 한 번만 실행).
+        self._style_apply_timer = QTimer(self)
+        self._style_apply_timer.setSingleShot(True)
+        self._style_apply_timer.setInterval(180)
+        self._style_apply_timer.timeout.connect(self._apply_style_debounced)
+        self._pending_font_size = None
         self._setup_page()
         self.load_settings()
 
@@ -394,7 +402,7 @@ class FormatStylePage(BasePage):
         self.size_spin.setRange(10, 24)
         self.size_spin.setValue(self.size_slider.value())
         self.size_spin.setSuffix("px")
-        self.size_spin.setFixedWidth(70)
+        self.size_spin.setFixedWidth(92)
         self.size_spin.setFixedHeight(32)
         size_layout.addWidget(self.size_spin)
 
@@ -428,7 +436,7 @@ class FormatStylePage(BasePage):
         self.height_spin.setSingleStep(0.1)
         self.height_spin.setDecimals(1)
         self.height_spin.setValue(self.height_slider.value() / 10)
-        self.height_spin.setFixedWidth(70)
+        self.height_spin.setFixedWidth(92)
         self.height_spin.setFixedHeight(32)
         height_layout.addWidget(self.height_spin)
 
@@ -1020,7 +1028,7 @@ class FormatStylePage(BasePage):
         self.line_width_spin.setRange(20, 100)
         self.line_width_spin.setValue(60)
         self.line_width_spin.setSuffix("%")
-        self.line_width_spin.setFixedWidth(70)
+        self.line_width_spin.setFixedWidth(92)
         self.line_width_spin.setFixedHeight(32)
         self.line_width_spin.valueChanged.connect(
             lambda v: (
@@ -1069,7 +1077,7 @@ class FormatStylePage(BasePage):
         self.header_size_spin.setRange(14, 32)
         self.header_size_spin.setValue(20)
         self.header_size_spin.setSuffix("px")
-        self.header_size_spin.setFixedWidth(70)
+        self.header_size_spin.setFixedWidth(92)
         self.header_size_spin.setFixedHeight(32)
         hdr_size_layout.addWidget(self.header_size_spin)
 
@@ -1442,35 +1450,38 @@ class FormatStylePage(BasePage):
         self.save_settings()
         self.settings_changed.emit()
 
+    def _apply_style_debounced(self):
+        """슬라이더/스핀 변경의 무거운 후처리(저장+미리보기)를 모아 한 번만 실행."""
+        self.save_settings()
+        if self._pending_font_size is not None:
+            self.update_inspector(font_size=self._pending_font_size)
+        self.settings_changed.emit()
+
     def _on_font_size_changed(self, value: int):
         self.size_spin.blockSignals(True)
         self.size_spin.setValue(value)
         self.size_spin.blockSignals(False)
-        self.save_settings()
-        self.update_inspector(font_size=value)
-        self.settings_changed.emit()
+        self._pending_font_size = value
+        self._style_apply_timer.start()
 
     def _on_font_size_spin_changed(self, value: int):
         self.size_slider.blockSignals(True)
         self.size_slider.setValue(value)
         self.size_slider.blockSignals(False)
-        self.save_settings()
-        self.update_inspector(font_size=value)
-        self.settings_changed.emit()
+        self._pending_font_size = value
+        self._style_apply_timer.start()
 
     def _on_line_height_changed(self, value: int):
         self.height_spin.blockSignals(True)
         self.height_spin.setValue(value / 10)
         self.height_spin.blockSignals(False)
-        self.save_settings()
-        self.settings_changed.emit()
+        self._style_apply_timer.start()
 
     def _on_line_height_spin_changed(self, value: float):
         self.height_slider.blockSignals(True)
         self.height_slider.setValue(int(value * 10))
         self.height_slider.blockSignals(False)
-        self.save_settings()
-        self.settings_changed.emit()
+        self._style_apply_timer.start()
 
     def _on_palette_color_changed(self, key: str, color: str):
         if "colors" not in self.settings:

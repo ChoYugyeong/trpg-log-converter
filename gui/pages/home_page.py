@@ -616,6 +616,7 @@ class HomePage(BasePage):
             ("EPUB + DOCX", "both"),
             ("EPUB만", "epub"),
             ("DOCX만", "docx"),
+            ("PDF만", "pdf"),
             ("모두 (PDF 포함)", "all"),
         ]
         for text, value in formats:
