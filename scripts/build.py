@@ -390,6 +390,9 @@ def build_app():
         if os.environ.get("BUILD_INSTALLER", "1") != "0":
             _build_installer(app_dir)
 
+        # 포터블 zip — 압축만 풀면 바로 실행 가능(설치 불필요). 항상 생성.
+        _make_portable_zip(app_dir)
+
         print(f"\n[OK] Build Success!")
         print(f"\n[OUTPUT]")
         print(f"   - dist/{APP_NAME}/  (distribution folder)")
@@ -399,10 +402,46 @@ def build_app():
             print(f"\n[TIP] Compress dist/{APP_NAME}.app to zip for distribution.")
         else:
             print(f"   - dist/{APP_NAME}/{APP_NAME}.exe  (Windows executable)")
-            print(f"\n[TIP] Compress dist/{APP_NAME} folder to zip for distribution.")
+            print(f"   - dist/{APP_NAME}_Portable_*_Windows.zip  (압축 풀면 바로 실행)")
+            print("   - dist/installer/*_Setup_*.exe  (설치형)")
     else:
         print(f"\n[FAIL] Build failed")
         sys.exit(1)
+
+
+def _make_portable_zip(app_dir: Path) -> None:
+    """onedir 산출물에 포터블 마커를 넣고 zip 으로 묶는다.
+
+    압축만 풀면 바로 실행 가능하며, 마커(portable.txt)가 있어 설정·기록·로그가
+    폴더 옆 ``data\\`` 에 저장되는 '진짜 포터블' 빌드다. 인스톨러와 별개로 항상
+    생성한다. macOS(.app)는 zip 규칙이 달라 건너뛴다.
+    """
+    from core.version import __version__
+
+    dist_dir = app_dir / "dist" / APP_NAME
+    if not dist_dir.is_dir():
+        print("[portable] onedir 산출물이 없어 건너뜀")
+        return
+
+    # 포터블 마커 + 사용 안내(존재 자체가 포터블 모드를 켠다)
+    (dist_dir / "portable.txt").write_text(
+        "이 파일이 있으면 '포터블 모드'로 동작합니다.\n"
+        "설정·기록·로그가 이 폴더의 data\\ 안에 저장되어, 폴더째 USB 등으로\n"
+        "옮겨도 설정이 그대로 따라갑니다.\n\n"
+        "설치형처럼 설정을 %APPDATA% 에 저장하고 싶으면 이 파일을 삭제하세요.\n",
+        encoding="utf-8",
+    )
+
+    out_base = app_dir / "dist" / f"{APP_NAME}_Portable_{__version__}_Windows"
+    try:
+        archive = shutil.make_archive(
+            str(out_base), "zip", root_dir=str(dist_dir.parent), base_dir=dist_dir.name
+        )
+    except Exception as e:  # noqa: BLE001 — 배포 보조 단계, 실패해도 빌드는 성공
+        print(f"[portable] zip 생성 실패(비치명): {e}")
+        return
+    size_mb = Path(archive).stat().st_size / (1024 * 1024)
+    print(f"[portable] OK -> {archive} ({size_mb:.1f} MB)")
 
 
 def _build_installer(app_dir: Path) -> None:

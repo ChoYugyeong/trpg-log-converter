@@ -48,8 +48,33 @@ APP_FOLDER_NAME = "TRPG_Converter_Pro"
 _PLATFORM: str = sys.platform
 
 
+def _portable_base() -> Path | None:
+    """포터블 모드면 실행파일(또는 프로젝트) 옆 ``data`` 디렉터리를 반환.
+
+    실행파일과 같은 폴더에 ``portable.txt`` 마커 파일이 있으면 포터블 모드로
+    간주하고 설정·캐시·로그를 모두 그 옆 ``data/`` 에 저장한다. 압축만 풀면
+    USB 등 어디서든 설정을 그대로 들고 다닐 수 있다(레지스트리/APPDATA 미사용).
+    마커가 없으면 None 을 반환해 기존 OS 표준 경로(%APPDATA% 등)를 쓴다.
+    """
+    try:
+        if getattr(sys, "frozen", False):
+            root = Path(sys.executable).resolve().parent
+        else:
+            root = Path(__file__).resolve().parent.parent
+        if (root / "portable.txt").exists():
+            data = root / "data"
+            data.mkdir(parents=True, exist_ok=True)
+            return data
+    except Exception:  # 권한/읽기 전용 매체 등 — 조용히 표준 경로로 폴백
+        return None
+    return None
+
+
 def user_data_dir() -> Path:
     """Per-user writable directory for settings, presets, history."""
+    portable = _portable_base()
+    if portable is not None:
+        return portable
     if _PLATFORM == "win32":
         base = os.environ.get("APPDATA")
         if base:
@@ -66,6 +91,9 @@ def user_data_dir() -> Path:
 
 def user_cache_dir() -> Path:
     """Per-user discardable cache (downloads, optimised images, etc.)."""
+    portable = _portable_base()
+    if portable is not None:
+        return portable / "Cache"
     if _PLATFORM == "win32":
         base = os.environ.get("LOCALAPPDATA")
         if base:
@@ -81,6 +109,9 @@ def user_cache_dir() -> Path:
 
 def user_logs_dir() -> Path:
     """Per-user log directory. On macOS this is platform-conventional separate."""
+    portable = _portable_base()
+    if portable is not None:
+        return portable / "logs"
     if sys.platform == "darwin":
         return Path.home() / "Library" / "Logs" / APP_FOLDER_NAME
     # Windows + Linux: keep logs adjacent to settings for easy support extraction.

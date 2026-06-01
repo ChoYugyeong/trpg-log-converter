@@ -1,6 +1,8 @@
 [project]
 name = "trpg-log-converter-pro"
-version = "2.1.0"
+# 버전 단일 출처(SSOT): core/version.py 의 __version__. 아래 dynamic 으로
+# 거기서 읽어와 pyproject 와 런타임/빌드 버전이 어긋나지 않게 한다.
+dynamic = ["version"]
 description = "TRPG 채팅 로그를 EPUB/DOCX/PDF로 변환하는 도구"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -56,6 +58,9 @@ trpg-converter = "main:main"
 [build-system]
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools.dynamic]
+version = {attr = "core.version.__version__"}
 
 [tool.setuptools.packages.find]
 where = ["."]
