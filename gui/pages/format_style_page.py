@@ -476,7 +476,6 @@ class FormatStylePage(BasePage):
         self.custom_separator = LineEdit()
         self.custom_separator.setPlaceholderText("예: [ ] 또는 < >")
         self.custom_separator.setMinimumHeight(36)
-        self.custom_separator.setVisible(False)
         self.custom_separator.textChanged.connect(self._on_style_changed)
         char_card.add_field(
             "", self.custom_separator, help_text="열림/닫힘 기호를 공백으로 구분하여 입력 (예: [ ])"
@@ -484,8 +483,9 @@ class FormatStylePage(BasePage):
 
         saved_sep = self.settings.get("style_separator", "「 」 (꺾쇠)")
         if saved_sep == "직접 입력":
-            self.custom_separator.setVisible(True)
             self.custom_separator.setText(self.settings.get("custom_separator_text", ""))
+        # 위젯만 숨기면 라벨 없는 빈 행에 도움말(?) 버튼이 남으므로 행 전체를 토글
+        self._set_custom_separator_row_visible(saved_sep == "직접 입력")
 
         section.add_widget(char_card)
 
@@ -1459,8 +1459,17 @@ class FormatStylePage(BasePage):
         else:
             self.preset_combo.setCurrentText("Classic Light")
 
+    def _set_custom_separator_row_visible(self, visible: bool):
+        """커스텀 구분자 입력 '행 전체'를 표시/숨김.
+
+        widget.setVisible 만 쓰면 라벨 없는 행에 도움말 버튼이 남는다.
+        ContentCard.add_field 가 부착한 _field_row 컨테이너를 토글한다.
+        """
+        row = getattr(self.custom_separator, "_field_row", None)
+        (row if row is not None else self.custom_separator).setVisible(visible)
+
     def _on_separator_changed(self, text: str):
-        self.custom_separator.setVisible(text == "직접 입력")
+        self._set_custom_separator_row_visible(text == "직접 입력")
         self._on_style_changed()
 
     def _on_style_changed(self, *args):
@@ -1955,6 +1964,11 @@ class FormatStylePage(BasePage):
         _s("cover_image", self.cover_image_entry.text())
         _s("include_toc", self.include_toc.isChecked())
         _s("toc_title", self.toc_title.text())
+        # toc_scene_only / toc_exclude_patterns 는 UI 에 존재하고 엔진
+        # (core/config_manager.py)에서 목차 필터로 소비되지만 저장 누락되어
+        # 사용자의 선택이 항상 기본값으로 되돌아가던 버그를 수정.
+        _s("toc_scene_only", self.toc_scene_only.isChecked())
+        _s("toc_exclude_patterns", self.toc_exclude_patterns.text())
 
         # Decoration - Divider
         _s("divider_type", self.divider_type.currentText())
@@ -2023,6 +2037,7 @@ class FormatStylePage(BasePage):
             self.title_on_cover,
             self.author_on_cover,
             self.include_toc,
+            self.toc_scene_only,
             self.divider_type,
             self.divider_text,
             self.line_style,
@@ -2079,8 +2094,10 @@ class FormatStylePage(BasePage):
 
         saved_sep = _g("style_separator", "「 」 (꺾쇠)")
         if saved_sep == "직접 입력":
-            self.custom_separator.setVisible(True)
             self.custom_separator.setText(_g("custom_separator_text", ""))
+        # 위젯만 토글하면 빈 행이 남고, 직접입력이 아닐 때 숨김 처리가 빠져
+        # 한 번 보였던 입력칸이 안 사라지던 문제를 행 단위 토글로 수정.
+        self._set_custom_separator_row_visible(saved_sep == "직접 입력")
 
         current_preset = self.preset_combo.currentText()
         self._update_preset_swatch(bg, text, name_c, current_preset)
@@ -2136,6 +2153,8 @@ class FormatStylePage(BasePage):
         self.cover_image_entry.setText(str(_g("cover_image", "")))
         self.include_toc.setChecked(_g("include_toc", True))
         self.toc_title.setText(str(_g("toc_title", "목차")))
+        self.toc_scene_only.setChecked(_g("toc_scene_only", False))
+        self.toc_exclude_patterns.setText(str(_g("toc_exclude_patterns", "")))
 
         # === Decoration ===
         self.safe_set_combo(self.divider_type, _g("divider_type", "텍스트/기호"))

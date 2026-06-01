@@ -493,17 +493,53 @@ class AdvancedSettingsPage(BasePage):
         """기본값으로 복원"""
         w = MessageBox("설정 초기화", "모든 설정을 기본값으로 초기화하시겠습니까?", self.window())
 
-        if w.exec():
-            default_settings = self.config_manager.get_default_gui_settings()
-            self.config_manager.save_gui_settings(default_settings)
-            self.load_settings()
-            InfoBar.success(
-                title="초기화 완료",
-                content="모든 설정이 기본값으로 초기화되었습니다.",
-                parent=self,
-                position=InfoBarPosition.TOP,
-                duration=3000,
-            )
+        if not w.exec():
+            return
+
+        default_settings = self.config_manager.get_default_gui_settings()
+        self.config_manager.save_gui_settings(default_settings)
+
+        main_window = self.window()
+        # AppState 도 기본값으로 동기화 (이 페이지만이 아니라 전체가 대상)
+        if hasattr(main_window, "app_state"):
+            main_window.app_state.load()
+
+        # 모든 페이지의 UI 를 다시 로드한다. 한 페이지만 load_settings 하면
+        # 다른 페이지(예: 파싱 및 콘텐츠)의 숨김/표시 상태가 갱신되지 않아
+        # 초기화해도 화면이 복구되지 않는 문제가 있었다.
+        # 리로드 중 위젯 시그널이 save_settings 를 거쳐 기본값으로 디스크를
+        # 오염시키지 않도록 set/save 를 잠근다(_import_settings 와 동일 패턴).
+        original_save = self.config_manager.save_gui_settings
+        self.config_manager.save_gui_settings = lambda _s: None
+        if hasattr(main_window, "app_state"):
+            main_window.app_state._suspend_set = True
+        try:
+            if hasattr(main_window, "pages"):
+                for page in main_window.pages.values():
+                    if hasattr(page, "load_settings"):
+                        try:
+                            page.load_settings()
+                        except Exception as page_err:
+                            logger.warning("페이지 설정 로드 중 오류(계속 진행): %s", page_err)
+            else:
+                self.load_settings()
+        finally:
+            if hasattr(main_window, "app_state"):
+                main_window.app_state._suspend_set = False
+            self.config_manager.save_gui_settings = original_save
+
+        # 리로드 후 기본값을 최종 확정 저장하고 AppState 재동기화
+        self.config_manager.save_gui_settings(default_settings)
+        if hasattr(main_window, "app_state"):
+            main_window.app_state.load()
+
+        InfoBar.success(
+            title="초기화 완료",
+            content="모든 설정이 기본값으로 초기화되었습니다.",
+            parent=self,
+            position=InfoBarPosition.TOP,
+            duration=3000,
+        )
 
     # ──────────── 페이지 진입 ────────────
     def on_page_enter(self):

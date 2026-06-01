@@ -348,14 +348,16 @@ class ParsingContentPage(BasePage):
         self.custom_separator_input.setPlaceholderText("구분자를 입력하세요 (예: ::, ->, |)")
         self.custom_separator_input.setMinimumHeight(Sizes.BUTTON_MD_H)
         self.custom_separator_input.setText(self.settings.get("custom_separator_text", ""))
-        self.custom_separator_input.setVisible(
-            self.settings.get("custom_separator_type", "콜론 (:)") == "직접 입력"
-        )
         name_card.add_field(
             "커스텀 구분자",
             self.custom_separator_input,
             "custom_separator_text",
             help_text="이름과 대사 사이에 사용되는 구분 문자열을 입력하세요",
+        )
+        # 초기 표시 상태: '직접 입력'일 때만 행 전체를 표시 (행 단위 토글)
+        self._set_field_row_visible(
+            self.custom_separator_input,
+            self.settings.get("custom_separator_type", "콜론 (:)") == "직접 입력",
         )
         self.name_position = name_card.add_dropdown(
             "이름 위치",
@@ -445,6 +447,18 @@ class ParsingContentPage(BasePage):
         test_card.add_widget(self.test_result)
         section.add_card(test_card)
 
+    # ──────────── 행 단위 표시/숨김 헬퍼 ────────────
+    @staticmethod
+    def _set_field_row_visible(widget, visible: bool):
+        """필드가 속한 '행(라벨+위젯)' 컨테이너만 표시/숨김.
+
+        widget.parent() 를 직접 숨기면 카드 전체(선택 라디오 포함)가 사라지는
+        버그가 있었다. ContentCard 가 각 행을 별도 컨테이너로 감싸 widget 에
+        부착해둔 _field_row 를 사용해 그 행만 안전하게 토글한다.
+        """
+        row = getattr(widget, "_field_row", None)
+        (row if row is not None else widget).setVisible(visible)
+
     # ──────────── 분할 모드 변경 ────────────
     def _on_split_mode_changed(self, checked=True):
         """분할 모드 변경 시 관련 필드 표시/숨김"""
@@ -456,27 +470,20 @@ class ParsingContentPage(BasePage):
         is_none = mode == "none"
 
         # 장면 기반 필드
-        self.scene_patterns.setVisible(is_scene)
-        if self.scene_patterns.parent():
-            self.scene_patterns.parent().setVisible(is_scene)
-        self.min_scene_entries.setVisible(is_scene)
+        self._set_field_row_visible(self.scene_patterns, is_scene)
+        self._set_field_row_visible(self.min_scene_entries, is_scene)
 
         # 항목 수 기반 필드
-        self.entries_per_chapter.setVisible(is_count)
+        self._set_field_row_visible(self.entries_per_chapter, is_count)
 
         # 제목 형식은 '단일 챕터' 외에는 표시
-        self.title_format.setVisible(not is_none)
+        self._set_field_row_visible(self.title_format, not is_none)
 
     # ──────────── 구분 방식 변경 ────────────
     def _on_separator_type_changed(self, text: str):
         """구분 방식 변경 시 직접 입력 필드 표시/숨김"""
         is_custom = text == "직접 입력"
-        self.custom_separator_input.setVisible(is_custom)
-        # 부모 행(라벨+위젯)도 함께 표시/숨김
-        if self.custom_separator_input.parent():
-            parent = self.custom_separator_input.parent()
-            if parent != self:
-                parent.setVisible(is_custom)
+        self._set_field_row_visible(self.custom_separator_input, is_custom)
 
     # ──────────── 룰 시스템 변경 ────────────
     def _on_rule_system_changed(self, rule_system: str):

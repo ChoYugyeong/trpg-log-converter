@@ -82,8 +82,8 @@ Source: "..\..\dist\TRPG_Converter_Pro\*"; DestDir: "{app}"; \
     Flags: ignoreversion recursesubdirs createallsubdirs
 
 ; Bundled assets that may live outside dist/ (license, README for support).
-Source: "..\..\LICENSE";   DestDir: "{app}"; Flags: ignoreversion
-Source: "..\..\README.md"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\..\LICENSE";        DestDir: "{app}"; Flags: ignoreversion
+Source: "..\..\docs\README.md"; DestDir: "{app}"; Flags: ignoreversion skipifsourcedoesntexist
 
 [Icons]
 Name: "{group}\{#AppName}";          Filename: "{app}\{#AppShortName}.exe"

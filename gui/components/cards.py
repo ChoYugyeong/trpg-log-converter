@@ -119,6 +119,10 @@ class ContentCard(CardWidget):
     ):
         super().__init__(parent)
         self._fields = {}
+        # key -> 그 필드가 들어있는 행(라벨+위젯) 컨테이너 위젯.
+        # 행 단위 표시/숨김에 사용. widget.parent() 에 의존하면 카드 전체가
+        # 숨겨지는 버그가 생기므로, 항상 이 컨테이너로 토글한다.
+        self._field_rows = {}
 
         # 메인 레이아웃
         self._layout = QVBoxLayout(self)
@@ -194,8 +198,29 @@ class ContentCard(CardWidget):
         if key:
             self._fields[key] = widget
 
-        self._content_layout.addLayout(row)
+        container = self._wrap_row(row)
+        # 호출 측이 위젯만 들고 있어도 행 전체를 토글할 수 있도록 참조를 부착.
+        widget._field_row = container
+        if key:
+            self._field_rows[key] = container
         return widget
+
+    def _wrap_row(self, row: QHBoxLayout) -> QWidget:
+        """행(QHBoxLayout)을 독립 QWidget 컨테이너로 감싸 콘텐츠 영역에 추가.
+
+        레이아웃을 직접 addLayout 하면 그 안의 위젯들의 parent() 가 카드 전체가
+        되어, 한 위젯의 parent().setVisible(False) 호출이 카드를 통째로 숨기는
+        버그를 유발한다. 행마다 별도 컨테이너를 두면 행 단위로 안전하게 숨길 수
+        있고, 위젯의 parent() 도 해당 행 컨테이너로 한정된다.
+        """
+        container = QWidget()
+        container.setLayout(row)
+        self._content_layout.addWidget(container)
+        return container
+
+    def row_of(self, key: str) -> QWidget | None:
+        """key 로 추가된 필드가 속한 행 컨테이너 위젯을 반환."""
+        return self._field_rows.get(key)
 
     def add_text_field(
         self,
@@ -261,12 +286,16 @@ class ContentCard(CardWidget):
             help_btn = HelpButton(help_text)
             row.addWidget(help_btn)
             row.addStretch()
-            self._content_layout.addLayout(row)
+            container = self._wrap_row(row)
+            checkbox._field_row = container
+            self._field_rows[key] = container
 
             checkbox.setToolTip(help_text)
             checkbox.installEventFilter(ToolTipFilter(checkbox, showDelay=300))
         else:
             self._content_layout.addWidget(checkbox)
+            checkbox._field_row = checkbox
+            self._field_rows[key] = checkbox
 
         return checkbox
 
@@ -288,7 +317,8 @@ class ContentCard(CardWidget):
                 radio.setChecked(True)
 
         row.addStretch()
-        self._content_layout.addLayout(row)
+        container = self._wrap_row(row)
+        self._field_rows[key] = container
         self._fields[key] = group
         return group
 
