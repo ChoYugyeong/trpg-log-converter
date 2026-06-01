@@ -131,7 +131,11 @@ class HelpButton(QPushButton):
             return  # 같은 버튼 토글 → 닫기만
 
         view = FlyoutView(title="도움말", content=self.help_text, isClosable=True)
-        HelpButton._open_flyout = Flyout.make(view, self, self.window(), isDeleteOnClose=True)
+        flyout = Flyout.make(view, self, self.window(), isDeleteOnClose=True)
+        # qfluentwidgets 버그 우회: Flyout 은 FlyoutView 의 X 버튼(closed 시그널)을
+        # 자동으로 닫기에 연결하지 않는다 → X 를 눌러도 안 닫힘. 직접 연결한다.
+        view.closed.connect(flyout.close)
+        HelpButton._open_flyout = flyout
         HelpButton._open_owner = self
 
 
