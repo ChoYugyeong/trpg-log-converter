@@ -485,6 +485,24 @@ QListWidget::item:selected {
     color: palette(highlighted-text);
 }
 
+/* qfluentwidgets ComboBox/RoundMenu 팝업 전용 보정.
+   위의 일반 QListWidget(padding:6px)·QListWidget::item(margin:1px) 규칙이
+   qfluentwidgets 메뉴의 MenuActionListWidget 에도 적용되면서, qfluentwidgets
+   가 미리 계산해 둔 항목 높이(항목당 ~33px)보다 실제 렌더가 커져 팝업 마지막
+   항목이 잘려 보이는(=글자 깨짐) 문제가 있었다. 추가 여백을 0 으로 되돌려
+   qfluentwidgets 의 높이 계산과 일치시킨다. */
+MenuActionListWidget {
+    padding: 0px;
+    border: none;
+    background: transparent;
+}
+
+MenuActionListWidget::item {
+    margin: 0px;
+    padding: 0px 16px;
+    border-radius: 6px;
+}
+
 /* ==================== Slider - Modern ==================== */
 QSlider::groove:horizontal {
     height: 6px;

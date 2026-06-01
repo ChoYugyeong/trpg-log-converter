@@ -430,8 +430,10 @@ class ParsingContentPage(BasePage):
             "■ 장면 1\n"
             "홍길동: CCB<=65 → 35 성공"
         )
-        self.test_input.setMinimumHeight(120)
-        self.test_input.setMaximumHeight(150)
+        # 7줄짜리 안내(placeholder)가 들어가므로 높이를 넉넉히. 이전엔 max 150 이라
+        # 고배율(125~150%) 화면에서 아래 두어 줄이 잘렸다.
+        self.test_input.setMinimumHeight(190)
+        self.test_input.setMaximumHeight(240)
         test_card.add_widget(self.test_input)
 
         test_btn = PrimaryPushButton("파싱 테스트")
