@@ -472,6 +472,10 @@ class MainWindow(FluentWindow):
         self.setWindowTitle("TRPG Log Converter Pro")
         self.setMinimumSize(900, 600)
         self.resize(1300, 800)
+        # 창 전체에서 파일 드래그 앤 드롭을 받는다. FluentWindow(프레임리스)에서는
+        # 자식 드롭 영역까지 이벤트가 잘 전달되지 않는 경우가 있어, 윈도우 레벨에서
+        # 받아 어디에 떨궈도 추가되게 한다(드롭 영역 밖에 떨궈도 동작).
+        self.setAcceptDrops(True)
 
         # 테마 설정 (시스템 테마 따라감)
         setTheme(Theme.AUTO)
@@ -1334,6 +1338,41 @@ class MainWindow(FluentWindow):
         from gui.dialogs import UpdateDialog
 
         UpdateDialog(info, UpdateService(), self).exec()
+
+    # ──────────── 창 전체 파일 드래그 앤 드롭 ────────────
+    def dragEnterEvent(self, event):
+        """파일 URL 이 드래그되면 수락 표시."""
+        md = event.mimeData()
+        if md is not None and md.hasUrls():
+            event.acceptProposedAction()
+        else:
+            event.ignore()
+
+    def dragMoveEvent(self, event):
+        md = event.mimeData()
+        if md is not None and md.hasUrls():
+            event.acceptProposedAction()
+        else:
+            event.ignore()
+
+    def dropEvent(self, event):
+        """떨궈진 파일 중 지원 형식(.html/.htm/.txt)만 홈 페이지에 추가."""
+        md = event.mimeData()
+        if md is None or not md.hasUrls():
+            event.ignore()
+            return
+        supported = (".html", ".htm", ".txt")
+        paths = []
+        for url in md.urls():
+            p = url.toLocalFile()
+            if p and p.lower().endswith(supported):
+                paths.append(p)
+        if paths:
+            self.home_page._on_files_dropped(paths)
+            self._switch_to_page("home")
+            event.acceptProposedAction()
+        else:
+            event.ignore()
 
     def closeEvent(self, event):
         """윈도우 닫기 이벤트.

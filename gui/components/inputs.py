@@ -390,6 +390,14 @@ class FileDropArea(QFrame):
                     }}
                 """)
 
+    def dragMoveEvent(self, event):
+        # dragEnter 에서 수락했더라도 일부 환경에선 dragMove 에서 다시 수락해야
+        # 드롭이 허용된다. URL 드래그면 계속 수락.
+        if event.mimeData().hasUrls():
+            event.acceptProposedAction()
+        else:
+            event.ignore()
+
     def dragLeaveEvent(self, event):
         self._update_style(False)
         self.setStyleSheet("")  # 인라인 제거
