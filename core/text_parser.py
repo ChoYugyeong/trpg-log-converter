@@ -217,7 +217,11 @@ def parse_text_log(content, config):
         if content_text and is_scene_marker(content_text, scene_patterns):
             entry["type"] = "scene"
 
-    return entries
+    # '파싱 규칙'(dice_keywords/system_prefix/narration_no_name) 을 HTML 파서와
+    # 동일하게 텍스트 로그에도 반영. 기본값이면 무변경.
+    from core.parsers.helpers import apply_parsing_overrides
+
+    return apply_parsing_overrides(entries, config)
 
 
 def _detect_and_read(path: Path) -> tuple[str, str]:

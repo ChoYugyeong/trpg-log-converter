@@ -15,6 +15,7 @@ from bs4 import BeautifulSoup
 
 from core.parsers.cocofolia import parse_cocofolia
 from core.parsers.helpers import (
+    apply_parsing_overrides,
     extract_scene_title,
     is_scene_end,
     is_scene_marker,
@@ -33,7 +34,7 @@ def parse_log(html_content: str, config: dict[str, Any]) -> list[dict[str, Any]]
     # Roll20 형식 감지
     is_roll20 = soup.find(id="textchat") is not None or soup.find(class_="message") is not None
     if is_roll20:
-        return parse_roll20(soup, config)
+        return apply_parsing_overrides(parse_roll20(soup, config), config)
 
     entries = parse_cocofolia(soup, config)
 
@@ -54,7 +55,7 @@ def parse_log(html_content: str, config: dict[str, Any]) -> list[dict[str, Any]]
         if e.get("type") != "scene" and is_scene_marker(content_check, scene_patterns):
             e["type"] = "scene"
 
-    return entries
+    return apply_parsing_overrides(entries, config)
 
 
 def filter_entries(entries: list[dict], config: dict[str, Any]) -> list[dict]:

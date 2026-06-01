@@ -406,6 +406,15 @@ class ConfigManager:
                     c.strip() for c in gui_settings.get("skip_channels", "").split(",") if c.strip()
                 ],
                 "normalize_punctuation": gui_settings.get("normalize_punct", True),
+                # 파싱 규칙 — 실제 변환에 반영(파서 post-pass 에서 소비). 빈 값/False 면
+                # 기존 동작 그대로(무변경).
+                "dice_keywords": [
+                    k.strip()
+                    for k in str(gui_settings.get("dice_keywords", "")).split(",")
+                    if k.strip()
+                ],
+                "system_prefix": str(gui_settings.get("system_prefix", "")).strip(),
+                "narration_no_name": bool(gui_settings.get("narration_no_name", False)),
             },
             "roll20": {
                 "session_gap_minutes": safe_int(gui_settings.get("session_gap", "60"), 60),

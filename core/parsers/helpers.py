@@ -86,6 +86,57 @@ def is_dice_roll(text: str) -> bool:
     return bool(re.search(r"\d+d\d+\s*[+\-]?\s*\d*\s*=\s*\d+", text, re.IGNORECASE))
 
 
+def apply_parsing_overrides(
+    entries: list[dict[str, Any]], config: dict[str, Any]
+) -> list[dict[str, Any]]:
+    """'파싱 규칙' UI 설정을 실제 파싱 결과에 반영하는 공통 post-pass.
+
+    HTML(코코포리아/Roll20) 파이프라인과 텍스트 파서 양쪽에서 호출한다.
+    세 가지를 처리하되, 기본값(빈 prefix/키워드, narration_no_name=False)이면
+    아무것도 하지 않고 그대로 반환해 기존 동작을 100% 보존한다.
+
+    1) system_prefix: content 가 이 접두사로 시작하면 system 메시지로 분류.
+    2) dice_keywords: dialogue 로 분류된 항목이 사용자 키워드 + 결과 기호(→/=/>)를
+       가지면 dice 로 재분류(기본 다이스 감지에 '추가'되는 보강).
+    3) narration_no_name: 이름 없는 dialogue 를 narration 으로.
+    """
+    parsing = config.get("parsing", {})
+    sys_prefix = (parsing.get("system_prefix") or "").strip()
+    extra_dice = [k for k in (parsing.get("dice_keywords") or []) if k]
+    narr_no_name = bool(parsing.get("narration_no_name", False))
+
+    if not sys_prefix and not extra_dice and not narr_no_name:
+        return entries  # 기본값 — 무변경
+
+    _skip = {"scene", "scene_end", "image"}
+    for entry in entries:
+        if entry.get("type") in _skip:
+            continue
+        content = entry.get("content") or ""
+
+        if sys_prefix and content.lstrip().lower().startswith(sys_prefix.lower()):
+            entry["type"] = "system"
+            entry["content"] = content.lstrip()[len(sys_prefix) :].strip()
+            entry["name"] = ""
+            continue
+
+        if extra_dice and entry.get("type") == "dialogue":
+            cu = content.upper()
+            has_symbol = any(s in content for s in ("→", "=", ">", "＞"))
+            if has_symbol and any(k.upper() in cu for k in extra_dice):
+                entry["type"] = "dice"
+                continue
+
+        if (
+            narr_no_name
+            and entry.get("type") == "dialogue"
+            and not (entry.get("name") or "").strip()
+        ):
+            entry["type"] = "narration"
+
+    return entries
+
+
 def validate_regex(pattern: str) -> bool:
     try:
         re.compile(pattern)
