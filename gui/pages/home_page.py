@@ -1019,7 +1019,10 @@ class HomePage(BasePage):
         """문서 미리보기 업데이트 (디바운스 적용)"""
         if files is None:
             files = self.files
-        if not files or not hasattr(self, "document_preview"):
+        # 미리보기는 entries_parsed 시그널로 메인윈도우가 갱신한다. home_page 자체엔
+        # document_preview 가 없으므로 그걸 조건으로 걸면 안 된다(걸려 있어서 파일을
+        # 추가해도 미리보기 타이머가 시작되지 않던 버그).
+        if not files:
             return
         self._pending_preview_files = files
         self._preview_timer.start()
@@ -1061,7 +1064,10 @@ class HomePage(BasePage):
                 "narration_prefix": self.settings.get("narration_prefix", "＿"),
                 "narrators": _ensure_str(self.settings.get("narrators", DEFAULTS["narrators"])),
             }
-            self.document_preview.update_preview(entries=entries, settings=preview_settings)
+            # entries_parsed 시그널이 메인윈도우 미리보기를 갱신하므로, home_page 에
+            # document_preview 가 있을 때만(레거시 호환) 직접 갱신한다.
+            if hasattr(self, "document_preview"):
+                self.document_preview.update_preview(entries=entries, settings=preview_settings)
         except Exception as e:
             logger.warning("미리보기 업데이트 오류: %s", e, exc_info=True)
 

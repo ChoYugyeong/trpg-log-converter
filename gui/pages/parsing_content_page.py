@@ -53,7 +53,9 @@ class ParsingContentPage(BasePage):
         # ============================================================
         # 섹션 3: 파싱 규칙 (접힘)
         # ============================================================
-        self._section_parsing = CollapsibleSection("파싱 규칙", expanded=False)
+        # 빠른 시작(플랫폼·룰 시스템)이 이 안에 있어 첫 설정 단계라 기본 펼침.
+        # (접혀 있어서 '룰 시스템 선택이 없어진 것 같다'는 혼란이 있었음)
+        self._section_parsing = CollapsibleSection("파싱 규칙", expanded=True)
         self._build_parsing_rules_section(self._section_parsing)
         self.content_layout.addWidget(self._section_parsing)
 

@@ -993,7 +993,11 @@ class MainWindow(FluentWindow):
         self.add_conversion_log(f"[{value}%] {message}")
 
     def _on_conversion_finished(self, success: bool, message: str):
-        """변환 완료 처리 — InfoBar + HistoryManager 자동 기록."""
+        """변환 완료 처리 — HistoryManager 자동 기록.
+
+        완료/실패 토스트(InfoBar)는 home_page.conversion_complete() 가 띄운다.
+        여기서 또 띄우면 '변환 완료'가 두 번 떠서, 이 함수에서는 띄우지 않는다.
+        """
         self.home_page.conversion_complete(success, message)
 
         # Worker 가 보관한 각 파일의 결과 → HistoryManager 에 영구 저장.
@@ -1018,22 +1022,8 @@ class MainWindow(FluentWindow):
                 except Exception:
                     logger.exception("Failed to record conversion to history")
 
-        if success:
-            InfoBar.success(
-                title="변환 완료",
-                content=message,
-                parent=self,
-                position=InfoBarPosition.TOP,
-                duration=INFOBAR_DURATION_WARNING_MS,
-            )
-        else:
-            InfoBar.error(
-                title="변환 실패",
-                content=message,
-                parent=self,
-                position=InfoBarPosition.TOP,
-                duration=INFOBAR_DURATION_WARNING_MS,
-            )
+        # 완료/실패 토스트는 home_page.conversion_complete() 가 이미 띄웠다.
+        # (중복 InfoBar 제거 — '변환 완료'가 두 번 뜨던 문제)
 
     _SHUTDOWN_WORKER_TIMEOUT_MS = CONVERT_WORKER_SHUTDOWN_TIMEOUT_MS
 
