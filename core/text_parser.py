@@ -63,6 +63,12 @@ def parse_colon_format(line, config):
     if not name or not content:
         return None
 
+    # "13:45 모두가 모였다" 같이 시각으로 시작하는 나레이션을 name='13' 으로
+    # 오인식하지 않도록, 이름이 1~2자리 숫자(시각의 '시' 부분)면 거부.
+    # Cocofolia 경로(smart_split_name_content)와 동일한 보호.
+    if re.fullmatch(r"\d{1,2}", name):
+        return None
+
     return {"name": name, "content": content}
 
 

@@ -436,6 +436,8 @@ _FIELD_MAP: list[tuple[str, str]] = [
     ("cover_image", "format_style.cover.cover_image"),
     ("include_toc", "format_style.cover.include_toc"),
     ("toc_title", "format_style.cover.toc_title"),
+    ("toc_scene_only", "format_style.cover.toc_scene_only"),
+    ("toc_exclude_patterns", "format_style.cover.toc_exclude_patterns"),
     # --- DecorationSettings ---
     ("divider_type", "format_style.decoration.divider_type"),
     ("divider_text", "format_style.decoration.divider_text"),

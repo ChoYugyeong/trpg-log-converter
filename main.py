@@ -60,6 +60,18 @@ def load_embedded_fonts():
 
 
 def main():
+    # 콘솔 표준 출력을 UTF-8 로 — Windows 기본 cp949 콘솔 핸들러가 일본어
+    # 캐릭터명·이모지·em-dash 등 비-cp949 문자를 로깅할 때 UnicodeEncodeError 로
+    # 크래시하던 문제 방지. 윈도우(windowed/frozen)에서 stdout 이 None 이거나
+    # reconfigure 미지원일 수 있어 방어적으로 처리.
+    for _stream_name in ("stdout", "stderr"):
+        _stream = getattr(sys, _stream_name, None)
+        if _stream is not None and hasattr(_stream, "reconfigure"):
+            try:
+                _stream.reconfigure(encoding="utf-8", errors="replace")
+            except Exception:
+                pass
+
     # 로깅 설정 (가장 먼저)
     setup_app_logging()
 

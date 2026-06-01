@@ -41,8 +41,12 @@ def optimize_image(img_path: Path, config: dict[str, Any]) -> tuple[bytes, str, 
         mime, _ = mimetypes.guess_type(str(img_path))
         return data, mime or "image/jpeg", img_path.name
 
-    img = Image.open(img_path)
-    original_format = img.format or "PNG"
+    # Image.open 은 lazy 라 파일 핸들을 연 채로 둔다. 핸들을 즉시 닫지 않으면
+    # Windows 에서 원본 이미지 파일이 잠겨 이후 삭제/이동이 막히고 FD 가 샌다.
+    # with 로 열어 format 을 먼저 읽고 copy() 로 독립 복사본을 떠 핸들을 닫는다.
+    with Image.open(img_path) as opened:
+        original_format = opened.format or "PNG"
+        img = opened.copy()
     filename = img_path.name
 
     is_webp = original_format.upper() == "WEBP" or str(img_path).lower().endswith(".webp")
@@ -106,6 +110,15 @@ def extract_image_markers(text: str, config: dict[str, Any]) -> tuple[str | None
         try:
             match = re.search(pattern, text, re.IGNORECASE)
             if match:
+                # 캡처 그룹이 없는 마커 정규식(예: r"\[IMG\]")이면 group(1) 이
+                # IndexError 를 던져 parse 전체가 중단된다. 파일명을 추출할 수
+                # 없는 패턴이므로 건너뛴다.
+                if not match.groups():
+                    logger.warning(
+                        "이미지 마커 '%s' 에 캡처 그룹이 없어 파일명을 추출할 수 없습니다 — 건너뜀",
+                        pattern,
+                    )
+                    continue
                 filename = match.group(1).strip()
                 remaining_text = re.sub(pattern, "", text, count=1).strip()
                 return filename, remaining_text

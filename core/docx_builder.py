@@ -138,7 +138,10 @@ def create_docx(
             progress_callback(pct, 100, f"장면 {scene_idx + 1}/{len(scenes)} 생성 중...")
 
         if scene_title:
-            if scene_idx > 0:
+            # 'page_break' 설정이 켜져 있을 때만 챕터마다 페이지를 나눈다.
+            # (이전엔 무조건 분할되어 UI 체크 해제가 무시됐다.)
+            page_break_enabled = config.get("layout", {}).get("page_break", True)
+            if scene_idx > 0 and page_break_enabled:
                 doc.add_page_break()
 
             # 챕터 느낌의 큰 제목 — 사용자 설정(config['header'])을 따름
@@ -181,7 +184,7 @@ def create_docx(
                     doc.add_picture(io.BytesIO(img_data), width=Inches(4))
                     doc.paragraphs[-1].alignment = WD_ALIGN_PARAGRAPH.CENTER
 
-            if t == "image" or not content.strip():
+            if t == "image" or not (content and content.strip()):
                 continue
 
             para = doc.add_paragraph()

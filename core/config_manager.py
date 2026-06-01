@@ -379,6 +379,9 @@ class ConfigManager:
                     if isinstance(gui_settings.get("margins"), dict)
                     else {}
                 ),
+                # DOCX 에서 챕터(씬)마다 페이지를 나눌지. UI 체크박스 'page_break'
+                # 가 이 값으로 전달돼야 실제 출력에 반영된다(이전엔 무조건 분할).
+                "page_break": bool(gui_settings.get("page_break", True)),
             },
             # DOCX 와 PDF 가 공유하는 판형 정보 (core.layout 헬퍼로 파싱)
             "page_format": gui_settings.get("page_format", "A5 (148x210mm)"),
