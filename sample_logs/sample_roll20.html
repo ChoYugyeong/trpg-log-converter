@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Roll20 Chat Archive - The Lost Mine</title>
+<style>
+body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
+#textchat { max-width: 800px; margin: 0 auto; background: #fff; padding: 15px; }
+.message { padding: 5px 10px; border-bottom: 1px solid #eee; }
+.message .tstamp { color: #999; font-size: 0.75em; }
+.message .by { font-weight: bold; }
+.message.desc { font-style: italic; border-left: 3px solid #8bc34a; }
+.message.rollresult { background: #e3f2fd; }
+.message.system { color: #666; }
+.inlinerollresult { background: #bbdefb; font-weight: bold; }
+</style>
+</head>
+<body>
+<div id="textchat">
+
+<!-- 세션 시작 -->
+<div class="message system">
+    <span class="tstamp">2024-12-22 19:00:00</span>
+    <span class="by">::</span> Campaign "The Lost Mine of Phandelver" started
+</div>
+
+<!-- 장면 1 -->
+<div class="message general">
+    <span class="tstamp">19:00:40</span>
+    <span class="by">DM:</span> ■ Chapter 1: Goblin Ambush
+</div>
+<div class="message desc">
+    <span class="tstamp">19:01:10</span>
+    <span class="by">DM:</span> The Triboar Trail winds through pine forest. Suddenly, two dead horses block the path, several black-feathered arrows protruding from their flanks.
+</div>
+<div class="message general">
+    <span class="tstamp">19:02:00</span>
+    <span class="by">Thornwick:</span> 「I don't like this. Everyone, stay alert.」
+</div>
+<div class="message rollresult">
+    <span class="tstamp">19:02:20</span>
+    <span class="by">Thornwick:</span> Perception check: <span class="inlinerollresult">18</span> vs DC 12 → success
+</div>
+<div class="message general">
+    <span class="tstamp">19:02:45</span>
+    <span class="by">DM:</span> You spot goblins hiding in the underbrush! Roll for initiative.
+</div>
+
+<!-- 장면 2 -->
+<div class="message general">
+    <span class="tstamp">19:05:00</span>
+    <span class="by">DM:</span> ■ Chapter 2: The Skirmish
+</div>
+<div class="message rollresult">
+    <span class="tstamp">19:05:30</span>
+    <span class="by">Lyra:</span> Attack: 1d20+5 vs AC 15 → <span class="inlinerollresult">22</span> hit!
+</div>
+<div class="message rollresult">
+    <span class="tstamp">19:05:45</span>
+    <span class="by">Lyra:</span> Damage: 1d8+3 → <span class="inlinerollresult">9</span>
+</div>
+<div class="message general">
+    <span class="tstamp">19:06:10</span>
+    <span class="by">Lyra:</span> 「Take that, you green-skinned menace!」
+</div>
+<div class="message desc">
+    <span class="tstamp">19:07:00</span>
+    <span class="by">DM:</span> The last goblin falls. Silence returns to the forest, broken only by the wind.
+</div>
+<div class="message general">
+    <span class="tstamp">19:08:00</span>
+    <span class="by">Thornwick:</span> 「Let's search the bodies. There may be a clue about who sent them.」
+</div>
+
+<!-- 세션 종료 -->
+<div class="message system">
+    <span class="tstamp">19:30:00</span>
+    <span class="by">::</span> Session ended
+</div>
+
+</div>
+</body>
+</html>

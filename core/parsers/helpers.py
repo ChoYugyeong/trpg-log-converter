@@ -113,10 +113,14 @@ def apply_parsing_overrides(
         if entry.get("type") in _skip:
             continue
         content = entry.get("content") or ""
+        # system_prefix 는 '원본 줄(raw)' 기준으로 검사한다. 그렇지 않으면
+        # "[INFO] 규칙: ..." 처럼 접두사 줄에 콜론이 또 있을 때 이름:대사 분리에서
+        # 접두사가 name 으로 빨려들어가 content 검사가 놓친다.
+        probe = entry.get("raw") or content
 
-        if sys_prefix and content.lstrip().lower().startswith(sys_prefix.lower()):
+        if sys_prefix and probe.lstrip().lower().startswith(sys_prefix.lower()):
             entry["type"] = "system"
-            entry["content"] = content.lstrip()[len(sys_prefix) :].strip()
+            entry["content"] = probe.lstrip()[len(sys_prefix) :].strip()
             entry["name"] = ""
             continue
 

@@ -53,3 +53,6 @@ logs/
 병동/
 input/
 docs/
+
+# 샘플 변환 산출물(생성물)
+sample_logs/output/
