@@ -1146,7 +1146,14 @@ class MainWindow(FluentWindow):
         thread = QThread(self)
         worker.moveToThread(thread)
         thread.started.connect(worker.run)
-        worker.finished.connect(lambda info: self._on_update_check_result(info, silent))
+        # 결과 핸들러는 반드시 메인(GUI) 스레드에서 실행돼야 한다.
+        # worker.finished 를 context 없는 lambda 에 연결하면 Qt 가 이를
+        # DirectConnection 으로 처리해 슬롯이 'worker 스레드'에서 돌고, 거기서
+        # InfoBar(위젯) 생성·QTimer 조작을 하면 UI 가 프리즈/크래시한다.
+        # self(메인스레드 QObject)의 bound method 에 QueuedConnection 으로 연결해
+        # 메인스레드 이벤트 루프에서 실행되도록 강제한다.
+        self._pending_update_silent = silent
+        worker.finished.connect(self._dispatch_update_check_result, Qt.QueuedConnection)
         worker.finished.connect(thread.quit)
         worker.finished.connect(worker.deleteLater)
         thread.finished.connect(thread.deleteLater)
@@ -1204,6 +1211,18 @@ class MainWindow(FluentWindow):
         """Thread 정상 종료 시 우리 쪽 참조도 해제 — 그래야 다음 클릭이 동작."""
         self._update_check_thread = None
         self._update_check_worker = None
+
+    def _dispatch_update_check_result(self, info) -> None:
+        """worker.finished 를 '메인스레드'에서 받기 위한 bound-method 디스패처.
+
+        worker.finished 를 context 없는 lambda 에 직접 연결하면 슬롯이 worker
+        스레드에서 실행되어 InfoBar/QTimer 등 위젯 조작 시 프리즈/크래시한다.
+        self 의 bound method 로 받으면 Qt 가 QueuedConnection 으로 메인스레드
+        이벤트 루프에 디스패치한다. silent 플래그는 중복 가드 덕에 동시 실행이
+        없으므로 인스턴스 속성으로 안전하게 전달한다.
+        """
+        silent = getattr(self, "_pending_update_silent", False)
+        self._on_update_check_result(info, silent)
 
     def _on_update_check_result(self, info, silent: bool) -> None:
         """결과 InfoBar 분기 — outcome 별로 정확한 메시지.
