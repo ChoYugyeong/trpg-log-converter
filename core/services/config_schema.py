@@ -205,8 +205,16 @@ def validate_engine_config(config_dict: dict) -> dict:
     잘못된 값은 기본값으로 대체되며, 앱이 비정상 종료되지 않도록 보장.
     """
     try:
-        validated = EngineConfig(**config_dict)
-        return validated.model_dump()
+        validated = EngineConfig(**config_dict).model_dump()
+        # 검증은 '알려진 필드'를 교정/클램프하되, 스키마에 정의되지 않은 (중첩)
+        # 키까지 버리면 안 된다. Pydantic 기본 extra="ignore" 는 style.first_letter,
+        # parsing.dice_keywords, toc.scene_only, style.body_line_height/색상 등
+        # GUI 가 실제로 사용하는 수많은 키를 조용히 떨어뜨려, 해당 설정들이 출력에
+        # 반영되지 않는 버그를 유발했다. 원본 위에 검증값을 deep_merge 해서
+        # 알려진 필드는 교정된 값으로 덮되 그 외 키는 보존한다(비파괴 검증).
+        from core.utils import deep_merge
+
+        return deep_merge(config_dict, validated)
     except Exception as e:
         logger.warning("설정 검증 실패, 기본값 사용: %s", e)
         return EngineConfig().model_dump()
