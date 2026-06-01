@@ -27,6 +27,63 @@ logger = logging.getLogger(__name__)
 ProgressCallback = Callable[[int, int, str], None]
 
 
+def _b64_image_mime(b64: str) -> str:
+    """base64 문자열 선두로 이미지 MIME 추정 (data URI 용)."""
+    if b64.startswith("iVBOR"):
+        return "image/png"
+    if b64.startswith("/9j/"):
+        return "image/jpeg"
+    if b64.startswith("R0lGOD"):
+        return "image/gif"
+    if b64.startswith(("PHN2Zy", "PD94bWw")):
+        return "image/svg+xml"
+    return "image/png"
+
+
+def _render_divider_html(config: dict[str, Any]) -> str:
+    """장면 구분선(장식)을 챕터 제목 아래 HTML 로 렌더. 빈 문자열이면 표시 안 함."""
+    d = config.get("divider", {}) or {}
+    dtype = d.get("type", "텍스트/기호")
+    if dtype == "사용 안 함":
+        return ""
+    if dtype == "이미지":
+        img = d.get("image", "")
+        if not img:
+            return ""
+        h = d.get("img_height", 40)
+        mime = _b64_image_mime(img)
+        return (
+            '<div class="chapter-divider" style="text-align:center;margin:1em 0">'
+            f'<img src="data:{mime};base64,{img}" alt="divider" '
+            f'style="height:{h}px;max-width:60%"/></div>'
+        )
+    if dtype == "선 스타일":
+        style_map = {
+            "실선": "solid",
+            "점선": "dashed",
+            "파선": "dashed",
+            "점선(촘촘)": "dotted",
+            "이중선": "double",
+        }
+        css_style = style_map.get(d.get("line_style", "실선"), "solid")
+        t = d.get("line_thickness", 1)
+        w = d.get("line_width", 60)
+        c = d.get("line_color", "#cccccc")
+        return (
+            '<hr class="chapter-divider" style="border:none;'
+            f'border-top:{t}px {css_style} {c};width:{w}%;margin:1.2em auto"/>'
+        )
+    # 텍스트/기호 (기본)
+    text = d.get("text", "")
+    if not text.strip():
+        return ""
+    c = d.get("color", "#888888")
+    return (
+        f'<p class="chapter-divider" style="text-align:center;color:{c};'
+        f'margin:0.8em 0;letter-spacing:0.2em">{escape_html(text)}</p>'
+    )
+
+
 def entries_to_html(
     entries: list[dict[str, Any]],
     chapter_title: str | None = None,
@@ -43,6 +100,9 @@ def entries_to_html(
     if chapter_title:
         clean_title = chapter_title.lstrip("■▶ ").strip() or chapter_title
         html_parts.append(f'<h1 class="scene-title chapter">{escape_html(clean_title)}</h1>')
+        divider_html = _render_divider_html(config or {})
+        if divider_html:
+            html_parts.append(divider_html)
 
     for entry in entries:
         t = entry["type"]

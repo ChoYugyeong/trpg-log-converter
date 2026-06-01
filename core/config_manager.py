@@ -400,6 +400,20 @@ class ConfigManager:
                 "box_color": gui_settings.get("header_box_color", "#f5f5f5"),
                 "style": gui_settings.get("header_style", "기본"),
             },
+            # 장면 구분선(장식) — 각 챕터 제목 아래에 텍스트/이미지/선을 렌더.
+            # UI(서식 및 스타일 → 장면 구분선)는 있었으나 렌더러에 연결돼 있지 않아
+            # 동작하지 않던 것을 배선.
+            "divider": {
+                "type": gui_settings.get("divider_type", "텍스트/기호"),
+                "text": gui_settings.get("divider_text", "＊　＊　＊"),
+                "color": gui_settings.get("divider_color", "#888888"),
+                "image": gui_settings.get("divider_image", ""),  # base64 (접두사 없음)
+                "img_height": safe_int(gui_settings.get("divider_img_height", 40), 40),
+                "line_style": gui_settings.get("line_style", "실선"),
+                "line_color": gui_settings.get("line_color", "#cccccc"),
+                "line_thickness": safe_int(gui_settings.get("line_thickness", 1), 1),
+                "line_width": safe_int(gui_settings.get("line_width", 60), 60),
+            },
             "parsing": {
                 "name_max_length": safe_int(gui_settings.get("name_max_length", "50"), 50),
                 "skip_channels": [

@@ -562,6 +562,64 @@ def create_toc(story: list, scenes: list[dict], config: dict, styles: dict[str, 
     story.append(PageBreak())
 
 
+def _pdf_divider_flowables(config: dict, pdf_styles: dict) -> list:
+    """장면 구분선(장식)을 PDF flowable 리스트로. type 별 텍스트/이미지/선."""
+    d = (config or {}).get("divider", {}) or {}
+    dtype = d.get("type", "텍스트/기호")
+    if dtype == "사용 안 함":
+        return []
+    flow: list = []
+    if dtype == "이미지":
+        img_b64 = d.get("image", "")
+        if not img_b64:
+            return []
+        try:
+            import base64
+            import io as _io
+
+            from PIL import Image as PILImage
+
+            data = base64.b64decode(img_b64)
+            pil = PILImage.open(_io.BytesIO(data))
+            w, h = pil.size
+            target_h = float(d.get("img_height", 40)) * 0.75  # px → pt
+            target_w = target_h * (w / h) if h else target_h
+            img = Image(_io.BytesIO(data), width=target_w, height=target_h)
+            img.hAlign = "CENTER"
+            flow.append(img)
+        except Exception:
+            return []
+    elif dtype == "선 스타일":
+        try:
+            from reportlab.platypus import HRFlowable
+
+            try:
+                col = HexColor(d.get("line_color", "#cccccc"))
+            except Exception:
+                col = gray
+            flow.append(
+                HRFlowable(
+                    width=f"{float(d.get('line_width', 60))}%",
+                    thickness=float(d.get("line_thickness", 1)),
+                    color=col,
+                    spaceBefore=2,
+                    spaceAfter=2,
+                    hAlign="CENTER",
+                )
+            )
+        except Exception:
+            return []
+    else:  # 텍스트/기호
+        text = d.get("text", "")
+        if not text.strip():
+            return []
+        c = d.get("color", "#888888")
+        flow.append(Paragraph(f'<font color="{c}">{escape_xml(text)}</font>', pdf_styles["SceneEnd"]))
+    if flow:
+        flow.append(Spacer(1, 8))
+    return flow
+
+
 def add_image_to_story(
     story: list,
     img_path: Path,
@@ -670,6 +728,9 @@ def create_pdf(
                     f"{header_cfg.get('prefix', '')}{base_title}{header_cfg.get('suffix', '')}"
                 )
                 story.append(Paragraph(escape_xml(display_title), pdf_styles["SceneTitle"]))
+                # 장면 구분선(장식) — 제목 아래
+                for _f in _pdf_divider_flowables(config, pdf_styles):
+                    story.append(_f)
 
             # 엔트리 처리
             for entry in scene_entries:

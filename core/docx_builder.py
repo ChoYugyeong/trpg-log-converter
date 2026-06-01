@@ -59,6 +59,41 @@ def add_paragraph_spacing(paragraph, before_pt=0, after_pt=0, line_spacing=1.0):
     pPr.append(spacing)
 
 
+def _add_docx_divider(doc, config, name_font):
+    """장면 구분선(장식)을 챕터 제목 아래에 추가. type 별로 텍스트/이미지/선."""
+    d = (config or {}).get("divider", {}) or {}
+    dtype = d.get("type", "텍스트/기호")
+    if dtype == "사용 안 함":
+        return
+    para = doc.add_paragraph()
+    para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    if dtype == "이미지":
+        img_b64 = d.get("image", "")
+        if not img_b64:
+            return
+        try:
+            import base64
+
+            data = base64.b64decode(img_b64)
+            h_px = int(d.get("img_height", 40))
+            run = para.add_run()
+            # px → inch (96dpi). SVG 등 docx 가 못 읽는 형식이면 예외 → 건너뜀.
+            run.add_picture(io.BytesIO(data), height=Inches(max(8, h_px) / 96.0))
+        except Exception:
+            return
+    elif dtype == "선 스타일":
+        width = int(d.get("line_width", 60))
+        run = para.add_run("─" * max(3, width // 3))
+        set_run_font(run, name_font, size_pt=10, color=d.get("line_color", "#cccccc"))
+    else:  # 텍스트/기호
+        text = d.get("text", "")
+        if not text.strip():
+            return
+        run = para.add_run(text)
+        set_run_font(run, name_font, size_pt=11, color=d.get("color", "#888888"))
+    add_paragraph_spacing(para, before_pt=4, after_pt=14)
+
+
 def create_docx(
     entries, output_path, config, title="TRPG 리플레이", author=None, progress_callback=None
 ):
@@ -171,6 +206,9 @@ def create_docx(
             if header_cfg.get("underline"):
                 title_run.font.underline = True
             add_paragraph_spacing(title_para, before_pt=72, after_pt=36)
+
+            # 장면 구분선(장식) — 제목 아래
+            _add_docx_divider(doc, config, name_font)
 
         # 드롭캡: 이 챕터의 첫 나레이션 문단에만 적용.
         dropcap_pending = drop_cap
