@@ -96,6 +96,10 @@ class CheckOutcome:
     PARSE_ERROR = "parse"  # 200 인데 응답 형식 이상
 
 
+class DownloadCancelled(Exception):
+    """download() 가 should_cancel 콜백에 의해 협조적으로 중단됐음을 알린다."""
+
+
 @dataclass(frozen=True)
 class UpdateInfo:
     """Resolved update available on the remote."""
@@ -252,12 +256,19 @@ class UpdateService:
         self,
         info: UpdateInfo,
         on_progress: ProgressCallback | None = None,
+        should_cancel: Callable[[], bool] | None = None,
     ) -> Path:
         """Stream the asset to a local cache. Returns the path on disk.
+
+        ``should_cancel`` 가 주어지면 각 chunk 마다 호출해 True 면 부분 파일을
+        지우고 ``DownloadCancelled`` 를 던진다. 이로써 다운로드 스레드가 블로킹
+        read 안에서 영원히 멈추지 않고 빠르게 빠져나와, 다이얼로그를 닫을 때
+        'QThread destroyed while running' 크래시를 막는다.
 
         Raises:
             urllib.error.URLError: network / TLS failure.
             ValueError: size or sha256 mismatch.
+            DownloadCancelled: should_cancel 가 중단을 요청함.
         """
         cache_dir = self._cache_dir() / info.version
         cache_dir.mkdir(parents=True, exist_ok=True)
@@ -277,11 +288,15 @@ class UpdateService:
         # 두고 전체 진행은 chunk 단위로 무한정 허용. urlopen 의 timeout 은
         # "socket operation between data" 이라 chunk 가 흐르는 동안엔 reset.
         # WPAD 우회 위해 모듈 레벨 _OPENER 재사용.
+        cancelled = False
         with _OPENER.open(req, timeout=_TIMEOUT_SECONDS) as resp, open(target, "wb") as out:
             total = int(resp.headers.get("Content-Length", info.asset_size or 0))
             downloaded = 0
             chunk = 64 * 1024
             while True:
+                if should_cancel is not None and should_cancel():
+                    cancelled = True
+                    break
                 buf = resp.read(chunk)
                 if not buf:
                     break
@@ -289,6 +304,10 @@ class UpdateService:
                 downloaded += len(buf)
                 if on_progress:
                     on_progress(downloaded, total)
+
+        if cancelled:
+            target.unlink(missing_ok=True)
+            raise DownloadCancelled("download cancelled by caller")
 
         if info.asset_size and target.stat().st_size != info.asset_size:
             target.unlink(missing_ok=True)
@@ -518,4 +537,10 @@ def _verify_sha256(path: Path, expected: str) -> bool:
     return True
 
 
-__all__ = ["CheckOutcome", "ProgressCallback", "UpdateInfo", "UpdateService"]
+__all__ = [
+    "CheckOutcome",
+    "DownloadCancelled",
+    "ProgressCallback",
+    "UpdateInfo",
+    "UpdateService",
+]

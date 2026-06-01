@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import logging
 import sys
+import threading
 from pathlib import Path
 
 from PySide6.QtCore import QObject, QThread, Signal
@@ -23,7 +24,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
-from core.services.updater import UpdateInfo, UpdateService
+from core.services.updater import DownloadCancelled, UpdateInfo, UpdateService
 
 logger = logging.getLogger(__name__)
 
@@ -37,14 +38,23 @@ class _DownloadWorker(QObject):
         super().__init__()
         self._service = service
         self._info = info
+        self._cancel = threading.Event()
+
+    def cancel(self) -> None:
+        """다운로드 루프가 다음 chunk 에서 협조적으로 중단하도록 요청."""
+        self._cancel.set()
 
     def run(self) -> None:
         try:
             path = self._service.download(
                 self._info,
                 on_progress=lambda d, t: self.progress.emit(d, t),
+                should_cancel=self._cancel.is_set,
             )
             self.finished.emit(path)
+        except DownloadCancelled:
+            # 사용자가 취소함 — 조용히 종료(스레드 정리는 _cleanup_thread 가 담당).
+            logger.info("Update download cancelled by user")
         except Exception as exc:
             logger.exception("Update download failed")
             self.failed.emit(str(exc))
@@ -194,6 +204,8 @@ class UpdateDialog(QDialog):
         self._worker.progress.connect(self._on_progress)
         self._worker.finished.connect(self._on_downloaded)
         self._worker.failed.connect(self._on_failed)
+        # 스레드가 끝나면 QThread 객체를 안전하게 해제(누수 방지).
+        self._thread.finished.connect(self._thread.deleteLater)
         self._thread.start()
 
     def _on_progress(self, downloaded: int, total: int) -> None:
@@ -215,11 +227,29 @@ class UpdateDialog(QDialog):
         self._set_state(self.STATE_FAILED)
 
     def _cleanup_thread(self) -> None:
-        if self._thread:
-            self._thread.quit()
-            self._thread.wait(2000)
-            self._thread = None
-            self._worker = None
+        """다운로드 스레드를 안전하게 정리.
+
+        이전 구현은 quit()+wait(2000) 만 했는데, quit() 은 worker.run() 안의
+        블로킹 소켓 read 를 멈추지 못한다. 큰 파일/느린 회선이면 wait 가
+        타임아웃되고, 그 사이 _thread=None 으로 참조를 버린 뒤 다이얼로그가
+        파괴되면서 (QThread 가 self 에 parent 됨) 'QThread destroyed while
+        running' 으로 앱이 죽을 수 있었다.
+        → 먼저 worker 에 협조적 취소를 요청해 read 루프를 빠르게 빠져나오게 하고,
+        그래도 안 멈추면 main_window 종료 패턴처럼 terminate() 로 마지막 방어.
+        """
+        thread = self._thread
+        worker = self._worker
+        if thread is None:
+            return
+        if worker is not None:
+            worker.cancel()
+        thread.quit()
+        if not thread.wait(5000):
+            logger.warning("다운로드 스레드가 제때 멈추지 않음 — 강제 종료")
+            thread.terminate()
+            thread.wait(2000)
+        self._thread = None
+        self._worker = None
 
     def _launch_apply(self) -> None:
         if self._archive_path is None:

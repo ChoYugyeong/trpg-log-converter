@@ -177,10 +177,13 @@ class DecorationSettings(BaseModel):
     header_box: bool = Field(False, description="헤더 박스 표시")
     header_box_color: str = Field("#f0f0f0", description="헤더 박스 배경색")
     # 기타 장식
-    quote_style: str = Field("기본", description="인용문 스타일")
+    # 모델 기본값은 반드시 콤보 옵션에 존재하는 값이어야 한다. "기본" 은 콤보에
+    # 없어, reset/기본값 baseline 적용 시 safe_set_combo 가 첫 항목으로 떨어져
+    # 사용자도 모르게 다른 값이 저장되던 드리프트가 있었다(위젯/로드 기본값과 정렬).
+    quote_style: str = Field("왼쪽 테두리", description="인용문 스타일")
     quote_bg: str = Field("#f9f9f9", description="인용문 배경색")
     quote_border: str = Field("#cccccc", description="인용문 테두리 색상")
-    dice_style: str = Field("기본", description="주사위 스타일")
+    dice_style: str = Field("인라인", description="주사위 스타일")
     dice_icon: bool = Field(False, description="주사위 아이콘 표시")
     dice_color: str = Field("#888888", description="주사위 색상")
 
