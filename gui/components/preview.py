@@ -5,7 +5,7 @@ InspectorBar, CoverPreview, DocumentPreview 등
 
 from typing import ClassVar
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QSize, Qt
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
     QComboBox,
@@ -272,6 +272,11 @@ class DocumentPreview(QFrame):
         self.format_combo = QComboBox()
         self.format_combo.setObjectName("PreviewFormatCombo")
         self.format_combo.addItems(list(self.DOCUMENT_FORMATS.keys()))
+        # 네이티브 QComboBox 는 QSS 의 ::item min-height 를 드롭다운 행 높이에
+        # 반영하지 않아, 한글 받침/내림이 잘려 보이는 경우가 있다(특히 고DPI/
+        # ClearType 환경). 모델 SizeHintRole 로 항목 높이를 직접 보장한다.
+        for _i in range(self.format_combo.count()):
+            self.format_combo.setItemData(_i, QSize(0, 32), Qt.SizeHintRole)
         self.format_combo.setCurrentText(self._current_format)
         # full-width 확장 → 행 전체 차지.
         # sizeAdjustPolicy 는 의도적으로 기본값으로 둔다 — AdjustToMinimumContentsLength
