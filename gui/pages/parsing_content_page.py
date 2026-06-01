@@ -34,6 +34,7 @@ class ParsingContentPage(BasePage):
     def _setup_page(self):
         """페이지 UI 구성"""
         self.add_header("파싱 및 콘텐츠", "콘텐츠 필터, 장면 분할, 파싱 규칙을 설정합니다")
+        self.add_autosave_hint()
 
         # ============================================================
         # 섹션 1: 콘텐츠 필터 (기본 펼침)

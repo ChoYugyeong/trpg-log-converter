@@ -718,6 +718,28 @@ QSpinBox:focus, QDoubleSpinBox:focus {
     border-color: palette(highlight);
 }
 
+/* 슬라이더 옆 값 표시 칩 — 슬라이더와 한 세트로 보이도록 테두리 없이
+   은은한 배경의 둥근 칩. 업/다운 버튼은 코드에서 제거(NoButtons). */
+#SliderValueBox {
+    background: rgba(128, 128, 128, 0.10);
+    border: none;
+    border-radius: 8px;
+    padding: 4px 6px;
+    font-weight: 600;
+    color: palette(text);
+}
+
+#SliderValueBox:focus {
+    background: rgba(10, 132, 255, 0.12);
+    border: 1px solid palette(highlight);
+}
+
+/* 자동 저장 안내 — 은은한 성공 톤 */
+#AutosaveHint {
+    color: #22A06B;
+    font-weight: 500;
+}
+
 /* ==================== Inspector Bar ==================== */
 #InspectorBar {
     background: palette(window);

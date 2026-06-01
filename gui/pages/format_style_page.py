@@ -47,6 +47,20 @@ from .base_page import BasePage
 # ---------------------------------------------------------------------------
 
 
+class SafeSlider(Slider):
+    """qfluentwidgets ``Slider`` 의 mouseMoveEvent 는 버튼 상태를 확인하지 않아,
+    이동 이벤트가 전달되면(마우스를 갖다 대기만 해도) 핸들이 따라 움직이는
+    문제가 있다. 좌클릭으로 드래그하는 동안에만 값이 바뀌도록 보정한다.
+    """
+
+    def mouseMoveEvent(self, e):
+        if e.buttons() & Qt.LeftButton:
+            super().mouseMoveEvent(e)
+        # 버튼을 누르지 않은 상태(hover)에서는 값 변경 무시
+        else:
+            e.ignore()
+
+
 class ImagePreview(QFrame):
     """Image preview widget for divider images."""
 
@@ -269,6 +283,7 @@ class FormatStylePage(BasePage):
 
     def _setup_page(self):
         self.add_header("서식 및 스타일", "스타일, 폰트, 표지, 장식 요소를 설정합니다")
+        self.add_autosave_hint()
 
         # --- Section 1: 스타일 설정 (expanded) ---
         self.style_section = CollapsibleSection("스타일 설정", expanded=True)
@@ -393,7 +408,7 @@ class FormatStylePage(BasePage):
         size_layout.setContentsMargins(0, 0, 0, 0)
         size_layout.setSpacing(Spacing.SM)
 
-        self.size_slider = Slider(Qt.Horizontal)
+        self.size_slider = SafeSlider(Qt.Horizontal)
         self.size_slider.setRange(10, 24)
         self.size_slider.setPageStep(2)
         try:
@@ -409,6 +424,7 @@ class FormatStylePage(BasePage):
         self.size_spin.setSuffix("px")
         # 업/다운 버튼 제거 — 슬라이더가 조절을 담당하므로 값 표시/직접입력만.
         # (분리돼 떠 보이던 업다운 버튼 제거로 UI 통일)
+        self.size_spin.setObjectName("SliderValueBox")
         self.size_spin.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
         self.size_spin.setAlignment(Qt.AlignCenter)
         self.size_spin.setFixedWidth(64)
@@ -433,7 +449,7 @@ class FormatStylePage(BasePage):
         height_layout.setContentsMargins(0, 0, 0, 0)
         height_layout.setSpacing(Spacing.SM)
 
-        self.height_slider = Slider(Qt.Horizontal)
+        self.height_slider = SafeSlider(Qt.Horizontal)
         self.height_slider.setRange(12, 24)
         self.height_slider.setPageStep(2)
         try:
@@ -448,6 +464,7 @@ class FormatStylePage(BasePage):
         self.height_spin.setSingleStep(0.1)
         self.height_spin.setDecimals(1)
         self.height_spin.setValue(self.height_slider.value() / 10)
+        self.height_spin.setObjectName("SliderValueBox")
         self.height_spin.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
         self.height_spin.setAlignment(Qt.AlignCenter)
         self.height_spin.setFixedWidth(64)
@@ -1034,7 +1051,7 @@ class FormatStylePage(BasePage):
         width_layout.setContentsMargins(0, 0, 0, 0)
         width_layout.setSpacing(Spacing.SM)
 
-        self.line_width = Slider(Qt.Horizontal)
+        self.line_width = SafeSlider(Qt.Horizontal)
         self.line_width.setRange(20, 100)
         self.line_width.setValue(60)
         self.line_width.valueChanged.connect(self._update_deco_preview)
@@ -1044,7 +1061,10 @@ class FormatStylePage(BasePage):
         self.line_width_spin.setRange(20, 100)
         self.line_width_spin.setValue(60)
         self.line_width_spin.setSuffix("%")
-        self.line_width_spin.setFixedWidth(92)
+        self.line_width_spin.setObjectName("SliderValueBox")
+        self.line_width_spin.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
+        self.line_width_spin.setAlignment(Qt.AlignCenter)
+        self.line_width_spin.setFixedWidth(64)
         self.line_width_spin.setFixedHeight(32)
         self.line_width_spin.valueChanged.connect(
             lambda v: (
@@ -1084,7 +1104,7 @@ class FormatStylePage(BasePage):
         hdr_size_layout.setContentsMargins(0, 0, 0, 0)
         hdr_size_layout.setSpacing(Spacing.SM)
 
-        self.header_size = Slider(Qt.Horizontal)
+        self.header_size = SafeSlider(Qt.Horizontal)
         self.header_size.setRange(14, 32)
         self.header_size.setValue(20)
         hdr_size_layout.addWidget(self.header_size, 1)
@@ -1093,7 +1113,10 @@ class FormatStylePage(BasePage):
         self.header_size_spin.setRange(14, 32)
         self.header_size_spin.setValue(20)
         self.header_size_spin.setSuffix("px")
-        self.header_size_spin.setFixedWidth(92)
+        self.header_size_spin.setObjectName("SliderValueBox")
+        self.header_size_spin.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
+        self.header_size_spin.setAlignment(Qt.AlignCenter)
+        self.header_size_spin.setFixedWidth(64)
         self.header_size_spin.setFixedHeight(32)
         hdr_size_layout.addWidget(self.header_size_spin)
 

@@ -76,6 +76,20 @@ class BasePage(ScrollArea):
 
         self.main_layout.addSpacing(Sizes.HEADER_BOTTOM_SPACE)
 
+    def add_autosave_hint(self):
+        """설정이 자동 저장됨을 알리는 작은 안내.
+
+        앱은 변경 즉시 + 페이지 이동 시 자동 저장하므로 별도 '저장' 버튼이
+        없다. (필요하면 [고급 설정 → 설정 관리]에서 수동 저장/내보내기 가능.)
+        """
+        from qfluentwidgets import CaptionLabel
+
+        hint = CaptionLabel("✓ 변경사항은 자동으로 저장됩니다 (별도 저장 버튼 불필요)")
+        hint.setObjectName("AutosaveHint")
+        hint.setWordWrap(True)
+        self.main_layout.addWidget(hint)
+        self.main_layout.addSpacing(8)
+
     def add_section_title(self, title: str):
         """섹션 제목 추가"""
         from qfluentwidgets import StrongBodyLabel
