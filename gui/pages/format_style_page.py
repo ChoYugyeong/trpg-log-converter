@@ -536,7 +536,11 @@ class FormatStylePage(BasePage):
         auto_btn_row = QHBoxLayout()
         auto_btn_row.setSpacing(Spacing.SM)
 
-        auto_assign_btn = PushButton("파일에서 캐릭터 추출")
+        auto_assign_btn = PushButton("불러온 파일에서 캐릭터 추출")
+        auto_assign_btn.setToolTip(
+            "홈 화면에 추가한 파일 전체에서 캐릭터 이름을 모아 색상을 자동 할당합니다.\n"
+            "(불러온 파일이 없으면 파일 선택 창이 열립니다.)"
+        )
         auto_assign_btn.clicked.connect(self._auto_assign_colors)
         auto_btn_row.addWidget(auto_assign_btn)
 
@@ -558,7 +562,8 @@ class FormatStylePage(BasePage):
 
         if not char_colors:
             no_char_label = BodyLabel(
-                "아직 캐릭터가 없습니다. '파일에서 캐릭터 추출'을 사용하거나 변환 시 자동 할당됩니다."
+                "아직 캐릭터가 없습니다. 홈에서 파일을 추가한 뒤 '불러온 파일에서 캐릭터 추출'을 "
+                "누르거나, 변환 시 자동 할당됩니다."
             )
             no_char_label.setWordWrap(True)
             self.char_color_layout.addWidget(no_char_label)
@@ -1573,17 +1578,29 @@ class FormatStylePage(BasePage):
         self.config_manager.save_gui_settings(self.settings)
 
     def _auto_assign_colors(self):
-        from PySide6.QtWidgets import QFileDialog as _QFD
-
         from core.engine import load_config
         from core.text_parser import parse_file
 
-        files, _ = _QFD.getOpenFileNames(
-            self,
-            "캐릭터 추출용 로그 파일 선택",
-            "",
-            "지원 형식 (*.html *.htm *.txt);;모든 파일 (*.*)",
-        )
+        # 1) 홈 화면에 이미 불러온 파일이 있으면 그걸 그대로 사용(모두 대상).
+        #    캐릭터 추출을 위해 파일을 다시 고를 필요가 없게 한다.
+        files: list[str] = []
+        main_win = self.window()
+        if main_win is not None and hasattr(main_win, "home_page"):
+            try:
+                files = list(main_win.home_page.get_files())
+            except Exception:
+                files = []
+
+        # 2) 불러온 파일이 없을 때만 파일 선택 대화상자로 폴백.
+        if not files:
+            from PySide6.QtWidgets import QFileDialog as _QFD
+
+            files, _ = _QFD.getOpenFileNames(
+                self,
+                "캐릭터 추출용 로그 파일 선택 (홈에서 먼저 추가하면 자동 사용)",
+                "",
+                "지원 형식 (*.html *.htm *.txt);;모든 파일 (*.*)",
+            )
         if not files:
             return
 
@@ -1636,7 +1653,8 @@ class FormatStylePage(BasePage):
             self.config_manager.save_gui_settings(self.settings)
 
             no_char_label = BodyLabel(
-                "아직 캐릭터가 없습니다. '파일에서 캐릭터 추출'을 사용하거나 변환 시 자동 할당됩니다."
+                "아직 캐릭터가 없습니다. 홈에서 파일을 추가한 뒤 '불러온 파일에서 캐릭터 추출'을 "
+                "누르거나, 변환 시 자동 할당됩니다."
             )
             no_char_label.setWordWrap(True)
             self.char_color_layout.addWidget(no_char_label)

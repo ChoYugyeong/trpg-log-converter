@@ -287,6 +287,9 @@ class DocumentPreview(QFrame):
         # ("신국판 (152x225mm)") 를 과소 추정함 → 콤보가 ~90px 로 좁아지는 버그가 있었음.
         # 고정값 + showEvent 에서 재계산하는 2단계 보호.
         self.format_combo.setMinimumWidth(260)
+        # 닫힌 콤보가 짧아 선택된 한글(신국판/문고판 등)의 위가 잘리던 문제 →
+        # 충분한 높이 보장(QSS min-height 와 함께, 네이티브 콤보 안전장치).
+        self.format_combo.setMinimumHeight(28)
         # 툴팁은 호버 시 전체 라벨을 노출.
         self.format_combo.setToolTip(f"판형: {self._current_format}")
         self.format_combo.currentTextChanged.connect(self._on_format_changed)

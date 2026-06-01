@@ -1984,7 +1984,9 @@ QToolTip {
     padding: 4px 8px;
     padding-right: 26px;
     font-size: __FS_SM__px;
-    min-height: 0px;
+    /* min-height 0 이면 콤보가 너무 짧아져 선택된 한글(신국판/문고판 등)의 위가
+       잘린다. 한글이 충분히 들어가도록 높이를 확보. */
+    min-height: 28px;
     /* 가장 긴 항목("Letter (216x279mm)" / "46배판 (128x188mm)" / "신국판 (152x225mm)")
        이 잘리지 않도록 충분한 최소폭. 한글 폭이 라틴 글자보다 크기 때문에 여유 있게 잡는다.
        Python setMinimumWidth(폰트 메트릭 기반) 과 함께 적용. */
