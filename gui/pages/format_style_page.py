@@ -26,6 +26,7 @@ from PySide6.QtWidgets import (
 from qfluentwidgets import (
     BodyLabel,
     ComboBox,
+    FluentIcon,
     InfoBar,
     InfoBarPosition,
     LineEdit,
@@ -33,6 +34,7 @@ from qfluentwidgets import (
     PushButton,
     Slider,
     StrongBodyLabel,
+    TransparentToolButton,
 )
 
 from core.services import CharacterColorService
@@ -1566,8 +1568,33 @@ class FormatStylePage(BasePage):
 
         row_layout.addStretch()
 
+        # 개별 제거(×) 버튼 — 이 캐릭터만 목록에서 제거.
+        remove_btn = TransparentToolButton(FluentIcon.CLOSE)
+        remove_btn.setFixedSize(28, 28)
+        remove_btn.setToolTip(f"'{name}' 색상 제거")
+        remove_btn.clicked.connect(lambda _=False, n=name: self._remove_character_color(n))
+        row_layout.addWidget(remove_btn)
+
         self.char_color_layout.addWidget(row_widget)
         self.character_color_widgets[name] = (row_widget, picker)
+
+    def _remove_character_color(self, name: str):
+        """캐릭터별 색상에서 한 캐릭터만 제거."""
+        self.color_service.remove_color(name)
+        entry = self.character_color_widgets.pop(name, None)
+        if entry is not None:
+            row_widget = entry[0]
+            self.char_color_layout.removeWidget(row_widget)
+            row_widget.deleteLater()
+        self._save_character_colors()
+        # 모두 지웠으면 안내 문구를 다시 보여준다.
+        if not self.character_color_widgets:
+            no_char_label = BodyLabel(
+                "아직 캐릭터가 없습니다. 홈에서 파일을 추가한 뒤 '불러온 파일에서 캐릭터 추출'을 "
+                "누르거나, 변환 시 자동 할당됩니다."
+            )
+            no_char_label.setWordWrap(True)
+            self.char_color_layout.addWidget(no_char_label)
 
     def _on_character_color_changed(self, name: str, color: str):
         self.color_service.set_custom_color(name, color)

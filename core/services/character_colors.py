@@ -115,6 +115,12 @@ class CharacterColorService:
         """사용자 정의 색상 설정"""
         self._custom_colors[character_name] = color
 
+    def remove_color(self, character_name: str) -> None:
+        """특정 캐릭터의 색상 매핑을 제거한다(대소문자 키 모두)."""
+        for key in {character_name, character_name.lower().strip()}:
+            self._custom_colors.pop(key, None)
+            self._assigned_colors.pop(key, None)
+
     def get_all_colors(self) -> dict[str, str]:
         """모든 할당된 색상 반환"""
         result = {}
