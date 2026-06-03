@@ -318,11 +318,39 @@ def get_image_size(img_path: Path, max_width: float, max_height: float) -> tuple
         return max_width * 0.8, max_height * 0.5
 
 
+def _safe_float(value, default: float) -> float:
+    """설정값을 안전하게 float 로 변환한다 (문자열일 수 있음)."""
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _safe_hex(value, default: str) -> str:
+    """'#' 으로 시작하는 hex 문자열만 허용하고, 아니면 default 를 돌려준다."""
+    if isinstance(value, str) and value.startswith("#"):
+        return value
+    return default
+
+
 def create_styles(body_font: str, name_font: str, config: dict) -> dict[str, ParagraphStyle]:
     """PDF 스타일 정의"""
     styles = getSampleStyleSheet()
     style_config = config.get("style", {})
     cover_config = config.get("cover", {})
+    header_config = config.get("header", {}) or {}
+
+    name_color = _safe_hex(style_config.get("name_color", "#2d2d2d"), "#2d2d2d")
+    body_text = _safe_hex(style_config.get("body_text", "#1a1a1a"), "#1a1a1a")
+    system_color = _safe_hex(style_config.get("system_color", "#666666"), "#666666")
+    effect_bg = _safe_hex(style_config.get("effect_bg", "#f5f5f5"), "#f5f5f5")
+    effect_border = _safe_hex(style_config.get("effect_border", "#cccccc"), "#cccccc")
+    dialogue_line_height = _safe_float(style_config.get("dialogue_line_height", 1.5), 1.5)
+    narration_line_height = _safe_float(style_config.get("narration_line_height", 1.7), 1.7)
+    narration_indent = _safe_float(style_config.get("narration_indent", 1.5), 1.5)
+
+    header_box = bool(header_config.get("box", False))
+    header_box_color = _safe_hex(header_config.get("box_color", "#f5f5f5"), "#f5f5f5")
 
     custom_styles = {
         "CoverTitle": ParagraphStyle(
@@ -383,11 +411,19 @@ def create_styles(body_font: str, name_font: str, config: dict) -> dict[str, Par
                 if isinstance(hc["color"], str) and hc["color"].startswith("#")
                 else black,
                 keepWithNext=True,
+                **(
+                    {
+                        "backColor": HexColor(header_box_color),
+                        "borderPadding": 6,
+                    }
+                    if header_box
+                    else {}
+                ),
             )
         )(
             {
-                "size": float((config.get("header", {}) or {}).get("size", 24)),
-                "color": (config.get("header", {}) or {}).get("color", "#1a1a1a"),
+                "size": _safe_float(header_config.get("size", 24), 24),
+                "color": header_config.get("color", "#1a1a1a"),
             }
         ),
         "SceneEnd": ParagraphStyle(
@@ -405,7 +441,8 @@ def create_styles(body_font: str, name_font: str, config: dict) -> dict[str, Par
             parent=styles["Normal"],
             fontName=body_font,
             fontSize=10.5,
-            leading=16,
+            leading=10.5 * dialogue_line_height,
+            textColor=HexColor(body_text),
             spaceBefore=3,
             spaceAfter=3,
             alignment=TA_JUSTIFY,
@@ -415,15 +452,16 @@ def create_styles(body_font: str, name_font: str, config: dict) -> dict[str, Par
             parent=styles["Normal"],
             fontName=name_font,
             fontSize=10.5,
-            textColor=HexColor("#333333"),
+            textColor=HexColor(name_color),
         ),
         "Narration": ParagraphStyle(
             "Narration",
             parent=styles["Normal"],
             fontName=body_font,
             fontSize=10,
-            leading=17,
-            leftIndent=12 * mm,
+            leading=10 * narration_line_height,
+            textColor=HexColor(body_text),
+            leftIndent=narration_indent * 8 * mm,
             spaceBefore=8,
             spaceAfter=8,
             alignment=TA_JUSTIFY,
@@ -443,7 +481,7 @@ def create_styles(body_font: str, name_font: str, config: dict) -> dict[str, Par
             parent=styles["Normal"],
             fontName=name_font,
             fontSize=9.5,
-            textColor=HexColor("#666666"),
+            textColor=HexColor(system_color),
             spaceBefore=12,
             spaceAfter=12,
             alignment=TA_CENTER,
@@ -457,7 +495,10 @@ def create_styles(body_font: str, name_font: str, config: dict) -> dict[str, Par
             leftIndent=8 * mm,
             spaceBefore=5,
             spaceAfter=5,
-            backColor=HexColor("#f5f5f5"),
+            backColor=HexColor(effect_bg),
+            borderColor=HexColor(effect_border),
+            borderWidth=1,
+            borderPadding=4,
         ),
         "ImageCaption": ParagraphStyle(
             "ImageCaption",

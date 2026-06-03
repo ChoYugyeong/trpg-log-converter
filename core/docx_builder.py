@@ -59,6 +59,41 @@ def add_paragraph_spacing(paragraph, before_pt=0, after_pt=0, line_spacing=1.0):
     pPr.append(spacing)
 
 
+def _coerce_float(value, fallback):
+    """config 값이 문자열/None 일 수 있으므로 안전하게 float 로 변환한다."""
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return float(fallback)
+
+
+def _set_para_shading(paragraph, fill_hex):
+    """문단 배경색(w:shd)을 지정. fill_hex 가 falsy 면 아무것도 하지 않는다."""
+    if not fill_hex:
+        return
+    pPr = paragraph._p.get_or_add_pPr()
+    shd = OxmlElement("w:shd")
+    shd.set(qn("w:val"), "clear")
+    shd.set(qn("w:color"), "auto")
+    shd.set(qn("w:fill"), str(fill_hex).lstrip("#"))
+    pPr.append(shd)
+
+
+def _set_para_left_border(paragraph, color_hex, sz=18):
+    """문단 왼쪽 테두리(w:pBdr > w:left). color_hex 가 falsy 면 아무것도 하지 않는다."""
+    if not color_hex:
+        return
+    pPr = paragraph._p.get_or_add_pPr()
+    pBdr = OxmlElement("w:pBdr")
+    left = OxmlElement("w:left")
+    left.set(qn("w:val"), "single")
+    left.set(qn("w:sz"), str(sz))
+    left.set(qn("w:space"), "8")
+    left.set(qn("w:color"), str(color_hex).lstrip("#"))
+    pBdr.append(left)
+    pPr.append(pBdr)
+
+
 def _add_docx_divider(doc, config, name_font):
     """장면 구분선(장식)을 챕터 제목 아래에 추가. type 별로 텍스트/이미지/선."""
     d = (config or {}).get("divider", {}) or {}
@@ -83,8 +118,15 @@ def _add_docx_divider(doc, config, name_font):
             return
     elif dtype == "선 스타일":
         width = int(d.get("line_width", 60))
-        run = para.add_run("─" * max(3, width // 3))
-        set_run_font(run, name_font, size_pt=10, color=d.get("line_color", "#cccccc"))
+        line_style = d.get("line_style", "실선")
+        glyph = {"실선": "─", "점선": "┈", "이중선": "═"}.get(line_style, "─")
+        try:
+            thickness = int(d.get("line_thickness", 1))
+        except (TypeError, ValueError):
+            thickness = 1
+        size_pt = 10 + min(max(thickness, 0), 4)
+        run = para.add_run(glyph * max(3, width // 3))
+        set_run_font(run, name_font, size_pt=size_pt, color=d.get("line_color", "#cccccc"))
     else:  # 텍스트/기호
         text = d.get("text", "")
         if not text.strip():
@@ -138,6 +180,21 @@ def create_docx(
         else fallback.get("name", "맑은 고딕")
     )
 
+    # 사용자 스타일 설정을 EPUB 과 동일하게 DOCX 에도 반영한다.
+    name_color = style_config.get("name_color", "#2d2d2d")
+    name_bold = bool(style_config.get("name_bold", True))
+    body_text = style_config.get("body_text", "#1a1a1a")
+    dice_color = style_config.get("dice_color", "#888888")
+    system_color = style_config.get("system_color", "#666666")
+    effect_bg = style_config.get("effect_bg", "#f5f5f5")
+    effect_border = style_config.get("effect_border", "#cccccc")
+    dialogue_line_height = _coerce_float(style_config.get("dialogue_line_height", 1.5), 1.5)
+    narration_line_height = _coerce_float(style_config.get("narration_line_height", 1.7), 1.7)
+    narration_indent_em = _coerce_float(style_config.get("narration_indent", 1.5), 1.5)
+    header_cfg = config.get("header", {}) or {}
+    images_cfg = config.get("images", {}) or {}
+    show_caption = bool(images_cfg.get("show_caption", True))
+
     cover_config = config.get("cover", {})
     if cover_config.get("include", True):
         cover_image = cover_config.get("image", "")
@@ -181,7 +238,6 @@ def create_docx(
                 doc.add_page_break()
 
             # 챕터 느낌의 큰 제목 — 사용자 설정(config['header'])을 따름
-            header_cfg = config.get("header", {}) or {}
             title_para = doc.add_paragraph()
             title_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
@@ -205,6 +261,8 @@ def create_docx(
             )
             if header_cfg.get("underline"):
                 title_run.font.underline = True
+            if header_cfg.get("box"):
+                _set_para_shading(title_para, header_cfg.get("box_color", "#f5f5f5"))
             add_paragraph_spacing(title_para, before_pt=72, after_pt=36)
 
             # 장면 구분선(장식) — 제목 아래
@@ -226,6 +284,22 @@ def create_docx(
                     doc.add_picture(io.BytesIO(img_data), width=Inches(4))
                     doc.paragraphs[-1].alignment = WD_ALIGN_PARAGRAPH.CENTER
 
+                    # 이미지 캡션 — EPUB 은 entry["image"] 값을 캡션으로 쓴다.
+                    # 여기서는 명시적 caption 필드를 우선하고, image 타입이면 content,
+                    # 그래도 없으면 EPUB 과 동일하게 image 값(img) 으로 폴백한다.
+                    if show_caption:
+                        caption = entry.get("caption")
+                        if not caption and t == "image":
+                            caption = entry.get("content")
+                        if not caption:
+                            caption = img
+                        if caption and str(caption).strip():
+                            cap_para = doc.add_paragraph()
+                            cap_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                            cap_run = cap_para.add_run(str(caption))
+                            set_run_font(cap_run, body_font, size_pt=9, color="#666666")
+                            add_paragraph_spacing(cap_para, before_pt=2, after_pt=8)
+
             if t == "image" or not (content and content.strip()):
                 continue
 
@@ -234,10 +308,12 @@ def create_docx(
             if t == "dialogue":
                 if name:
                     name_run = para.add_run(f"{name}   ")
-                    set_run_font(name_run, name_font, size_pt=11, bold=True)
+                    set_run_font(name_run, name_font, size_pt=11, bold=name_bold, color=name_color)
                 content_run = para.add_run(content)
-                set_run_font(content_run, body_font, size_pt=11)
-                add_paragraph_spacing(para, before_pt=2, after_pt=2, line_spacing=1.3)
+                set_run_font(content_run, body_font, size_pt=11, color=body_text)
+                add_paragraph_spacing(
+                    para, before_pt=2, after_pt=2, line_spacing=dialogue_line_height
+                )
 
             elif t == "narration":
                 prefix = narration_prefix if narration_prefix else ""
@@ -248,24 +324,26 @@ def create_docx(
                     cap_run = para.add_run(first)
                     set_run_font(cap_run, name_font, size_pt=30, bold=True)
                     rest_run = para.add_run(rest)
-                    set_run_font(rest_run, body_font, size_pt=10.5)
+                    set_run_font(rest_run, body_font, size_pt=10.5, color=body_text)
                     dropcap_pending = False
                 else:
                     content_run = para.add_run(f"{prefix}{content}")
-                    set_run_font(content_run, body_font, size_pt=10.5)
-                para.paragraph_format.left_indent = Inches(0.3)
-                add_paragraph_spacing(para, before_pt=8, after_pt=8, line_spacing=1.4)
+                    set_run_font(content_run, body_font, size_pt=10.5, color=body_text)
+                para.paragraph_format.left_indent = Inches(narration_indent_em * 0.2)
+                add_paragraph_spacing(
+                    para, before_pt=8, after_pt=8, line_spacing=narration_line_height
+                )
 
             elif t == "dice":
                 dice_text = f"{name} : {content}" if name else content
                 content_run = para.add_run(dice_text)
-                set_run_font(content_run, name_font, size_pt=9, color="#888888")
+                set_run_font(content_run, name_font, size_pt=9, color=dice_color)
                 para.paragraph_format.left_indent = Inches(0.2)
                 add_paragraph_spacing(para, before_pt=1, after_pt=1, line_spacing=1.2)
 
             elif t == "system":
                 content_run = para.add_run(content)
-                set_run_font(content_run, name_font, size_pt=10, color="#666666")
+                set_run_font(content_run, name_font, size_pt=10, color=system_color)
                 add_paragraph_spacing(para, before_pt=12, after_pt=12)
 
             elif t == "effect":
@@ -275,6 +353,8 @@ def create_docx(
                 content_run = para.add_run(content)
                 set_run_font(content_run, name_font, size_pt=9, color="#444444")
                 para.paragraph_format.left_indent = Inches(0.3)
+                _set_para_shading(para, effect_bg)
+                _set_para_left_border(para, effect_border)
                 add_paragraph_spacing(para, before_pt=4, after_pt=4, line_spacing=1.2)
 
             elif t == "scene_end":
