@@ -478,7 +478,7 @@ class ConfigManager:
                 "name_color": gui_settings.get("style_name_color", "#2d2d2d"),
                 "name_bold": gui_settings.get("style_name_bold", True),
                 "visual_line_height": safe_float(gui_settings.get("style_line_height", 1.6), 1.6),
-                "dialogue_separator": gui_settings.get("style_separator", "「 」 (꺾쇠)"),
+                "dialogue_separator": gui_settings.get("style_separator", "없음"),
                 # '직접 입력' 선택 시 사용할 사용자 정의 열림/닫힘 기호.
                 "dialogue_separator_custom": gui_settings.get("custom_separator_text", ""),
             }
@@ -490,7 +490,8 @@ class ConfigManager:
         gui_config["style"].update(
             {
                 "quote_style": gui_settings.get("quote_style", "왼쪽 테두리"),
-                "dice_icon": bool(gui_settings.get("dice_icon", True)),
+                # 주사위 🎲 아이콘은 기본 OFF — 사용자가 명시적으로 켤 때만 표시.
+                "dice_icon": bool(gui_settings.get("dice_icon", False)),
                 "dice_style": gui_settings.get("dice_style", "인라인"),
             }
         )

@@ -13,7 +13,7 @@ from __future__ import annotations
 import copy
 from typing import Any
 
-CONFIG_SCHEMA_VERSION: int = 2
+CONFIG_SCHEMA_VERSION: int = 3
 
 DEFAULT_ENGINE_CONFIG: dict[str, Any] = {
     "paths": {

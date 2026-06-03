@@ -197,8 +197,12 @@ def parse_roll20(soup, config: dict[str, Any]) -> list[dict[str, Any]]:
             tstamp_tag = msg.find("span", class_="tstamp")
             cur_time = None
             if tstamp_tag is not None:
-                cur_time = _parse_tstamp(tstamp_tag.get("aria-label", "")) or _parse_tstamp(
-                    tstamp_tag.get_text(strip=True)
+                # 실제 Roll20 채팅 아카이브는 타임스탬프를 보통 ``title`` 속성에 둔다.
+                # ``aria-label`` / 텍스트도 폴백으로 시도한다.
+                cur_time = (
+                    _parse_tstamp(tstamp_tag.get("title", ""))
+                    or _parse_tstamp(tstamp_tag.get("aria-label", ""))
+                    or _parse_tstamp(tstamp_tag.get_text(strip=True))
                 )
             if cur_time is not None:
                 if prev_time is not None:

@@ -102,7 +102,7 @@ class ParsingContentPage(BasePage):
             "나레이터 목록",
             "narrators",
             placeholder="GM, KP, DM, Keeper (쉼표로 구분)",
-            default=self.settings.get("narrators", "GM, KP, DM, Keeper, 나레이터, 진행자"),
+            default=self.settings.get("narrators", "-, GM, KP, DM, Keeper, 나레이터, 진행자"),
             help_text="쉼표로 구분. 이 이름들의 대사는 나레이션으로 처리됩니다.",
         )
         self.narration_prefix = narration_card.add_text_field(
@@ -404,7 +404,7 @@ class ParsingContentPage(BasePage):
             "나레이터 이름",
             "narration_users",
             placeholder="GM, KP, DM, Keeper, 나레이터",
-            default=self.settings.get("narrators", "GM, KP, DM, Keeper, 나레이터"),
+            default=self.settings.get("narrators", "-, GM, KP, DM, Keeper, 나레이터"),
             help_text="이 이름으로 발화하면 나레이션으로 처리합니다 (쉼표 구분)",
         )
         # '나레이터 이름'은 '나레이션 설정' 카드의 '나레이터 목록'(narrators)과 동일
@@ -800,7 +800,7 @@ class ParsingContentPage(BasePage):
         self.include_ooc.setChecked(_g("include_ooc", False))
 
         # narrators: 리스트인 경우 문자열로 변환
-        narrators_val = _g("narrators", "GM, KP, DM, Keeper, 나레이터, 진행자")
+        narrators_val = _g("narrators", "-, GM, KP, DM, Keeper, 나레이터, 진행자")
         if isinstance(narrators_val, list):
             narrators_val = ", ".join(narrators_val)
         self.narrators_entry.setText(str(narrators_val))
@@ -853,7 +853,7 @@ class ParsingContentPage(BasePage):
 
         # 나레이션 규칙의 나레이터 이름 (narrators 키 공유)
         if hasattr(self, "narration_users"):
-            narration_val = _g("narrators", "GM, KP, DM, Keeper, 나레이터")
+            narration_val = _g("narrators", "-, GM, KP, DM, Keeper, 나레이터")
             if isinstance(narration_val, list):
                 narration_val = ", ".join(narration_val)
             self.narration_users.setText(str(narration_val))

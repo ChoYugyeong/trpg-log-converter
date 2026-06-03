@@ -238,9 +238,12 @@ def create_docx(
                 doc.add_page_break()
             elif scene_idx > 0:
                 # 페이지 나눔을 끈 경우, 장면 사이에 구분 기호(scene_separator)를 넣어
-                # 장면 경계를 시각적으로 표시한다(기본값 '＊　＊　＊').
+                # 장면 경계를 시각적으로 표시한다(기본값 '＊　＊　＊'). 단, 제목 아래
+                # 장면 구분선(divider)이 켜져 있으면 장식이 겹치므로 divider 가 '사용
+                # 안 함' 일 때만 넣는다.
+                divider_off = (config.get("divider", {}) or {}).get("type") == "사용 안 함"
                 sep_text = str(style_config.get("scene_separator", "") or "").strip()
-                if sep_text:
+                if sep_text and divider_off:
                     sep_para = doc.add_paragraph()
                     sep_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
                     sep_run = sep_para.add_run(sep_text)

@@ -66,7 +66,7 @@ class StyleSettings(BaseModel):
     style_line_height: float = Field(1.6, ge=1.2, le=2.4, description="줄 간격")
     style_name_color: str = Field("#2d2d2d", description="캐릭터 이름 색상")
     style_name_bold: bool = Field(True, description="캐릭터 이름 굵게 표시")
-    style_separator: str = Field("「 」 (꺾쇠)", description="대사 구분자 스타일")
+    style_separator: str = Field("없음", description="대사 구분자 스타일")
     custom_separator_text: str = Field("", description="직접 입력 대사 구분자")
     character_colors: dict[str, str] = Field(
         default_factory=dict,
@@ -175,13 +175,13 @@ class DecorationSettings(BaseModel):
     header_suffix: str = Field("", description="헤더 접미사")
     header_underline: bool = Field(False, description="헤더 밑줄")
     header_box: bool = Field(False, description="헤더 박스 표시")
-    header_box_color: str = Field("#f0f0f0", description="헤더 박스 배경색")
+    header_box_color: str = Field("#f5f5f5", description="헤더 박스 배경색")
     # 기타 장식
     # 모델 기본값은 반드시 콤보 옵션에 존재하는 값이어야 한다. "기본" 은 콤보에
     # 없어, reset/기본값 baseline 적용 시 safe_set_combo 가 첫 항목으로 떨어져
     # 사용자도 모르게 다른 값이 저장되던 드리프트가 있었다(위젯/로드 기본값과 정렬).
     quote_style: str = Field("왼쪽 테두리", description="인용문 스타일")
-    quote_bg: str = Field("#f9f9f9", description="인용문 배경색")
+    quote_bg: str = Field("#f5f5f5", description="인용문 배경색")
     quote_border: str = Field("#cccccc", description="인용문 테두리 색상")
     dice_style: str = Field("인라인", description="주사위 스타일")
     dice_icon: bool = Field(False, description="주사위 아이콘 표시")

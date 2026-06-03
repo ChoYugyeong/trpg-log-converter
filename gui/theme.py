@@ -169,7 +169,9 @@ LANGUAGE_REVERSE_MAP = {v: k for k, v in LANGUAGE_MAP.items()}
 
 # ==================== 기본값 ====================
 DEFAULTS = {
-    "narrators": "GM, KP, DM, Keeper, 나레이터, 진행자",
+    # '-' 는 cocofolia 에서 GM 메시지의 기본 표기. 넣어둬야 GM 나레이션이 대사로
+    # 잘못 분류되지 않는다(gui/config_models.py 의 모델 기본값과 일치).
+    "narrators": "-, GM, KP, DM, Keeper, 나레이터, 진행자",
     "language": "ko",
     "split_mode": "scene",
     "scene_patterns": "■, 씬, Scene, 장면, Act",

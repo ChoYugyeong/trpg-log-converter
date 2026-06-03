@@ -107,6 +107,39 @@ def _v1_to_v2(settings: dict) -> dict:
     return settings
 
 
+@migration(from_version=2)
+def _v2_to_v3(settings: dict) -> dict:
+    """v2 -> v3: 과거 기본값이 잘못 저장돼 출력을 망치는 두 키를 정리한다.
+
+    1) ``dice_icon``: 이전까지 어디서도 소비되지 않던 죽은 설정이라 과거 위젯
+       기본값(True)이 무의미하게 저장돼 있을 수 있다. 이제 실제로 🎲 를 그리므로
+       사용자가 의도한 적 없는 True 를 기본(False)로 리셋한다.
+    2) ``skip_channels``: 과거 기본값에 ``[main]`` 이 들어 있어, 메인 채널을 쓰는
+       로그의 본문이 통째로 제외되는 위험이 있었다. ``[main]``/``[메인]`` 토큰만
+       제거한다(사용자가 추가한 다른 채널은 보존).
+    """
+    if settings.get("dice_icon") is True:
+        settings["dice_icon"] = False
+
+    skip = settings.get("skip_channels")
+    if isinstance(skip, str) and skip.strip():
+        kept = [
+            tok.strip()
+            for tok in skip.split(",")
+            if tok.strip() and tok.strip().lower() not in ("[main]", "[메인]", "main", "메인")
+        ]
+        settings["skip_channels"] = ", ".join(kept)
+
+    # 3) ``style_separator``(대사 구분자)도 직전까지 소비되지 않던 죽은 설정이라
+    #    과거 위젯 기본값 '「 」 (꺾쇠)' 이 무의미하게 저장돼 있을 수 있다. 이제
+    #    실제로 대사를 「」 로 감싸므로, 의도한 적 없는 옛 기본값을 '없음'(원문 유지)
+    #    으로 리셋한다. (원하면 서식 탭에서 다시 선택.)
+    if settings.get("style_separator") == "「 」 (꺾쇠)":
+        settings["style_separator"] = "없음"
+
+    return settings
+
+
 __all__ = [
     "MigrationFn",
     "migrate_gui_settings",

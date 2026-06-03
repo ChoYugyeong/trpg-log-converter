@@ -511,7 +511,7 @@ class FormatStylePage(BasePage):
             "대사 구분자",
             "style_separator",
             options=["「 」 (꺾쇠)", '" " (따옴표)', "' ' (작은따옴표)", "없음", "직접 입력"],
-            default=self.settings.get("style_separator", "「 」 (꺾쇠)"),
+            default=self.settings.get("style_separator", "없음"),
             help_text="대사를 감싸는 기호입니다. 일본식 꺾쇠「」가 가장 많이 사용됩니다.",
         )
         self.separator_combo.currentTextChanged.connect(self._on_separator_changed)
@@ -524,7 +524,7 @@ class FormatStylePage(BasePage):
             "", self.custom_separator, help_text="열림/닫힘 기호를 공백으로 구분하여 입력 (예: [ ])"
         )
 
-        saved_sep = self.settings.get("style_separator", "「 」 (꺾쇠)")
+        saved_sep = self.settings.get("style_separator", "없음")
         if saved_sep == "직접 입력":
             self.custom_separator.setText(self.settings.get("custom_separator_text", ""))
         # 위젯만 숨기면 라벨 없는 빈 행에 도움말(?) 버튼이 남으므로 행 전체를 토글
@@ -1287,10 +1287,10 @@ class FormatStylePage(BasePage):
             help_text="특수 효과나 인용문 표시 스타일",
         )
 
-        self.quote_bg = ColorPicker("#f9f9f9")
+        self.quote_bg = ColorPicker("#f5f5f5")
         quote_card.add_field("배경색", self.quote_bg)
 
-        self.quote_border = ColorPicker("#e0e0e0")
+        self.quote_border = ColorPicker("#cccccc")
         quote_card.add_field("테두리색", self.quote_border)
 
         section.add_widget(quote_card)
@@ -1310,7 +1310,7 @@ class FormatStylePage(BasePage):
         self.dice_icon = dice_card.add_checkbox(
             "주사위 아이콘 표시",
             "dice_icon",
-            checked=True,
+            checked=False,
             help_text="주사위 굴림 앞에 \U0001f3b2 아이콘을 표시합니다.",
         )
         self.dice_icon.stateChanged.connect(self._update_dice_preview)
@@ -2155,9 +2155,9 @@ class FormatStylePage(BasePage):
         self.height_spin.setValue(line_height)
 
         self.name_bold.setChecked(_g("style_name_bold", True))
-        self.safe_set_combo(self.separator_combo, _g("style_separator", "「 」 (꺾쇠)"))
+        self.safe_set_combo(self.separator_combo, _g("style_separator", "없음"))
 
-        saved_sep = _g("style_separator", "「 」 (꺾쇠)")
+        saved_sep = _g("style_separator", "없음")
         if saved_sep == "직접 입력":
             self.custom_separator.setText(_g("custom_separator_text", ""))
         # 위젯만 토글하면 빈 행이 남고, 직접입력이 아닐 때 숨김 처리가 빠져
@@ -2258,10 +2258,10 @@ class FormatStylePage(BasePage):
 
         # Misc decoration
         self.safe_set_combo(self.quote_style, _g("quote_style", "왼쪽 테두리"))
-        self.quote_bg.set_color(_g("quote_bg", "#f9f9f9"))
-        self.quote_border.set_color(_g("quote_border", "#e0e0e0"))
+        self.quote_bg.set_color(_g("quote_bg", "#f5f5f5"))
+        self.quote_border.set_color(_g("quote_border", "#cccccc"))
         self.safe_set_combo(self.dice_style, _g("dice_style", "인라인"))
-        self.dice_icon.setChecked(_g("dice_icon", True))
+        self.dice_icon.setChecked(_g("dice_icon", False))
         self.dice_color.set_color(_g("dice_color", "#0066cc"))
 
         # Effects

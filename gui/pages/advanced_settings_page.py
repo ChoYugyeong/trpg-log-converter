@@ -218,8 +218,8 @@ class AdvancedSettingsPage(BasePage):
         self.skip_channels = parsing_card.add_text_field(
             "제외할 채널",
             "skip_channels",
-            placeholder="[main], [잡담], [ooc]",
-            default=self.settings.get("skip_channels", "[main], [잡담], [ooc]"),
+            placeholder="[잡담], [ooc]",
+            default=self.settings.get("skip_channels", "[잡담], [ooc]"),
             help_text="변환에서 제외할 채널 이름을 쉼표로 구분하여 입력합니다.",
         )
         self.normalize_punct = parsing_card.add_checkbox(
@@ -620,7 +620,7 @@ class AdvancedSettingsPage(BasePage):
 
         # 고급 옵션: 파싱
         self.name_max_length.setText(str(_g("name_max_length", "50")))
-        self.skip_channels.setText(str(_g("skip_channels", "[main], [잡담], [ooc]")))
+        self.skip_channels.setText(str(_g("skip_channels", "[잡담], [ooc]")))
         self.normalize_punct.setChecked(_g("normalize_punct", True))
 
         # 고급 옵션: Roll20

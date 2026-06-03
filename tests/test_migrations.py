@@ -37,6 +37,35 @@ class TestMigrateExistingChain:
         result = migrate_gui_settings(dict(settings))
         assert result == settings
 
+    def test_v2_to_v3_resets_stale_dice_icon(self):
+        """v2 -> v3: 죽은 설정이던 dice_icon=True 는 False 로 리셋된다."""
+        settings = {"_schema_version": 2, "dice_icon": True}
+        result = migrate_gui_settings(settings)
+        assert result["dice_icon"] is False
+        assert result["_schema_version"] == CONFIG_SCHEMA_VERSION
+
+    def test_v2_to_v3_keeps_explicit_false(self):
+        settings = {"_schema_version": 2, "dice_icon": False}
+        result = migrate_gui_settings(settings)
+        assert result["dice_icon"] is False
+
+    def test_v2_to_v3_strips_main_from_skip_channels(self):
+        settings = {"_schema_version": 2, "skip_channels": "[main], [잡담], [ooc]"}
+        result = migrate_gui_settings(settings)
+        assert "[main]" not in result["skip_channels"]
+        assert "[잡담]" in result["skip_channels"]
+        assert "[ooc]" in result["skip_channels"]
+
+    def test_v2_to_v3_resets_stale_separator(self):
+        settings = {"_schema_version": 2, "style_separator": "「 」 (꺾쇠)"}
+        result = migrate_gui_settings(settings)
+        assert result["style_separator"] == "없음"
+
+    def test_v2_to_v3_keeps_explicit_separator(self):
+        settings = {"_schema_version": 2, "style_separator": '" " (따옴표)'}
+        result = migrate_gui_settings(settings)
+        assert result["style_separator"] == '" " (따옴표)'
+
 
 class TestRegistryGuards:
     def test_duplicate_registration_raises(self):
@@ -51,14 +80,14 @@ class TestRegistryGuards:
         """If we move two versions forward but only register one step, fail loudly."""
         from core.config import migrations
 
-        # Pretend the app is now at v99; only v1 -> v2 exists.
+        # Pretend the app is now at v99; registered steps stop at v3 -> v4 (absent).
         monkeypatch.setattr(migrations, "CONFIG_SCHEMA_VERSION", 99)
         with pytest.raises(SchemaMigrationError) as excinfo:
-            migrate_gui_settings({"_schema_version": 2})
+            migrate_gui_settings({"_schema_version": 3})
 
         ctx = excinfo.value.context
-        assert ctx["from"] == 2
-        assert ctx["to"] == 3
+        assert ctx["from"] == 3
+        assert ctx["to"] == 4
 
     def test_step_failure_wraps_cause(self, monkeypatch):
         from core.config import migrations
