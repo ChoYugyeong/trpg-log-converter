@@ -211,6 +211,14 @@ class ConversionWorker(QThread):
                 self.progress.emit(10, "파일 병합 중...")
                 all_entries = []
 
+                # 캠페인 모드: 각 파일(세션) 앞에 세션 제목 scene 을 삽입해 하나의
+                # 합본을 세션별 챕터로 구성한다.
+                campaign_cfg = config.get("campaign", {}) or {}
+                campaign_on = bool(campaign_cfg.get("enable", False))
+                session_fmt = campaign_cfg.get(
+                    "session_title_format", "Session {n}: {filename}"
+                )
+
                 for i, file_path in enumerate(self.files):
                     if self._stop_event.is_set():
                         raise InterruptedError("작업이 중단되었습니다.")
@@ -218,11 +226,22 @@ class ConversionWorker(QThread):
                     progress = int(10 + (40 * (i / len(self.files))))
                     self.progress.emit(progress, f"파싱 중: {Path(file_path).name}")
                     entries = parse_with_cache(file_path)
+                    if campaign_on:
+                        from core.engine import make_session_scene_entry
+
+                        all_entries.append(
+                            make_session_scene_entry(
+                                session_fmt, i + 1, Path(file_path).stem
+                            )
+                        )
                     all_entries.extend(entries)
 
                 if all_entries:
                     self.progress.emit(60, "변환 중...")
                     base = Path(self.files[0]).stem + "_merged"
+                    # 캠페인 모드이고 사용자가 제목을 비워뒀으면 campaign.title 을 사용.
+                    if campaign_on and not self.title:
+                        self.title = campaign_cfg.get("title") or self.title
                     merged_outputs: list[str] = []
 
                     if self.output_format in ["both", "all", "epub"]:

@@ -236,6 +236,16 @@ def create_docx(
             page_break_enabled = config.get("layout", {}).get("page_break", True)
             if scene_idx > 0 and page_break_enabled:
                 doc.add_page_break()
+            elif scene_idx > 0:
+                # 페이지 나눔을 끈 경우, 장면 사이에 구분 기호(scene_separator)를 넣어
+                # 장면 경계를 시각적으로 표시한다(기본값 '＊　＊　＊').
+                sep_text = str(style_config.get("scene_separator", "") or "").strip()
+                if sep_text:
+                    sep_para = doc.add_paragraph()
+                    sep_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                    sep_run = sep_para.add_run(sep_text)
+                    set_run_font(sep_run, name_font, size_pt=11, color="#888888")
+                    add_paragraph_spacing(sep_para, before_pt=12, after_pt=12)
 
             # 챕터 느낌의 큰 제목 — 사용자 설정(config['header'])을 따름
             title_para = doc.add_paragraph()

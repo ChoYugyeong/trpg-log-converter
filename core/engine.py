@@ -82,6 +82,25 @@ def load_config(config_path: str | Path | None = None) -> dict[str, Any]:
     return config
 
 
+def format_session_title(fmt: str, n: int, filename: str) -> str:
+    """캠페인 세션 제목 포맷. ``{n}``=세션 번호, ``{filename}``=파일명(확장자 제외)."""
+    fmt = fmt or "Session {n}: {filename}"
+    return fmt.replace("{n}", str(n)).replace("{filename}", filename or "")
+
+
+def make_session_scene_entry(fmt: str, n: int, filename: str) -> dict[str, Any]:
+    """캠페인 모드에서 각 세션(파일) 앞에 삽입할 scene 엔트리를 만든다."""
+    title = format_session_title(fmt, n, filename)
+    return {
+        "type": "scene",
+        "name": "",
+        "content": title,
+        "raw": title,
+        "image": None,
+        "channel": None,
+    }
+
+
 class ConversionEngine:
     """Convenience facade used by the GUI and CLI.
 

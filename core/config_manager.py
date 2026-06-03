@@ -1,6 +1,7 @@
 import contextlib
 import json
 import logging
+import re
 import sys
 from pathlib import Path
 
@@ -444,6 +445,16 @@ class ConfigManager:
             },
         }
 
+        # scene_marker(장면 마커 기호)를 scene_patterns 에 병합 — 마커를 바꾸면 실제
+        # 장면 분할에 반영되도록 한다. (과거엔 style.scene_marker 가 어디서도 읽히지
+        # 않아 동작하지 않았다.) 기호는 정규식 특수문자일 수 있으므로 escape 한다.
+        _marker = str(gui_settings.get("scene_marker", "") or "").strip()
+        if _marker:
+            _anchored = _marker if _marker.startswith("^") else "^" + re.escape(_marker)
+            _patterns = gui_config["chapter"]["scene_patterns"]
+            if isinstance(_patterns, list) and _anchored not in _patterns:
+                _patterns.append(_anchored)
+
         # 색상 설정 적용
         colors = gui_settings.get("colors", {})
         if colors:
@@ -472,6 +483,21 @@ class ConfigManager:
                 "dialogue_separator_custom": gui_settings.get("custom_separator_text", ""),
             }
         )
+
+        # 헤더 장식 → '인용/효과 박스' + '주사위 굴림 표시' 카드. 과거엔 저장만 되고
+        # 소비자가 없어 동작하지 않았다. 인용/효과 박스 색은 effect_bg/effect_border 를
+        # 덮어써 모든 렌더러가 따르게 한다.
+        gui_config["style"].update(
+            {
+                "quote_style": gui_settings.get("quote_style", "왼쪽 테두리"),
+                "dice_icon": bool(gui_settings.get("dice_icon", True)),
+                "dice_style": gui_settings.get("dice_style", "인라인"),
+            }
+        )
+        if gui_settings.get("quote_bg"):
+            gui_config["style"]["effect_bg"] = gui_settings.get("quote_bg")
+        if gui_settings.get("quote_border"):
+            gui_config["style"]["effect_border"] = gui_settings.get("quote_border")
 
         # 커스텀 CSS
         gui_config["custom_css"] = gui_settings.get("custom_css", "")

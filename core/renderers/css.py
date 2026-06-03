@@ -38,6 +38,13 @@ def generate_css(config: dict[str, Any], embedded_fonts: dict[str, Any] | None =
     narration_lh = _num(style.get("narration_line_height", 1.7), 1.7)
     narration_indent = _num(style.get("narration_indent", 1.5), 1.5)
 
+    # 전역 글자 배율 — 본문/나레이션/대사가 모두 em 기반이라 body 크기만 곱하면
+    # 문서 전체가 비례 확대/축소된다. 기본 1.0 이면 변화 없음.
+    base_font_scale = _num(style.get("base_font_size", 1.0), 1.0)
+    if base_font_scale <= 0:
+        base_font_scale = 1.0
+    body_font_size = round(_num(body_font_size, 14) * base_font_scale, 2)
+
     # 이미지 정렬/최대 너비 — UI(파싱/고급 탭)에서 조절. 과거엔 가운데/100% 고정.
     images_cfg = config.get("images", {}) if config else {}
     _align_raw = str(images_cfg.get("alignment", "center") or "center").lower()
@@ -62,6 +69,30 @@ def generate_css(config: dict[str, Any], embedded_fonts: dict[str, Any] | None =
     else:
         header_box_style = ""
 
+    # 인용/효과 박스 스타일(quote_style) — .effect 박스의 테두리/배경 처리.
+    quote_style = str(style.get("quote_style", "왼쪽 테두리") or "").strip()
+    if quote_style == "없음":
+        effect_box = "background: transparent;"
+    elif quote_style == "둥근 박스":
+        effect_box = f"background: {effect_bg}; border: 1px solid {effect_border}; border-radius: 8px;"
+    elif quote_style == "그림자 박스":
+        effect_box = (
+            f"background: {effect_bg}; border: 1px solid {effect_border}; "
+            f"border-radius: 6px; box-shadow: 2px 2px 6px rgba(0,0,0,0.12);"
+        )
+    elif quote_style == "인용 기호":
+        effect_box = f"background: {effect_bg}; border-left: 3px solid {effect_border}; font-style: italic;"
+    else:  # 왼쪽 테두리 (기본)
+        effect_box = f"background: {effect_bg}; border-left: 3px solid {effect_border};"
+
+    # 주사위 표시 스타일(dice_style) — '하이라이트' 면 .dice 에 배경 강조.
+    dice_style = str(style.get("dice_style", "인라인") or "").strip()
+    dice_highlight = (
+        "background: #fffbe6; border-radius: 4px; padding-right: 0.4em;"
+        if dice_style == "하이라이트"
+        else ""
+    )
+
     css_parts = [f"@import url('{fonts.get('pretendard_cdn', '')}');"]
 
     if embedded_fonts:
@@ -83,9 +114,9 @@ body {{ font-family: {body_font}; font-size: {body_font_size}px; line-height: {l
 .narration {{ font-size: 0.95em; line-height: {narration_lh}; margin: 0.8em 0; padding-left: {narration_indent}em; }}
 .narration.dropcap-para {{ padding-left: 0; }}
 .dropcap {{ float: left; font-family: {name_font}; font-size: 3.2em; line-height: 0.72; padding: 0.02em 0.1em 0 0; font-weight: 700; color: {header_color}; }}
-.dice {{ font-family: {name_font}; font-size: 0.75em; color: {dice_color}; margin: 0.2em 0; padding-left: 1em; }}
+.dice {{ font-family: {name_font}; font-size: 0.75em; color: {dice_color}; margin: 0.2em 0; padding-left: 1em; {dice_highlight} }}
 .system {{ font-family: {name_font}; font-size: 0.85em; color: {system_color}; margin: 1em 0; padding-left: 0.5em; }}
-.effect {{ font-family: {name_font}; font-size: 0.85em; color: #444; background: {effect_bg}; border-left: 3px solid {effect_border}; padding: 0.6em 1em; margin: 0.3em 0 0.3em 1em; }}
+.effect {{ font-family: {name_font}; font-size: 0.85em; color: #444; {effect_box} padding: 0.6em 1em; margin: 0.3em 0 0.3em 1em; }}
 .whisper {{ font-size: 0.92em; font-style: italic; color: #666; padding-left: 1.5em; }}
 .highlight {{ background: #fffde7; padding: 0.3em 0.5em; }}
 .scene-title, h1.scene-title {{ font-family: {name_font}; font-weight: {header_weight}; font-size: {header_size_em}em; color: {header_color}; text-align: center; margin: 3em 0 2em 0; letter-spacing: 0.06em; page-break-after: avoid; {header_decoration} {header_box_style} }}

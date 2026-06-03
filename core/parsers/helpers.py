@@ -144,9 +144,10 @@ def apply_parsing_overrides(
     style = config.get("style", {})
     brackets = _resolve_dialogue_brackets(style)
     empty_placeholder = str(config.get("dialogue", {}).get("empty_dialogue", "") or "").strip()
+    dice_icon = bool(style.get("dice_icon", False))
 
     reclassify = bool(sys_prefix or extra_dice or narr_no_name)
-    if not reclassify and brackets is None and not empty_placeholder:
+    if not reclassify and brackets is None and not empty_placeholder and not dice_icon:
         return entries  # 기본값 — 무변경
 
     _skip = {"scene", "scene_end", "image"}
@@ -171,7 +172,6 @@ def apply_parsing_overrides(
                 has_symbol = any(s in content for s in ("→", "=", ">", "＞"))
                 if has_symbol and any(k.upper() in cu for k in extra_dice):
                     entry["type"] = "dice"
-                    continue
 
             if (
                 narr_no_name
@@ -179,6 +179,12 @@ def apply_parsing_overrides(
                 and not (entry.get("name") or "").strip()
             ):
                 entry["type"] = "narration"
+
+        # 6) 주사위 아이콘(🎲) — dice 항목 content 앞에 표시(이미 있으면 건너뜀).
+        if dice_icon and entry.get("type") == "dice":
+            c = (entry.get("content") or "").lstrip()
+            if c and not c.startswith("🎲"):
+                entry["content"] = f"🎲 {c}"
 
         # 아래 두 처리는 최종 분류가 dialogue 인 항목에만 적용된다.
         if entry.get("type") != "dialogue":

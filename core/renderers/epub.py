@@ -99,10 +99,25 @@ def entries_to_html(
 
     if chapter_title:
         clean_title = chapter_title.lstrip("■▶ ").strip() or chapter_title
-        html_parts.append(f'<h1 class="scene-title chapter">{escape_html(clean_title)}</h1>')
+        # 헤더 prefix/suffix — DOCX/PDF 와 일관되게 EPUB 에도 적용.
+        header_cfg = (config or {}).get("header", {}) or {}
+        h_prefix = str(header_cfg.get("prefix", "") or "")
+        h_suffix = str(header_cfg.get("suffix", "") or "")
+        display_title = f"{h_prefix}{clean_title}{h_suffix}"
+        html_parts.append(
+            f'<h1 class="scene-title chapter">{escape_html(display_title)}</h1>'
+        )
         divider_html = _render_divider_html(config or {})
         if divider_html:
             html_parts.append(divider_html)
+        else:
+            # 장면 구분선을 '사용 안 함' 으로 둔 경우의 폴백 — 구버전 chapter_ornament
+            # 설정이 있으면 제목 아래에 장식선으로 렌더(.chapter-ornament CSS 재사용).
+            ornament = str(style.get("chapter_ornament", "") or "").strip()
+            if ornament:
+                html_parts.append(
+                    f'<p class="chapter-ornament">{escape_html(ornament)}</p>'
+                )
 
     for entry in entries:
         t = entry["type"]

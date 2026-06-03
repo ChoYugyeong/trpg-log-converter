@@ -27,6 +27,18 @@ logger = logging.getLogger(__name__)
 # 후처리에서 덮어쓰면 안 되는 확정형 type 들.
 _PROTECTED_TYPES = frozenset({"image", "system"})
 
+# OOC(Out Of Character) 명시 마커 — 오탐(인 캐릭터 괄호 대사)을 피하려고
+# '(( ))' 이중 괄호나 명시적 'OOC'/'잡담' 접두만 OOC 로 본다. 단일 괄호는 제외.
+_OOC_PREFIXES = ("((", "ooc:", "(ooc", "[ooc", "<ooc", "ooc）", "잡담:", "(잡담", "[잡담")
+
+
+def _is_ooc_content(content: str) -> bool:
+    """명시적 OOC 마커로 시작하는지 판정(대소문자 무시)."""
+    if not content:
+        return False
+    s = content.lstrip().lower()
+    return s.startswith(_OOC_PREFIXES)
+
 
 def parse_log(html_content: str, config: dict[str, Any]) -> list[dict[str, Any]]:
     soup = BeautifulSoup(html_content, "html.parser")
@@ -60,10 +72,20 @@ def parse_log(html_content: str, config: dict[str, Any]) -> list[dict[str, Any]]
 
 def filter_entries(entries: list[dict], config: dict[str, Any]) -> list[dict]:
     content_config = config.get("content", {})
+    # '주사위 굴림 표시' 스타일이 '숨김' 이면 include_dice 와 무관하게 dice 를 제거.
+    dice_hidden = str(config.get("style", {}).get("dice_style", "") or "").strip() == "숨김"
+    include_ooc = content_config.get("include_ooc", False)
     filtered: list[dict] = []
     for entry in entries:
         t = entry["type"]
-        if t == "dice" and not content_config.get("include_dice", True):
+        if t == "dice" and (dice_hidden or not content_config.get("include_dice", True)):
+            continue
+        # OOC: 명시적 '(( ))'/'OOC'/'잡담' 마커 메시지는 include_ooc 가 꺼져 있으면 제거.
+        if (
+            not include_ooc
+            and t in ("dialogue", "narration")
+            and _is_ooc_content(entry.get("content", ""))
+        ):
             continue
         if t == "system" and not content_config.get("include_system", True):
             patterns = config.get("chapter", {}).get("scene_patterns", [])
