@@ -407,6 +407,13 @@ class ParsingContentPage(BasePage):
             default=self.settings.get("narrators", "GM, KP, DM, Keeper, 나레이터"),
             help_text="이 이름으로 발화하면 나레이션으로 처리합니다 (쉼표 구분)",
         )
+        # '나레이터 이름'은 '나레이션 설정' 카드의 '나레이터 목록'(narrators)과 동일
+        # 데이터다. 과거엔 이 필드 편집값이 저장되지 않아(save_settings 는 narrators_entry
+        # 만 기록) 무시됐다. 두 필드를 양방향 동기화해 어느 쪽을 편집해도 반영되게 한다.
+        self._syncing_narrators = False
+        if hasattr(self, "narrators_entry"):
+            self.narration_users.textChanged.connect(self._sync_narrators_from_rule)
+            self.narrators_entry.textChanged.connect(self._sync_narrators_from_entry)
         self.narration_no_name = narration_rule_card.add_checkbox(
             "이름 없는 텍스트는 나레이션으로 처리",
             "narration_no_name",
@@ -707,6 +714,28 @@ class ParsingContentPage(BasePage):
             self.test_result.setPlainText("파싱 결과 없음")
 
     # ──────────── 설정 저장 ────────────
+    def _sync_narrators_from_rule(self, text):
+        """'나레이터 이름'(파싱 규칙) 편집을 '나레이터 목록'으로 반영."""
+        if getattr(self, "_syncing_narrators", False):
+            return
+        self._syncing_narrators = True
+        try:
+            if self.narrators_entry.text() != text:
+                self.narrators_entry.setText(text)
+        finally:
+            self._syncing_narrators = False
+
+    def _sync_narrators_from_entry(self, text):
+        """'나레이터 목록' 편집을 '나레이터 이름'(파싱 규칙)으로 반영."""
+        if getattr(self, "_syncing_narrators", False):
+            return
+        self._syncing_narrators = True
+        try:
+            if self.narration_users.text() != text:
+                self.narration_users.setText(text)
+        finally:
+            self._syncing_narrators = False
+
     def save_settings(self):
         """현재 UI 상태를 AppState에 저장."""
         state = self.app_state

@@ -86,26 +86,67 @@ def is_dice_roll(text: str) -> bool:
     return bool(re.search(r"\d+d\d+\s*[+\-]?\s*\d*\s*=\s*\d+", text, re.IGNORECASE))
 
 
+# 대사가 이미 따옴표/괄호로 감싸진 경우 구분자 중복 래핑을 막기 위한 여는 기호 집합.
+_OPENING_BRACKETS = "「『\"'“”‘’《〈<([（｢"
+
+
+def _resolve_dialogue_brackets(
+    style: dict[str, Any],
+) -> tuple[str, str] | None:
+    """'대사 구분자' UI 값(라벨)을 (여는기호, 닫는기호) 튜플로 변환.
+
+    감싸지 않는 경우('없음'/미설정/해석 불가)에는 None 을 반환한다.
+    """
+    label = str(style.get("dialogue_separator", "") or "").strip()
+    if not label or "없음" in label:
+        return None
+    if "직접" in label:  # 직접 입력
+        custom = str(style.get("dialogue_separator_custom", "") or "").strip()
+        if not custom:
+            return None
+        parts = custom.split()
+        if len(parts) >= 2:
+            return parts[0], parts[1]
+        # 공백 구분이 없으면 한 글자씩(예: "[]") 또는 양쪽 동일 기호로 처리
+        if len(custom) >= 2:
+            return custom[0], custom[-1]
+        return custom, custom
+    if "작은따옴표" in label:
+        return "'", "'"
+    if "따옴표" in label:
+        return '"', '"'
+    if "꺾쇠" in label:
+        return "「", "」"
+    return None
+
+
 def apply_parsing_overrides(
     entries: list[dict[str, Any]], config: dict[str, Any]
 ) -> list[dict[str, Any]]:
-    """'파싱 규칙' UI 설정을 실제 파싱 결과에 반영하는 공통 post-pass.
+    """'파싱 규칙' + 대사 표현 UI 설정을 실제 파싱 결과에 반영하는 공통 post-pass.
 
     HTML(코코포리아/Roll20) 파이프라인과 텍스트 파서 양쪽에서 호출한다.
-    세 가지를 처리하되, 기본값(빈 prefix/키워드, narration_no_name=False)이면
-    아무것도 하지 않고 그대로 반환해 기존 동작을 100% 보존한다.
+    기본값이면 아무것도 하지 않고 그대로 반환해 기존 동작을 보존한다.
 
     1) system_prefix: content 가 이 접두사로 시작하면 system 메시지로 분류.
     2) dice_keywords: dialogue 로 분류된 항목이 사용자 키워드 + 결과 기호(→/=/>)를
        가지면 dice 로 재분류(기본 다이스 감지에 '추가'되는 보강).
     3) narration_no_name: 이름 없는 dialogue 를 narration 으로.
+    4) empty_dialogue: 내용이 비어있는 대사를 placeholder(…) 로 치환.
+    5) dialogue_separator: 대사 content 를 선택한 기호(「」 등)로 감싼다.
+       이미 따옴표/괄호로 시작하는 대사는 중복 래핑하지 않는다.
     """
     parsing = config.get("parsing", {})
     sys_prefix = (parsing.get("system_prefix") or "").strip()
     extra_dice = [k for k in (parsing.get("dice_keywords") or []) if k]
     narr_no_name = bool(parsing.get("narration_no_name", False))
 
-    if not sys_prefix and not extra_dice and not narr_no_name:
+    style = config.get("style", {})
+    brackets = _resolve_dialogue_brackets(style)
+    empty_placeholder = str(config.get("dialogue", {}).get("empty_dialogue", "") or "").strip()
+
+    reclassify = bool(sys_prefix or extra_dice or narr_no_name)
+    if not reclassify and brackets is None and not empty_placeholder:
         return entries  # 기본값 — 무변경
 
     _skip = {"scene", "scene_end", "image"}
@@ -118,25 +159,41 @@ def apply_parsing_overrides(
         # 접두사가 name 으로 빨려들어가 content 검사가 놓친다.
         probe = entry.get("raw") or content
 
-        if sys_prefix and probe.lstrip().lower().startswith(sys_prefix.lower()):
-            entry["type"] = "system"
-            entry["content"] = probe.lstrip()[len(sys_prefix) :].strip()
-            entry["name"] = ""
-            continue
-
-        if extra_dice and entry.get("type") == "dialogue":
-            cu = content.upper()
-            has_symbol = any(s in content for s in ("→", "=", ">", "＞"))
-            if has_symbol and any(k.upper() in cu for k in extra_dice):
-                entry["type"] = "dice"
+        if reclassify:
+            if sys_prefix and probe.lstrip().lower().startswith(sys_prefix.lower()):
+                entry["type"] = "system"
+                entry["content"] = probe.lstrip()[len(sys_prefix) :].strip()
+                entry["name"] = ""
                 continue
 
-        if (
-            narr_no_name
-            and entry.get("type") == "dialogue"
-            and not (entry.get("name") or "").strip()
-        ):
-            entry["type"] = "narration"
+            if extra_dice and entry.get("type") == "dialogue":
+                cu = content.upper()
+                has_symbol = any(s in content for s in ("→", "=", ">", "＞"))
+                if has_symbol and any(k.upper() in cu for k in extra_dice):
+                    entry["type"] = "dice"
+                    continue
+
+            if (
+                narr_no_name
+                and entry.get("type") == "dialogue"
+                and not (entry.get("name") or "").strip()
+            ):
+                entry["type"] = "narration"
+
+        # 아래 두 처리는 최종 분류가 dialogue 인 항목에만 적용된다.
+        if entry.get("type") != "dialogue":
+            continue
+
+        # 4) 빈 대사 → placeholder
+        if empty_placeholder and not (entry.get("content") or "").strip():
+            entry["content"] = empty_placeholder
+
+        # 5) 대사 구분자 래핑 (이미 감싸진 대사는 건너뜀)
+        if brackets is not None:
+            text = (entry.get("content") or "").strip()
+            if text and text[0] not in _OPENING_BRACKETS:
+                open_b, close_b = brackets
+                entry["content"] = f"{open_b}{text}{close_b}"
 
     return entries
 

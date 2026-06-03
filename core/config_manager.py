@@ -468,6 +468,8 @@ class ConfigManager:
                 "name_bold": gui_settings.get("style_name_bold", True),
                 "visual_line_height": safe_float(gui_settings.get("style_line_height", 1.6), 1.6),
                 "dialogue_separator": gui_settings.get("style_separator", "「 」 (꺾쇠)"),
+                # '직접 입력' 선택 시 사용할 사용자 정의 열림/닫힘 기호.
+                "dialogue_separator_custom": gui_settings.get("custom_separator_text", ""),
             }
         )
 
