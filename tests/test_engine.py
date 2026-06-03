@@ -155,6 +155,63 @@ class TestMerge:
         assert len(result) == 2
 
 
+class TestEnginePipeline:
+    """ConversionEngine.parse_file 후처리 파이프라인 (필터 + 병합) 테스트.
+
+    GUI/배치 변환은 ``ConversionEngine.parse_file`` 의 반환값을 그대로 렌더러에
+    넘기므로, 이 메서드가 콘텐츠 필터와 연속 대사 병합을 적용해야 한다.
+    (과거 회귀: 파싱 결과를 그대로 반환해 "대화 병합" 설정이 GUI 변환에서
+    전혀 동작하지 않았다.)
+    """
+
+    def test_parse_file_applies_merge(self, monkeypatch):
+        import core.text_parser as tp
+        from core.engine import ConversionEngine
+
+        fake = [
+            {"type": "dialogue", "name": "제이크", "content": "안녕"},
+            {"type": "dialogue", "name": "제이크", "content": "반가워"},
+            {"type": "dialogue", "name": "미아", "content": "응"},
+        ]
+        monkeypatch.setattr(tp, "parse_file", lambda path, config: [dict(e) for e in fake])
+
+        engine = ConversionEngine(
+            {"dialogue": {"merge_consecutive": True, "merge_separator": "\n", "merge_max": 5}}
+        )
+        result = engine.parse_file("dummy.txt")
+        assert len(result) == 2
+        assert result[0]["content"] == "안녕\n반가워"
+        assert result[1]["name"] == "미아"
+
+    def test_parse_file_no_merge_when_disabled(self, monkeypatch):
+        import core.text_parser as tp
+        from core.engine import ConversionEngine
+
+        fake = [
+            {"type": "dialogue", "name": "제이크", "content": "안녕"},
+            {"type": "dialogue", "name": "제이크", "content": "반가워"},
+        ]
+        monkeypatch.setattr(tp, "parse_file", lambda path, config: [dict(e) for e in fake])
+
+        engine = ConversionEngine({"dialogue": {"merge_consecutive": False}})
+        result = engine.parse_file("dummy.txt")
+        assert len(result) == 2
+
+    def test_parse_file_applies_content_filter(self, monkeypatch):
+        import core.text_parser as tp
+        from core.engine import ConversionEngine
+
+        fake = [
+            {"type": "dialogue", "name": "제이크", "content": "안녕"},
+            {"type": "dice", "name": "제이크", "content": "1d100 → 42"},
+        ]
+        monkeypatch.setattr(tp, "parse_file", lambda path, config: [dict(e) for e in fake])
+
+        engine = ConversionEngine({"content": {"include_dice": False}})
+        result = engine.parse_file("dummy.txt")
+        assert all(e["type"] != "dice" for e in result)
+
+
 class TestSceneSplit:
     """장면 분할 테스트"""
 

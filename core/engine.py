@@ -95,7 +95,14 @@ class ConversionEngine:
     def parse_file(self, file_path: str) -> list[dict[str, Any]]:
         from core.text_parser import parse_file as text_parse_file
 
+        # GUI/배치 변환은 이 메서드의 반환값을 곧장 렌더러에 넘긴다. 따라서
+        # 여기서 standalone ``convert()`` 와 동일한 후처리 파이프라인
+        # (콘텐츠 필터 → 연속 대사 병합)을 적용해야 한다. 과거에는 파싱
+        # 결과를 그대로 반환해 "대화 병합"·"주사위/시스템 제외" 설정이
+        # GUI 변환에서 전혀 적용되지 않는 버그가 있었다.
         result: list[dict[str, Any]] = text_parse_file(file_path, self.config)
+        result = filter_entries(result, self.config)
+        result = merge_consecutive_dialogues(result, self.config)
         return result
 
     def parse_html(self, html_content: str) -> list[dict[str, Any]]:
