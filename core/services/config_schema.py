@@ -216,8 +216,16 @@ def validate_engine_config(config_dict: dict) -> dict:
 
         return deep_merge(config_dict, validated)
     except Exception as e:
-        logger.warning("설정 검증 실패, 기본값 사용: %s", e)
-        return EngineConfig().model_dump()
+        # 단일 필드 타입 오류로 전체 설정을 기본값으로 덮으면 사용자의 나머지 설정이
+        # 통째로 사라진다. 검증 실패 시에는 원본 위에 '기본값으로 채우기'만 하고
+        # (deep_merge: 원본 우선) 사용자 값은 최대한 보존한다.
+        logger.warning("설정 검증 실패, 원본 설정 보존: %s", e)
+        try:
+            from core.utils import deep_merge
+
+            return deep_merge(EngineConfig().model_dump(), config_dict)
+        except Exception:
+            return dict(config_dict)
 
 
 # GUI 설정 스키마는 gui.config_models.AppSettings가 SSOT이다.

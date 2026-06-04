@@ -77,7 +77,7 @@ def filter_entries(entries: list[dict], config: dict[str, Any]) -> list[dict]:
     include_ooc = content_config.get("include_ooc", False)
     filtered: list[dict] = []
     for entry in entries:
-        t = entry["type"]
+        t = entry.get("type", "dialogue")
         if t == "dice" and (dice_hidden or not content_config.get("include_dice", True)):
             continue
         # OOC: 명시적 '(( ))'/'OOC'/'잡담' 마커 메시지는 include_ooc 가 꺼져 있으면 제거.
@@ -109,14 +109,14 @@ def merge_consecutive_dialogues(entries: list[dict], config: dict[str, Any]) -> 
     i = 0
     while i < len(entries):
         entry = entries[i].copy()
-        if entry["type"] == "dialogue" and entry.get("name"):
-            same_speaker = [entry["content"]]
+        if entry.get("type") == "dialogue" and entry.get("name"):
+            same_speaker = [entry.get("content", "")]
             j = i + 1
             merge_count = 1
             while j < len(entries) and (max_merge == 0 or merge_count < max_merge):
                 next_entry = entries[j]
                 if (
-                    next_entry["type"] == "dialogue"
+                    next_entry.get("type") == "dialogue"
                     and next_entry.get("name", "").lower() == entry["name"].lower()
                 ):
                     same_speaker.append(next_entry["content"])
@@ -178,7 +178,7 @@ def split_by_scene(entries, chapter_config) -> list[dict]:
 
     for entry in entries:
         content = entry.get("content", "")
-        entry_type = entry["type"]
+        entry_type = entry.get("type", "dialogue")
 
         is_scene = False
         if entry_type == "scene" or (
@@ -192,6 +192,10 @@ def split_by_scene(entries, chapter_config) -> list[dict]:
                     scenes.append(current_scene)
                 elif scenes:
                     scenes[-1]["entries"].extend(current_scene["entries"])
+            elif current_scene["title"] and not current_scene.get("auto_title", True):
+                # 내용은 없지만 명시적 제목이 있는 씬(예: 캠페인 세션 구분선이 로그의
+                # 첫 씬 마커 바로 앞에 올 때)은 버리지 않고 제목 전용 챕터로 유지한다.
+                scenes.append(current_scene)
 
             scene_count += 1
             extracted = extract_scene_title(content) if extract_title else None

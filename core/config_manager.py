@@ -455,6 +455,14 @@ class ConfigManager:
             if isinstance(_patterns, list) and _anchored not in _patterns:
                 _patterns.append(_anchored)
 
+        # '사용자 정의' 판형은 custom_page_width/height 로 parse 가능한 문자열을
+        # 구성해야 한다. 과거엔 '사용자 정의' 리터럴이 그대로 넘어가 layout 이
+        # A5 로 폴백, 사용자 입력 크기가 무시됐다.
+        if "사용자 정의" in str(gui_config.get("page_format", "")):
+            _cw = safe_int(gui_settings.get("custom_page_width", 148), 148)
+            _ch = safe_int(gui_settings.get("custom_page_height", 210), 210)
+            gui_config["page_format"] = f"사용자 정의 ({_cw}x{_ch}mm)"
+
         # 색상 설정 적용
         colors = gui_settings.get("colors", {})
         if colors:

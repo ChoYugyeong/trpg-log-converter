@@ -120,7 +120,7 @@ def entries_to_html(
                 )
 
     for entry in entries:
-        t = entry["type"]
+        t = entry.get("type", "dialogue")
         content = entry.get("content", "")
         name = entry.get("name", "")
         img = entry.get("image")
@@ -346,7 +346,9 @@ def create_epub(
             pct = 30 + int(60 * idx / max(len(scenes), 1))
             progress_callback(pct, 100, f"장면 {idx + 1}/{len(scenes)} 생성 중...")
 
-        content_html = entries_to_html(scene_entries, scene_title, config)
+        # 콘텐츠 필터로 모든 항목이 제거되면 body 가 비어 lxml(write_epub)이
+        # "Document is empty" 로 크래시한다. 최소 placeholder 로 빈 본문을 막는다.
+        content_html = entries_to_html(scene_entries, scene_title, config) or "<p> </p>"
         chapter = epub.EpubHtml(
             title=scene_title or f"장면 {idx + 1}",
             file_name=f"chapter_{idx + 1}.xhtml",
@@ -380,8 +382,13 @@ def create_epub(
         else:
             os.rename(tmp_path, output_path)
     except Exception:
-        if os.path.exists(tmp_path):
-            os.unlink(tmp_path)
+        # 정리 실패(예: Windows 에서 핸들이 아직 열려 있어 unlink 가
+        # PermissionError)가 원래 예외를 가리지 않도록 suppress 한다.
+        import contextlib
+
+        with contextlib.suppress(OSError):
+            if os.path.exists(tmp_path):
+                os.unlink(tmp_path)
         raise
 
     if progress_callback:

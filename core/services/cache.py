@@ -80,8 +80,18 @@ class CacheService:
 
     def _get_config_hash(self, config: dict[str, Any]) -> str:
         """설정 해시 계산"""
-        # 캐시에 영향을 주는 설정만 추출
-        relevant_keys = ["parsing", "narration", "chapter", "content"]
+        # 캐시에 영향을 주는 설정만 추출. parse_file 가 파싱 후 filter/merge/대사
+        # 구분자/빈 대사/🎲 등 후처리를 적용하므로 dialogue/style/images 도 키에
+        # 포함해야 설정 변경 시 stale 결과가 반환되지 않는다.
+        relevant_keys = [
+            "parsing",
+            "narration",
+            "chapter",
+            "content",
+            "dialogue",
+            "style",
+            "images",
+        ]
         relevant_config = {k: config.get(k, {}) for k in relevant_keys}
 
         config_str = json.dumps(relevant_config, sort_keys=True)

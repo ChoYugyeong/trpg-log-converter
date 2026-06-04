@@ -285,7 +285,7 @@ def create_docx(
         dropcap_pending = drop_cap
 
         for entry in scene_entries:
-            t = entry["type"]
+            t = entry.get("type", "dialogue")
             content = entry.get("content", "")
             name = entry.get("name", "")
             img = entry.get("image")

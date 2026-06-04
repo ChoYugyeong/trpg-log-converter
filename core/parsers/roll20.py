@@ -29,6 +29,17 @@ logger = logging.getLogger(__name__)
 # All formats are STATIC patterns fed to ``datetime.strptime`` — we never call
 # ``datetime.now()`` so behaviour stays deterministic.
 _TSTAMP_FORMATS = (
+    # 초(%S)를 포함하는 변형 — 실제 Roll20 export 가 HH:MM:SS 를 많이 쓴다.
+    "%B %d, %Y %I:%M:%S%p",  # "January 1, 2024 3:04:05PM"
+    "%B %d, %Y %I:%M:%S %p",
+    "%b %d, %Y %I:%M:%S%p",
+    "%m/%d/%y %I:%M:%S%p",
+    "%m/%d/%Y %I:%M:%S%p",
+    "%Y-%m-%d %H:%M:%S",  # "2024-01-01 15:04:05"
+    "%I:%M:%S%p",  # "3:04:05PM"
+    "%I:%M:%S %p",
+    "%H:%M:%S",  # "15:04:05"
+    # 분(%M)까지만 있는 변형
     "%B %d, %Y %I:%M%p",  # "January 1, 2024 3:04PM"
     "%B %d, %Y %I:%M %p",  # "January 1, 2024 3:04 PM"
     "%b %d, %Y %I:%M%p",  # "Jan 1, 2024 3:04PM"
@@ -105,7 +116,9 @@ def parse_roll20(soup, config: dict[str, Any]) -> list[dict[str, Any]]:
             name_tag = by_span
             name_text = by_span.get_text(strip=True)
             name = name_text.rstrip(":").strip()
-            if name in (":", "::"):
+            # 콜론만 있는 화자(":"/"::" 등 Roll20 시스템 행)는 rstrip 후 빈 문자열이
+            # 되므로, 원본이 비어있지 않았다면 System 으로 정규화한다.
+            if not name and name_text:
                 name = "System"
             last_speaker = name
         else:
@@ -114,7 +127,7 @@ def parse_roll20(soup, config: dict[str, Any]) -> list[dict[str, Any]]:
                 name_tag = strong_tag
                 name_text = strong_tag.get_text(strip=True)
                 name = name_text.rstrip(":").strip()
-                if name in (":", "::"):
+                if not name and name_text:
                     name = "System"
                 last_speaker = name
 

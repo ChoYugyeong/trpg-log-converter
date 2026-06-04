@@ -6,6 +6,7 @@
 
 import json
 import logging
+import uuid
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
@@ -107,7 +108,10 @@ class HistoryManager:
     ) -> ConversionRecord:
         """새 변환 기록 추가"""
         record = ConversionRecord(
-            id=datetime.now().strftime("%Y%m%d_%H%M%S_%f"),
+            # %f(마이크로초)는 Windows 시계 해상도(~15ms) 때문에 빠른 연속 호출에서
+            # 동일하게 찍혀 id 충돌 → delete 가 엉뚱한 레코드를 지우는 버그가 있었다.
+            # uuid 접미사로 고유성을 보장한다(정렬용 시간 접두사는 유지).
+            id=datetime.now().strftime("%Y%m%d_%H%M%S_%f") + "_" + uuid.uuid4().hex[:8],
             timestamp=datetime.now().isoformat(),
             input_file=str(input_file),
             input_filename=Path(input_file).name,

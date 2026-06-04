@@ -54,13 +54,21 @@ def deep_merge(base: dict, override: dict) -> dict:
 
 
 def safe_int(value, default: int = 0) -> int:
-    """안전한 int 변환. '85 (권장)' 같은 문자열에서도 숫자 추출."""
+    """안전한 int 변환. '85 (권장)' 같은 문자열, float, '14.0' 도 처리."""
+    if isinstance(value, bool):
+        return int(value)
     if isinstance(value, int):
         return value
+    if isinstance(value, float):
+        return int(value)
     try:
         return int(str(value).split()[0])
     except (ValueError, TypeError, IndexError):
-        return default
+        # '14.0' 같은 float 문자열도 구제
+        try:
+            return int(float(str(value).split()[0]))
+        except (ValueError, TypeError, IndexError):
+            return default
 
 
 def safe_float(value, default: float = 0.0) -> float:
