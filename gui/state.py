@@ -124,7 +124,6 @@ _KEY_GROUP_MAP: dict[str, str] = {
     "quote_bg": "decoration",
     "quote_border": "decoration",
     "dice_style": "decoration",
-    "dice_icon": "decoration",
     "dice_color": "decoration",
     # ── content (콘텐츠 필터) ──
     "include_dice": "content",

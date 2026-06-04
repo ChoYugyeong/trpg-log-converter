@@ -133,3 +133,26 @@ class TestCustomPageFormat:
     def test_custom_size_parses(self):
         w, h = parse_page_format("사용자 정의 (120x180mm)")
         assert (w, h) == (120.0, 180.0)
+
+
+class TestSceneTitleStripsMarker:
+    def test_strips_leading_marker(self):
+        from core.parsers.helpers import extract_scene_title
+
+        assert extract_scene_title("■ 장면 1: 폐교") == "장면 1: 폐교"
+        assert extract_scene_title("▶ Scene 2") == "Scene 2"
+
+    def test_strips_decorative_dashes(self):
+        from core.parsers.helpers import extract_scene_title
+
+        assert extract_scene_title("───  장면 3  ───") == "장면 3"
+
+
+class TestEpubPrefixEscaped:
+    def test_narration_prefix_escaped(self):
+        from core.renderers.epub import entries_to_html
+
+        entries = [{"type": "narration", "name": "", "content": "문이 열렸다"}]
+        html = entries_to_html(entries, None, {"style": {"narration_prefix": "<b>"}})
+        assert "<b>문이" not in html  # 접두사가 마크업으로 해석되지 않아야
+        assert "&lt;b&gt;" in html

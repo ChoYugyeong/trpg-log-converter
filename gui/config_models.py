@@ -184,7 +184,6 @@ class DecorationSettings(BaseModel):
     quote_bg: str = Field("#f5f5f5", description="인용문 배경색")
     quote_border: str = Field("#cccccc", description="인용문 테두리 색상")
     dice_style: str = Field("인라인", description="주사위 스타일")
-    dice_icon: bool = Field(False, description="주사위 아이콘 표시")
     dice_color: str = Field("#888888", description="주사위 색상")
 
 
@@ -472,7 +471,6 @@ _FIELD_MAP: list[tuple[str, str]] = [
     ("quote_bg", "format_style.decoration.quote_bg"),
     ("quote_border", "format_style.decoration.quote_border"),
     ("dice_style", "format_style.decoration.dice_style"),
-    ("dice_icon", "format_style.decoration.dice_icon"),
     ("dice_color", "format_style.decoration.dice_color"),
     # --- ContentFilterSettings ---
     ("include_dice", "parsing_content.content_filter.include_dice"),

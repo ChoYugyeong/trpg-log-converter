@@ -498,8 +498,6 @@ class ConfigManager:
         gui_config["style"].update(
             {
                 "quote_style": gui_settings.get("quote_style", "왼쪽 테두리"),
-                # 주사위 🎲 아이콘은 기본 OFF — 사용자가 명시적으로 켤 때만 표시.
-                "dice_icon": bool(gui_settings.get("dice_icon", False)),
                 "dice_style": gui_settings.get("dice_style", "인라인"),
             }
         )

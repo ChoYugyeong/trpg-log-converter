@@ -163,16 +163,6 @@ class TestQuoteAndDiceStyle:
         css = generate_css({"style": {"dice_style": "하이라이트"}})
         assert "#fffbe6" in css
 
-    def test_dice_icon_prefixes(self):
-        entries = [{"type": "dice", "name": "제이크", "content": "1d100 → 42"}]
-        result = apply_parsing_overrides(entries, {"style": {"dice_icon": True}})
-        assert result[0]["content"].startswith("🎲")
-
-    def test_dice_icon_no_double(self):
-        entries = [{"type": "dice", "name": "", "content": "🎲 1d100 → 42"}]
-        result = apply_parsing_overrides(entries, {"style": {"dice_icon": True}})
-        assert result[0]["content"].count("🎲") == 1
-
     def test_dice_style_hidden_filters(self):
         entries = [
             {"type": "dialogue", "name": "A", "content": "안녕"},

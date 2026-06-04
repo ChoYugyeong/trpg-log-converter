@@ -161,7 +161,8 @@ def entries_to_html(
                 )
             html_parts.append(f'<div class="effect">{content_escaped}</div>')
         elif t == "narration":
-            prefix = narration_prefix if narration_prefix else ""
+            # 접두사도 XHTML escape — '<' '&' 등이 들어가도 마크업이 깨지지 않게.
+            prefix = escape_html(narration_prefix) if narration_prefix else ""
             if dropcap_pending:
                 from core.utils import split_first_grapheme
 

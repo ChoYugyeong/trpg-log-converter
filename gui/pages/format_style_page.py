@@ -167,9 +167,8 @@ class DecorationPreview(QFrame):
 
         layout.addStretch()
 
-    def update_dice(self, show_icon=True, color="#0066cc", style="인라인"):
-        icon = "\U0001f3b2 " if show_icon else ""
-        sample_text = f"{icon}1D100 \u2192 42 (\uc131\uacf5)"
+    def update_dice(self, color="#0066cc", style="인라인"):
+        sample_text = f"1D100 \u2192 42 (\uc131\uacf5)"
         if style == "숨김":
             self.dice_label.setVisible(False)
         else:
@@ -1307,14 +1306,6 @@ class FormatStylePage(BasePage):
         )
         self.dice_style.currentTextChanged.connect(self._update_dice_preview)
 
-        self.dice_icon = dice_card.add_checkbox(
-            "주사위 아이콘 표시",
-            "dice_icon",
-            checked=False,
-            help_text="주사위 굴림 앞에 \U0001f3b2 아이콘을 표시합니다.",
-        )
-        self.dice_icon.stateChanged.connect(self._update_dice_preview)
-
         self.dice_color = ColorPicker("#0066cc")
         self.dice_color.color_changed.connect(self._update_dice_preview)
         dice_card.add_field("주사위 색상", self.dice_color)
@@ -1858,7 +1849,6 @@ class FormatStylePage(BasePage):
 
     def _update_dice_preview(self, *args):
         self.preview_panel.update_dice(
-            show_icon=self.dice_icon.isChecked(),
             color=self.dice_color.get_color(),
             style=self.dice_style.currentText(),
         )
@@ -2077,7 +2067,6 @@ class FormatStylePage(BasePage):
         _s("quote_bg", self.quote_bg.get_color())
         _s("quote_border", self.quote_border.get_color())
         _s("dice_style", self.dice_style.currentText())
-        _s("dice_icon", self.dice_icon.isChecked())
         _s("dice_color", self.dice_color.get_color())
 
         # Effects
@@ -2121,7 +2110,6 @@ class FormatStylePage(BasePage):
             self.header_box,
             self.quote_style,
             self.dice_style,
-            self.dice_icon,
             self.first_letter,
             self.page_break,
             self.divider_img_height,
@@ -2261,7 +2249,6 @@ class FormatStylePage(BasePage):
         self.quote_bg.set_color(_g("quote_bg", "#f5f5f5"))
         self.quote_border.set_color(_g("quote_border", "#cccccc"))
         self.safe_set_combo(self.dice_style, _g("dice_style", "인라인"))
-        self.dice_icon.setChecked(_g("dice_icon", False))
         self.dice_color.set_color(_g("dice_color", "#0066cc"))
 
         # Effects

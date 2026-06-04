@@ -432,9 +432,18 @@ class ConversionWorker(QThread):
             duration_ms = int((_time.monotonic() - start_ts) * 1000)
             for rec in self.last_records:
                 rec["duration_ms"] = duration_ms
-            self.finished.emit(
-                True, f"변환 완료!\n{success_count}개 파일 생성\n출력 위치: {output_dir}"
-            )
+            if success_count == 0:
+                # 콘텐츠 필터로 항목이 모두 제거되는 등으로 출력이 0개면 '완료'가 아니라
+                # 경고로 알린다(과거엔 '0개 파일 생성' 을 성공으로 표시).
+                self.finished.emit(
+                    False,
+                    "생성된 파일이 없습니다.\n포함 설정(주사위/시스템/OOC 등)이나 "
+                    "장면 분할로 모든 내용이 제외되지 않았는지 확인해 주세요.",
+                )
+            else:
+                self.finished.emit(
+                    True, f"변환 완료!\n{success_count}개 파일 생성\n출력 위치: {output_dir}"
+                )
 
         except InterruptedError:
             logger.info("변환 작업이 사용자에 의해 중단되었습니다.")
