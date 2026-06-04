@@ -16,10 +16,27 @@ _RE_BRACKET = re.compile(r"^\[(.+?)\]\s*(.+)$")
 _RE_PAREN = re.compile(r"^\((.+?)\)\s*(.+)$")
 _RE_DICE = re.compile(r"(CCB|1D100|2D6|\d+D\d+)", re.IGNORECASE)
 
+# Discord (DiscordChatExporter PlainText) 메시지 헤더:
+#   "[2024-01-15 7:04 PM] 작성자"  /  "[15-Jan-24 7:04 PM] 작성자 (pinned)"
+# 대괄호 안에 시각(HH:MM 또는 AM/PM)이나 날짜(숫자-숫자)가 들어가야 한다.
+# 이렇게 해서 "[INFO] 텍스트" 같은 일반 채널 태그와 구분한다(채널 태그엔 시각이 없음).
+_RE_DISCORD_HEADER = re.compile(
+    r"^\[(?=[^\]]*\d)(?=[^\]]*(?::\d|[AaPp][Mm]|[-/]))([^\]]+)\]\s+(.+?)\s*$"
+)
+# Discord 본문에서 건너뛸 섹션 마커 / 메타 라인
+_DISCORD_SECTION = ("{Attachments}", "{Embed}", "{Reactions}", "{Stickers}")
+_DISCORD_META_PREFIX = ("Guild:", "Channel:", "Topic:", "After:", "Before:", "Exported ")
+
 
 def detect_format(content):
     """텍스트 형식 자동 감지"""
-    lines = content.strip().split("\n")[:50]
+    lines = content.strip().split("\n")[:80]
+
+    # Discord(DiscordChatExporter): "[타임스탬프] 작성자" 헤더가 여러 개면 우선.
+    # 헤더가 2개 이상이면 멀티라인 Discord 형식으로 본다(라인 단위 파싱과 다른 경로).
+    discord_count = sum(1 for line in lines if _RE_DISCORD_HEADER.match(line.strip()))
+    if discord_count >= 2:
+        return "discord"
 
     # 코코포리아 스타일: "이름 : 대사"
     colon_count = sum(1 for line in lines if _RE_COLON.match(line))
@@ -122,10 +139,89 @@ def is_scene_marker(text, patterns):
     return False
 
 
+def parse_discord_format(content, config):
+    """Discord(DiscordChatExporter PlainText) 멀티라인 형식 파싱.
+
+    구조:
+        [타임스탬프] 작성자            ← 메시지 헤더
+        본문 1줄째
+        본문 2줄째 ...               ← 다음 헤더(또는 섹션/구분선)까지가 한 메시지
+    상단 메타(Guild/Channel/===)와 {Attachments} 등 섹션은 건너뛴다.
+    """
+    scene_patterns = config.get("chapter", {}).get("scene_patterns", ["^■"])
+    entries = []
+    cur_name = None
+    cur_lines: list[str] = []
+
+    def flush():
+        if cur_name is None:
+            return
+        text = " ".join(s.strip() for s in cur_lines if s.strip()).strip()
+        if not text:
+            return
+        name = cur_name
+        if is_scene_marker(text, scene_patterns):
+            entries.append({"type": "scene", "name": "", "content": text, "raw": text, "image": None})
+        elif name.lower() == "system":
+            entries.append({"type": "system", "name": "", "content": text, "raw": text, "image": None})
+        elif is_narration_user(name, config):
+            entries.append(
+                {"type": "narration", "name": name, "content": text, "raw": text, "image": None}
+            )
+        elif is_dice_roll(text):
+            entries.append({"type": "dice", "name": name, "content": text, "raw": text, "image": None})
+        else:
+            entries.append(
+                {"type": "dialogue", "name": name, "content": text, "raw": text, "image": None}
+            )
+
+    in_body = False
+    for raw_line in content.split("\n"):
+        line = raw_line.rstrip()
+        stripped = line.strip()
+        # 상단/하단 구분선(====) 과 메타 라인 스킵
+        if set(stripped) == {"="} and stripped:
+            in_body = True
+            continue
+        m = _RE_DISCORD_HEADER.match(stripped)
+        if m:
+            in_body = True
+            flush()
+            author = m.group(2).strip()
+            # "(pinned)" 같은 접미사 제거
+            author = re.sub(r"\s*\((?:pinned|편집됨|edited)\)\s*$", "", author, flags=re.IGNORECASE)
+            cur_name = author
+            cur_lines = []
+            continue
+        if not in_body:
+            continue
+        if stripped.startswith(_DISCORD_META_PREFIX):
+            continue
+        if stripped.startswith("{") or stripped in _DISCORD_SECTION:
+            continue
+        if cur_name is not None and stripped:
+            cur_lines.append(stripped)
+    flush()
+
+    # 콜론 화자 뒤 마커 재검사 + 파싱 규칙 적용 (다른 경로와 동일 post-pass)
+    for entry in entries:
+        if entry.get("type") == "scene":
+            continue
+        c = entry.get("content") or ""
+        if c and is_scene_marker(c, scene_patterns):
+            entry["type"] = "scene"
+    from core.parsers.helpers import apply_parsing_overrides
+
+    return apply_parsing_overrides(entries, config)
+
+
 def parse_text_log(content, config):
     """텍스트 로그 파싱"""
     entries = []
     format_type = detect_format(content)
+
+    if format_type == "discord":
+        return parse_discord_format(content, config)
 
     scene_patterns = config.get("chapter", {}).get("scene_patterns", ["^■"])
 

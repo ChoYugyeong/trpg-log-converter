@@ -62,6 +62,26 @@ def parse_cocofolia(soup, config: dict[str, Any]) -> list[dict[str, Any]]:
         else:
             text = element.get_text(separator=" ", strip=True)
             name = None
+            # firing_name_ 도 콜론도 없는 실제 ccfolia 변형:
+            #   <p><span style="color:..">이름</span><span>대사</span></p>
+            # 첫 스팬이 색상/굵기 스타일을 가진 '이름 스팬' 이고 뒤에 본문이 더
+            # 있으면 이를 화자/본문으로 분리한다(콜론이 있으면 기존 콜론 경로 사용).
+            if ":" not in text:
+                spans = element.find_all("span")
+                if spans:
+                    first_text = spans[0].get_text(strip=True)
+                    style = (spans[0].get("style") or "").lower()
+                    styled = ("color" in style) or ("font-weight" in style) or ("bold" in style)
+                    if (
+                        first_text
+                        and styled
+                        and text.startswith(first_text)
+                        and len(text) > len(first_text)
+                    ):
+                        rest = text[len(first_text) :].strip()
+                        if rest:
+                            name = first_text
+                            text = rest
 
         # 채널 접두사 분리 — text 변형 *전* 에 수행해야 [잡담] 매칭 가능
         text = text.strip()

@@ -530,9 +530,10 @@ class ParsingContentPage(BasePage):
         if keywords is not None:
             self.dice_patterns_text.setText(keywords)
             self.save_settings()
+            # 제목은 짧게(긴 룰명을 제목에 넣으면 토스트에서 잘린다). 룰명은 본문으로.
             InfoBar.info(
-                title=f"룰 시스템: {rule_system}",
-                content="주사위 키워드가 업데이트되었습니다.",
+                title="룰 시스템 적용",
+                content=f"{rule_system} · 주사위 키워드가 업데이트되었습니다.",
                 parent=self,
                 position=InfoBarPosition.TOP,
                 duration=2000,
